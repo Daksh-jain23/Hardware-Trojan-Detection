@@ -1,330 +1,283 @@
-You are analyzing gate-level structural evidence for Hardware Trojan detection.
+You are the final reasoning component of a Hardware Trojan
+detection system.
 
-The system has already used a trained GNN as the PRIMARY detector and localizer.
+The GNN has already analyzed the complete gate-level circuit.
 
-Your role is NOT to replace the GNN and NOT to perform numerical computation.
-Your role is to interpret the supplied structural evidence and explain whether
-the observed structure is consistent with Hardware Trojan behavior.
-
-============================================================
-CRITICAL NUMERICAL RULE
-============================================================
-
-All numerical facts in this prompt were computed or copied by the Python
-pipeline before you received them.
-
-Treat the section "AUTHORITATIVE NUMERICAL FACTS" as ground truth.
-
-DO NOT:
-- recount nodes or scores yourself
-- calculate percentages or ratios
-- change a count
-- infer a threshold count from the displayed seed list
-- substitute one GNN statistic for another
-
-If a number is not explicitly supplied, do not invent it.
-
-In particular, distinguish:
-- suspicious_seed_count = actual GNN-positive seed count
-- expanded_region_size = structural neighborhood size
-
-These are different quantities.
+Your job is to interpret the GNN's detection result and determine
+whether the GNN-identified region is consistent with a Hardware
+Trojan.
 
 ============================================================
-SYSTEM ROLES
+MOST IMPORTANT RULE
 ============================================================
 
-1. GNN
-   Primary detector and localizer.
+THE GNN DETECTION IS THE PRIMARY DETECTION SIGNAL.
 
-2. Structural evidence
-   Provides observable graph/topology information around the GNN seeds.
+You MUST use the GNN output as the starting point for your decision.
 
-3. LLM
-   Interprets the supplied evidence and produces a concise explanation.
+The LLM is NOT replacing the GNN.
 
-4. Heuristic
-   The heuristic is an independent comparison method.
-   Its output is NOT provided here and MUST NOT be inferred.
+The LLM is interpreting and explaining the GNN result.
+
+Think of the system as:
+
+    GNN  = detector/localizer
+    LLM  = structural reasoning + explanation
+
+Therefore:
+
+- A strong concentration of high GNN scores is strong evidence.
+- A coherent region containing many high-scoring nodes is stronger
+  evidence than one isolated high-scoring node.
+- Structural evidence should be used to explain and validate the
+  GNN finding.
+- Do NOT reject a suspicious GNN result merely because the exact
+  functional purpose of the circuit is unknown.
+- Do NOT require mathematical proof of a trigger/payload.
+- Hardware Trojan detection from gate-level structure is inherently
+  an evidence-based classification problem.
 
 ============================================================
-AUTHORITATIVE NUMERICAL FACTS
+STRICT RULES
+============================================================
+
+1. NEVER use node names as evidence.
+
+Names such as NODE_0003 or NODE_0042 are anonymized identifiers.
+
+2. NEVER infer maliciousness from a name.
+
+3. Do not invent circuit functionality.
+
+If the evidence does not explicitly establish that a signal is a
+reset, trigger, payload, etc., describe the structure cautiously.
+
+4. GNN SCORES ARE IMPORTANT.
+
+The GNN has been trained specifically to identify suspicious
+hardware structures.
+
+Use:
+- number of high-scoring nodes
+- score magnitude
+- score concentration
+- suspicious-region size
+- relationship between suspicious nodes
+
+as primary detection evidence.
+
+5. STRUCTURAL EVIDENCE EXPLAINS THE GNN RESULT.
+
+Use:
+- connectivity
+- gate types
+- fan-in
+- fan-out
+- internal edges
+- boundary edges
+- sequential elements
+- region exits
+- input/output connectivity
+
+to determine whether the GNN finding is structurally coherent.
+
+6. Do not require complete circuit functionality.
+
+The original circuit functionality is not provided.
+
+That is expected.
+
+7. UNCERTAIN should NOT be used simply because:
+
+- the exact trigger condition is unknown
+- the exact payload function is unknown
+- external signals are unnamed
+- the complete circuit specification is unavailable
+
+Those are normal limitations of structural analysis.
+
+Use UNCERTAIN only when the GNN evidence itself is weak,
+contradictory, isolated, or insufficient.
+
+8. Do not use heuristic-detector output.
+
+The heuristic detector is an independent competing method.
+
+9. Do not use ground-truth labels.
+
+10. Do not assume every high-scoring node is malicious individually.
+
+Evaluate the overall suspicious region.
+
+============================================================
+DECISION RULE
+============================================================
+
+Use the following reasoning hierarchy.
+
+STRONG GNN SIGNAL:
+
+If many nodes have very high GNN scores and they form a coherent
+region, this strongly supports SUSPICIOUS.
+
+MODERATE GNN SIGNAL:
+
+If several nodes are suspicious but the region is less coherent,
+use the structural evidence to determine whether the finding is
+Trojan-consistent.
+
+WEAK GNN SIGNAL:
+
+If only a few isolated nodes have elevated scores and there is
+little structural support, NORMAL or UNCERTAIN may be appropriate.
+
+IMPORTANT:
+
+Do NOT turn "I cannot prove a Trojan" into UNCERTAIN.
+
+The question is:
+
+"Does the GNN evidence, together with the supplied structural
+evidence, support a Trojan-consistent interpretation?"
+
+============================================================
+GRAPH
+============================================================
+
+{
+  "total_nodes": 2535,
+  "total_edges": 3722
+}
+
+
+============================================================
+GNN OUTPUT — PRIMARY EVIDENCE
 ============================================================
 
 {
   "threshold": 0.95,
+  "top_k": 15,
   "suspicious_seed_count": 18,
-  "seed_score_max": 0.999107,
-  "seed_score_min": 0.968444,
-  "seed_score_mean": 0.991347,
-  "seed_count_at_or_above_threshold": 18,
-  "seed_count_at_or_above_0_99": 12
+  "suspicious_region_size": 47,
+  "suspicion": {
+    "max": 0.999107,
+    "mean": 0.608469,
+    "median": 0.769957,
+    "min": 0.0
+  }
 }
 
-The expanded suspicious region size is:
-
-47
-
-IMPORTANT:
-The expanded region is a structural neighborhood around the GNN seeds.
-It is NOT equivalent to the GNN-positive set.
 
 ============================================================
-STRICT EVIDENCE RULES
+TOP GNN SUSPICIOUS NODES
 ============================================================
 
-1. NODE IDENTIFIERS
+These are the nodes ranked most suspicious by the trained GNN.
 
-Node identifiers are anonymized and have no semantic meaning.
-Never use node names as evidence.
-
-------------------------------------------------------------
-
-2. OBSERVED FACT VS INTERPRETATION
-
-Observed fact:
-Something explicitly present in the supplied evidence.
-
-Interpretation:
-A cautious explanation of what the observed structure could indicate.
-
-Never present an interpretation as an observed fact.
-
-------------------------------------------------------------
-
-3. GNN SCORES
-
-A high GNN score means the trained GNN considers that node suspicious.
-
-This is detection evidence, not proof of malicious functionality.
-
-------------------------------------------------------------
-
-4. DO NOT INVENT FUNCTIONALITY
-
-The evidence does NOT automatically establish:
-- a trigger
-- a payload
-- a backdoor
-- a reset mechanism
-- a state machine
-- a safety mechanism
-- a control signal
-- malicious intent
-
-Do not claim any of these as facts unless explicitly supported.
-
-------------------------------------------------------------
-
-5. EXPANDED REGION
-
-The expanded region contains structural neighbors around suspicious seeds.
-
-Therefore:
-
-    GNN suspicious seeds != expanded region
-
-Do not call the entire expanded region Trojan logic.
-
-------------------------------------------------------------
-
-6. SEQUENTIAL LOGIC
-
-If DFFs or other sequential-like gates appear, you may say:
-
-"The region contains sequential logic."
-
-You may also say:
-
-"This could be relevant to state-dependent behavior."
-
-Do NOT automatically conclude:
-- "this is a state machine"
-- "this stores malicious state"
-- "this is a Trojan payload"
-
-unless explicitly supported.
-
-------------------------------------------------------------
-
-7. TRIGGER-LIKE STRUCTURE
-
-You may describe topology as potentially consistent with a hidden trigger.
-
-Use cautious wording such as:
-- "consistent with"
-- "could indicate"
-- "may represent"
-- "provides structural evidence for"
-
-Do not claim an exact trigger has been proven.
-
-------------------------------------------------------------
-
-8. REGION EXITS
-
-Region exits are structural connections from the suspicious region to
-logic outside the region.
-
-Describe them as topology.
-
-Do not automatically call them payload outputs.
-
-------------------------------------------------------------
-
-9. COUNTER-EVIDENCE
-
-Only report counter-evidence that is actually visible in the supplied evidence.
-
-Examples include:
-- isolated suspicious seeds
-- weak connectivity
-- little interaction among suspicious nodes
-- broad low-confidence suspicion
-- ordinary-looking structure
-
-If no meaningful counter-evidence is visible, say so explicitly.
-
-============================================================
-GRAPH SUMMARY
-============================================================
-
-{
-  "nodes": 0,
-  "edges": 0
-}
-
-============================================================
-GNN SUSPICIOUS SEEDS
-============================================================
-
-The following are the actual GNN suspicious seeds. They crossed the
-GNN threshold in the evidence-generation step.
-
-They are sorted by GNN score.
+They are sorted from highest to lowest GNN score.
 
 [
   {
+    "gate": "NODE_0003",
     "type": "PI",
-    "gnn_score": 0.999107,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.999107
   },
   {
+    "gate": "NODE_0033",
     "type": "nor2s1",
-    "gnn_score": 0.999026,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.999026
   },
   {
+    "gate": "NODE_0005",
     "type": "PI",
-    "gnn_score": 0.998826,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.998826
   },
   {
+    "gate": "NODE_0041",
     "type": "nnd2s1",
-    "gnn_score": 0.998811,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.998811
   },
   {
+    "gate": "NODE_0032",
     "type": "xnr2s1",
-    "gnn_score": 0.998802,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.998802
   },
   {
+    "gate": "NODE_0042",
     "type": "hi1s1",
-    "gnn_score": 0.998591,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.998591
   },
   {
+    "gate": "NODE_0045",
     "type": "dffles2",
-    "gnn_score": 0.996866,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.996866
   },
   {
+    "gate": "NODE_0038",
     "type": "and3s1",
-    "gnn_score": 0.996537,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.996537
   },
   {
+    "gate": "NODE_0035",
     "type": "xnr2s1",
-    "gnn_score": 0.991997,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.991997
   },
   {
+    "gate": "NODE_0034",
     "type": "hi1s1",
-    "gnn_score": 0.991472,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.991472
   },
   {
+    "gate": "NODE_0039",
     "type": "xnr2s1",
-    "gnn_score": 0.991131,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.991131
   },
   {
+    "gate": "NODE_0047",
     "type": "xor2s1",
-    "gnn_score": 0.990851,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.990851
   },
   {
+    "gate": "NODE_0043",
     "type": "dffs2",
-    "gnn_score": 0.989951,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.989951
   },
   {
+    "gate": "NODE_0031",
     "type": "dffs2",
-    "gnn_score": 0.989197,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.989197
   },
   {
+    "gate": "NODE_0044",
     "type": "dffles2",
-    "gnn_score": 0.988312,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.988312
   },
   {
+    "gate": "NODE_0046",
     "type": "dffles2",
-    "gnn_score": 0.979465,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.979465
   },
   {
+    "gate": "NODE_0009",
     "type": "xor2s3",
-    "gnn_score": 0.976853,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.976853
   },
   {
+    "gate": "NODE_0037",
     "type": "xnr2s1",
-    "gnn_score": 0.968444,
-    "fanin": 0,
-    "fanout": 0
+    "gnn_score": 0.968444
   }
 ]
 
-IMPORTANT:
-This list is authoritative for the GNN-positive seed set.
-
-Do not redefine that set using the representative region nodes.
 
 ============================================================
-EXPANDED REGION SUMMARY
+SUSPICIOUS REGION
 ============================================================
 
 {
-  "expanded_region_size": 47,
+  "size": 47,
+  "internal_edges": 61,
+  "boundary_edges": 56,
   "gate_types": {
     "nor2s3": 7,
     "xor2s3": 6,
@@ -346,20 +299,94 @@ EXPANDED REGION SUMMARY
     "xnr2s3": 1,
     "xor2s1": 1
   },
-  "representative_nodes_shown": 20
+  "fanin_distribution": {
+    "0": 5,
+    "1": 4,
+    "2": 27,
+    "3": 4,
+    "4": 4,
+    "5": 1,
+    "6": 2
+  },
+  "exits": [
+    {
+      "gate": "NODE_0011",
+      "gate_type": "nnd3s1",
+      "connections": [
+        "U356"
+      ]
+    },
+    {
+      "gate": "NODE_0017",
+      "gate_type": "nor2s3",
+      "connections": [
+        "NODE_00167"
+      ]
+    },
+    {
+      "gate": "NODE_0002",
+      "gate_type": "PI",
+      "connections": [
+        "U756",
+        "NODE_001002"
+      ]
+    },
+    {
+      "gate": "NODE_0027",
+      "gate_type": "nnd2s3",
+      "connections": [
+        "U73"
+      ]
+    },
+    {
+      "gate": "NODE_0006",
+      "gate_type": "nnd2s3",
+      "connections": [
+        "U10",
+        "U9"
+      ]
+    },
+    {
+      "gate": "NODE_0026",
+      "gate_type": "nnd3s3",
+      "connections": [
+        "NODE_00136",
+        "U124",
+        "U57",
+        "U83",
+        "NODE_00102",
+        "U37",
+        "U264"
+      ]
+    }
+  ]
 }
 
-The representative nodes below are selected from the expanded region.
-They are NOT necessarily GNN-positive.
 
 ============================================================
 STRUCTURAL EVIDENCE
 ============================================================
 
 {
-  "internal_edges": 61,
-  "boundary_edges": 56,
-  "region_exit_count": 6,
+  "primary_inputs": [
+    "NODE_0005",
+    "NODE_0002",
+    "NODE_0004",
+    "NODE_0001",
+    "NODE_0003"
+  ],
+  "primary_outputs": [
+    "NODE_0045",
+    "NODE_0044",
+    "NODE_0046"
+  ],
+  "sequential_like_gates": [
+    "NODE_0045",
+    "NODE_0043",
+    "NODE_0031",
+    "NODE_0044",
+    "NODE_0046"
+  ],
   "region_exits": [
     {
       "gate": "NODE_0011",
@@ -412,298 +439,1759 @@ STRUCTURAL EVIDENCE
       ]
     }
   ],
-  "sequential_like_gate_count": 5,
-  "sequential_like_gates": [
-    "NODE_0045",
-    "NODE_0043",
-    "NODE_0031",
-    "NODE_0044",
-    "NODE_0046"
+  "signal_paths": [
+    [
+      {
+        "gate": "NODE_0011",
+        "type": "nnd3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0037",
+        "type": "xnr2s1"
+      },
+      {
+        "gate": "NODE_0043",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0034",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0033",
+        "type": "nor2s1"
+      },
+      {
+        "gate": "NODE_0038",
+        "type": "and3s1"
+      },
+      {
+        "gate": "NODE_0031",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0011",
+        "type": "nnd3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0045",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0011",
+        "type": "nnd3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0044",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0011",
+        "type": "nnd3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0046",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0029",
+        "type": "or3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0037",
+        "type": "xnr2s1"
+      },
+      {
+        "gate": "NODE_0043",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0034",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0033",
+        "type": "nor2s1"
+      },
+      {
+        "gate": "NODE_0038",
+        "type": "and3s1"
+      },
+      {
+        "gate": "NODE_0031",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0029",
+        "type": "or3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0045",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0029",
+        "type": "or3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0044",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0029",
+        "type": "or3s1"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0046",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0002",
+        "type": "PI"
+      },
+      {
+        "gate": "NODE_0008",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0006",
+        "type": "nnd2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0005",
+        "type": "PI"
+      },
+      {
+        "gate": "NODE_0042",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0038",
+        "type": "and3s1"
+      },
+      {
+        "gate": "NODE_0031",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0005",
+        "type": "PI"
+      },
+      {
+        "gate": "NODE_0045",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0005",
+        "type": "PI"
+      },
+      {
+        "gate": "NODE_0042",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0041",
+        "type": "nnd2s1"
+      },
+      {
+        "gate": "NODE_0039",
+        "type": "xnr2s1"
+      },
+      {
+        "gate": "NODE_0046",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0016",
+        "type": "xnr2s3"
+      },
+      {
+        "gate": "NODE_0014",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0009",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0008",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0006",
+        "type": "nnd2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0004",
+        "type": "PI"
+      },
+      {
+        "gate": "NODE_0040",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0038",
+        "type": "and3s1"
+      },
+      {
+        "gate": "NODE_0031",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0004",
+        "type": "PI"
+      },
+      {
+        "gate": "NODE_0046",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0007",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0037",
+        "type": "xnr2s1"
+      },
+      {
+        "gate": "NODE_0043",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0034",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0033",
+        "type": "nor2s1"
+      },
+      {
+        "gate": "NODE_0038",
+        "type": "and3s1"
+      },
+      {
+        "gate": "NODE_0031",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0007",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0045",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0007",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0044",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0007",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0046",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0025",
+        "type": "nor2s3"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0021",
+        "type": "nor2s3"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0024",
+        "type": "nor2s3"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0013",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0010",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0009",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0008",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0006",
+        "type": "nnd2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0023",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0022",
+        "type": "nor2s3"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0019",
+        "type": "nor2s3"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0027",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0037",
+        "type": "xnr2s1"
+      },
+      {
+        "gate": "NODE_0043",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0034",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0033",
+        "type": "nor2s1"
+      },
+      {
+        "gate": "NODE_0038",
+        "type": "and3s1"
+      },
+      {
+        "gate": "NODE_0031",
+        "type": "dffs2"
+      },
+      {
+        "gate": "NODE_0047",
+        "type": "xor2s1"
+      },
+      {
+        "gate": "NODE_0018",
+        "type": "nor6s3"
+      },
+      {
+        "gate": "NODE_0017",
+        "type": "nor2s3"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0027",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0045",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0027",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0044",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0027",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0028",
+        "type": "nor5s1"
+      },
+      {
+        "gate": "NODE_0036",
+        "type": "hi1s1"
+      },
+      {
+        "gate": "NODE_0046",
+        "type": "dffles2"
+      }
+    ],
+    [
+      {
+        "gate": "NODE_0027",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0015",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0014",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0009",
+        "type": "xor2s3"
+      },
+      {
+        "gate": "NODE_0008",
+        "type": "nnd2s3"
+      },
+      {
+        "gate": "NODE_0006",
+        "type": "nnd2s3"
+      }
+    ]
   ]
 }
 
+
 ============================================================
-REPRESENTATIVE REGION NODES
+REGION NODE DETAILS
 ============================================================
 
-Only a subset of region nodes is shown for local structural context.
+The following information describes the structure around the
+GNN-identified suspicious region.
+
+Use it to interpret the GNN result.
 
 [
   {
+    "gate": "NODE_0003",
     "type": "PI",
     "gnn_score": 0.999107,
     "fanin": 0,
     "fanout": 3,
-    "depth": 0,
-    "output_distance": 1,
-    "primary_input": true
+    "depth_from_input": 0,
+    "distance_to_output": 1,
+    "primary_input": true,
+    "primary_output": false,
+    "inputs": [],
+    "outputs": [
+      "NODE_0033",
+      "NODE_0035",
+      "NODE_0044"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0033",
     "type": "nor2s1",
     "gnn_score": 0.999026,
     "fanin": 2,
     "fanout": 3,
-    "depth": 1,
-    "output_distance": 2
+    "depth_from_input": 1,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0003",
+      "NODE_0034"
+    ],
+    "outputs": [
+      "NODE_0041",
+      "NODE_0038",
+      "NODE_0032"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0005",
     "type": "PI",
     "gnn_score": 0.998826,
     "fanin": 0,
     "fanout": 3,
-    "depth": 0,
-    "output_distance": 1,
-    "primary_input": true
+    "depth_from_input": 0,
+    "distance_to_output": 1,
+    "primary_input": true,
+    "primary_output": false,
+    "inputs": [],
+    "outputs": [
+      "NODE_0032",
+      "NODE_0045",
+      "NODE_0042"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0041",
     "type": "nnd2s1",
     "gnn_score": 0.998811,
     "fanin": 2,
     "fanout": 1,
-    "depth": 2,
-    "output_distance": 2
+    "depth_from_input": 2,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0042",
+      "NODE_0033"
+    ],
+    "outputs": [
+      "NODE_0039"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0032",
     "type": "xnr2s1",
     "gnn_score": 0.998802,
     "fanin": 2,
     "fanout": 1,
-    "depth": 1,
-    "output_distance": 1
+    "depth_from_input": 1,
+    "distance_to_output": 1,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0005",
+      "NODE_0033"
+    ],
+    "outputs": [
+      "NODE_0045"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0042",
     "type": "hi1s1",
     "gnn_score": 0.998591,
     "fanin": 1,
     "fanout": 2,
-    "depth": 1,
-    "output_distance": 3
+    "depth_from_input": 1,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0005"
+    ],
+    "outputs": [
+      "NODE_0041",
+      "NODE_0038"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0045",
     "type": "dffles2",
     "gnn_score": 0.996866,
     "fanin": 4,
     "fanout": 0,
-    "depth": 1,
-    "output_distance": 0,
-    "primary_output": true
+    "depth_from_input": 1,
+    "distance_to_output": 0,
+    "primary_input": false,
+    "primary_output": true,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0036",
+      "NODE_0032",
+      "NODE_0005"
+    ],
+    "outputs": [],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0038",
     "type": "and3s1",
     "gnn_score": 0.996537,
     "fanin": 3,
     "fanout": 1,
-    "depth": 2,
-    "output_distance": 8
+    "depth_from_input": 2,
+    "distance_to_output": 8,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0042",
+      "NODE_0040",
+      "NODE_0033"
+    ],
+    "outputs": [
+      "NODE_0031"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0035",
     "type": "xnr2s1",
     "gnn_score": 0.991997,
     "fanin": 2,
     "fanout": 1,
-    "depth": 1,
-    "output_distance": 1
+    "depth_from_input": 1,
+    "distance_to_output": 1,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0003",
+      "NODE_0043"
+    ],
+    "outputs": [
+      "NODE_0044"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0034",
     "type": "hi1s1",
     "gnn_score": 0.991472,
     "fanin": 1,
     "fanout": 2,
-    "depth": 2,
-    "output_distance": 3
+    "depth_from_input": 2,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0043"
+    ],
+    "outputs": [
+      "NODE_0033",
+      "NODE_0037"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0039",
     "type": "xnr2s1",
     "gnn_score": 0.991131,
     "fanin": 2,
     "fanout": 1,
-    "depth": 2,
-    "output_distance": 1
+    "depth_from_input": 2,
+    "distance_to_output": 1,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0040",
+      "NODE_0041"
+    ],
+    "outputs": [
+      "NODE_0046"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0047",
     "type": "xor2s1",
     "gnn_score": 0.990851,
     "fanin": 2,
     "fanout": 1,
-    "depth": 2,
-    "output_distance": 6
+    "depth_from_input": 2,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0022",
+      "NODE_0031"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0043",
     "type": "dffs2",
     "gnn_score": 0.989951,
     "fanin": 2,
     "fanout": 2,
-    "depth": 1,
-    "output_distance": 2
+    "depth_from_input": 1,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0037",
+      "NODE_0001"
+    ],
+    "outputs": [
+      "NODE_0034",
+      "NODE_0035"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0031",
     "type": "dffs2",
     "gnn_score": 0.989197,
     "fanin": 2,
     "fanout": 1,
-    "depth": 1,
-    "output_distance": 7
+    "depth_from_input": 1,
+    "distance_to_output": 7,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0038"
+    ],
+    "outputs": [
+      "NODE_0047"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0044",
     "type": "dffles2",
     "gnn_score": 0.988312,
     "fanin": 4,
     "fanout": 0,
-    "depth": 1,
-    "output_distance": 0,
-    "primary_output": true
+    "depth_from_input": 1,
+    "distance_to_output": 0,
+    "primary_input": false,
+    "primary_output": true,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0035",
+      "NODE_0036",
+      "NODE_0003"
+    ],
+    "outputs": [],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0046",
     "type": "dffles2",
     "gnn_score": 0.979465,
     "fanin": 4,
     "fanout": 0,
-    "depth": 1,
-    "output_distance": 0,
-    "primary_output": true
+    "depth_from_input": 1,
+    "distance_to_output": 0,
+    "primary_input": false,
+    "primary_output": true,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0036",
+      "NODE_0039",
+      "NODE_0004"
+    ],
+    "outputs": [],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0009",
     "type": "xor2s3",
     "gnn_score": 0.976853,
     "fanin": 2,
     "fanout": 1,
-    "depth": 5,
-    "output_distance": 4
+    "depth_from_input": 5,
+    "distance_to_output": 4,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0014",
+      "NODE_0010"
+    ],
+    "outputs": [
+      "NODE_0008"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0037",
     "type": "xnr2s1",
     "gnn_score": 0.968444,
     "fanin": 2,
     "fanout": 1,
-    "depth": 3,
-    "output_distance": 3
+    "depth_from_input": 3,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0028",
+      "NODE_0034"
+    ],
+    "outputs": [
+      "NODE_0043"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0040",
     "type": "hi1s1",
     "gnn_score": 0.909605,
     "fanin": 1,
     "fanout": 2,
-    "depth": 1,
-    "output_distance": 2
+    "depth_from_input": 1,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0004"
+    ],
+    "outputs": [
+      "NODE_0038",
+      "NODE_0039"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   },
   {
+    "gate": "NODE_0008",
     "type": "nnd2s3",
     "gnn_score": 0.89957,
     "fanin": 2,
     "fanout": 1,
-    "depth": 1,
-    "output_distance": 3
+    "depth_from_input": 1,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0009",
+      "NODE_0002"
+    ],
+    "outputs": [
+      "NODE_0006"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0006",
+    "type": "nnd2s3",
+    "gnn_score": 0.887688,
+    "fanin": 2,
+    "fanout": 2,
+    "depth_from_input": 2,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0008",
+      "U12"
+    ],
+    "outputs": [
+      "U10",
+      "U9"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U10",
+      "U9"
+    ]
+  },
+  {
+    "gate": "NODE_0001",
+    "type": "PI",
+    "gnn_score": 0.868095,
+    "fanin": 0,
+    "fanout": 5,
+    "depth_from_input": 0,
+    "distance_to_output": 1,
+    "primary_input": true,
+    "primary_output": false,
+    "inputs": [],
+    "outputs": [
+      "NODE_0045",
+      "NODE_0043",
+      "NODE_0044",
+      "NODE_0046",
+      "NODE_0031"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0010",
+    "type": "xor2s3",
+    "gnn_score": 0.806426,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 4,
+    "distance_to_output": 5,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0013",
+      "NODE_0012"
+    ],
+    "outputs": [
+      "NODE_0009"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0004",
+    "type": "PI",
+    "gnn_score": 0.769957,
+    "fanin": 0,
+    "fanout": 2,
+    "depth_from_input": 0,
+    "distance_to_output": 1,
+    "primary_input": true,
+    "primary_output": false,
+    "inputs": [],
+    "outputs": [
+      "NODE_0046",
+      "NODE_0040"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0014",
+    "type": "xor2s3",
+    "gnn_score": 0.768763,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 4,
+    "distance_to_output": 5,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0016",
+      "NODE_0015"
+    ],
+    "outputs": [
+      "NODE_0009"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0036",
+    "type": "hi1s1",
+    "gnn_score": 0.766808,
+    "fanin": 1,
+    "fanout": 3,
+    "depth_from_input": 3,
+    "distance_to_output": 1,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0028"
+    ],
+    "outputs": [
+      "NODE_0045",
+      "NODE_0044",
+      "NODE_0046"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0012",
+    "type": "xor2s3",
+    "gnn_score": 0.691949,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 3,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_00166",
+      "U100"
+    ],
+    "outputs": [
+      "NODE_0010"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0016",
+    "type": "xnr2s3",
+    "gnn_score": 0.688524,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 3,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U138",
+      "U23"
+    ],
+    "outputs": [
+      "NODE_0014"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0013",
+    "type": "xor2s3",
+    "gnn_score": 0.664414,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 4,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_00126",
+      "U257"
+    ],
+    "outputs": [
+      "NODE_0010"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0015",
+    "type": "xor2s3",
+    "gnn_score": 0.498983,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 4,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0027",
+      "U48"
+    ],
+    "outputs": [
+      "NODE_0014"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0028",
+    "type": "nor5s1",
+    "gnn_score": 0.449831,
+    "fanin": 5,
+    "fanout": 2,
+    "depth_from_input": 2,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0027",
+      "NODE_0011",
+      "NODE_0030",
+      "NODE_0029",
+      "NODE_0007"
+    ],
+    "outputs": [
+      "NODE_0037",
+      "NODE_0036"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0022",
+    "type": "nor2s3",
+    "gnn_score": 0.403657,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 3,
+    "distance_to_output": 7,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0026",
+      "NODE_0023"
+    ],
+    "outputs": [
+      "NODE_0047"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0017",
+    "type": "nor2s3",
+    "gnn_score": 0.277102,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 3,
+    "distance_to_output": 4,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U260",
+      "NODE_0018"
+    ],
+    "outputs": [
+      "NODE_00167"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "NODE_00167"
+    ]
+  },
+  {
+    "gate": "NODE_0027",
+    "type": "nnd2s3",
+    "gnn_score": 0.142548,
+    "fanin": 2,
+    "fanout": 3,
+    "depth_from_input": 3,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U93",
+      "U75"
+    ],
+    "outputs": [
+      "U73",
+      "NODE_0015",
+      "NODE_0028"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U73"
+    ]
+  },
+  {
+    "gate": "NODE_0026",
+    "type": "nnd3s3",
+    "gnn_score": 0.139141,
+    "fanin": 3,
+    "fanout": 8,
+    "depth_from_input": 2,
+    "distance_to_output": 7,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U297",
+      "U323",
+      "U266"
+    ],
+    "outputs": [
+      "NODE_00136",
+      "NODE_0022",
+      "U124",
+      "U57",
+      "U83",
+      "NODE_00102",
+      "U37",
+      "U264"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "NODE_00136",
+      "U124",
+      "U57",
+      "U83",
+      "NODE_00102",
+      "U37",
+      "U264"
+    ]
+  },
+  {
+    "gate": "NODE_0030",
+    "type": "nnd4s1",
+    "gnn_score": 0.046762,
+    "fanin": 4,
+    "fanout": 1,
+    "depth_from_input": 2,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_000835",
+      "U622",
+      "NODE_001006",
+      "trig70_0U4"
+    ],
+    "outputs": [
+      "NODE_0028"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0029",
+    "type": "or3s1",
+    "gnn_score": 0.029523,
+    "fanin": 3,
+    "fanout": 1,
+    "depth_from_input": 2,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_000807",
+      "NODE_000970",
+      "U721"
+    ],
+    "outputs": [
+      "NODE_0028"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0018",
+    "type": "nor6s3",
+    "gnn_score": 0.017389,
+    "fanin": 6,
+    "fanout": 1,
+    "depth_from_input": 2,
+    "distance_to_output": 5,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "NODE_0025",
+      "NODE_0024",
+      "NODE_0047",
+      "NODE_0021",
+      "NODE_0020",
+      "NODE_0019"
+    ],
+    "outputs": [
+      "NODE_0017"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0024",
+    "type": "nor2s3",
+    "gnn_score": 0.01448,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 1,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U296",
+      "PI_n1469"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0025",
+    "type": "nor2s3",
+    "gnn_score": 0.008083,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 1,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U299",
+      "PI_n1428"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0002",
+    "type": "PI",
+    "gnn_score": 0.002502,
+    "fanin": 0,
+    "fanout": 3,
+    "depth_from_input": 0,
+    "distance_to_output": 4,
+    "primary_input": true,
+    "primary_output": false,
+    "inputs": [],
+    "outputs": [
+      "U756",
+      "NODE_001002",
+      "NODE_0008"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U756",
+      "NODE_001002"
+    ]
+  },
+  {
+    "gate": "NODE_0023",
+    "type": "nor6s3",
+    "gnn_score": 0.000999,
+    "fanin": 6,
+    "fanout": 1,
+    "depth_from_input": 2,
+    "distance_to_output": 8,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U269",
+      "U229",
+      "U228",
+      "U227",
+      "U226",
+      "U225"
+    ],
+    "outputs": [
+      "NODE_0022"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0007",
+    "type": "nnd2s3",
+    "gnn_score": 0.000807,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 2,
+    "distance_to_output": 3,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U1212",
+      "U1211"
+    ],
+    "outputs": [
+      "NODE_0028"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0019",
+    "type": "nor2s3",
+    "gnn_score": 0.000131,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 1,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U290",
+      "PI_n2144"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0020",
+    "type": "nor2s3",
+    "gnn_score": 3.1e-05,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 1,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U302",
+      "PI_n2254"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "region_exit": false,
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0011",
+    "type": "nnd3s1",
+    "gnn_score": 2.9e-05,
+    "fanin": 3,
+    "fanout": 2,
+    "depth_from_input": 1,
+    "distance_to_output": 2,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "PI_n1440",
+      "U713",
+      "U1378"
+    ],
+    "outputs": [
+      "NODE_0028",
+      "U356"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U356"
+    ]
+  },
+  {
+    "gate": "NODE_0021",
+    "type": "nor2s3",
+    "gnn_score": 0.0,
+    "fanin": 2,
+    "fanout": 1,
+    "depth_from_input": 1,
+    "distance_to_output": 6,
+    "primary_input": false,
+    "primary_output": false,
+    "inputs": [
+      "U292",
+      "PI_n2149"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "region_exit": false,
+    "external_outputs": []
   }
 ]
 
+
 ============================================================
-REASONING PROCEDURE
+REASONING TASK
 ============================================================
 
-STEP 1 — GNN SIGNAL
-Use the AUTHORITATIVE NUMERICAL FACTS.
-Report the suspicious seed count, score statistics, and threshold facts
-accurately.
+Perform these steps.
 
-STEP 2 — SEED CONCENTRATION
-Discuss whether the suspicious seeds appear localized within the
-expanded structural region.
+STEP 1 — GNN EVIDENCE
 
-STEP 3 — CONNECTIVITY
-Use internal edges, boundary edges, fan-in, fan-out, and region exits
-to describe observable topology.
+Determine:
 
-STEP 4 — LOGIC STRUCTURE
-Discuss the supplied gate types and sequential/combinational structure.
-Do not invent functionality.
+- How many suspicious seed nodes exist?
+- How high are their scores?
+- Is suspicion concentrated?
+- How large is the suspicious region?
 
-STEP 5 — POSSIBLE TRIGGER-LIKE STRUCTURE
-If the topology supports it, explain cautiously why some structure could
-be consistent with trigger-like behavior.
+STEP 2 — GNN COHERENCE
 
-STEP 6 — EXTERNAL CONNECTIONS
-Describe connections from the suspicious region to surrounding circuitry.
-Do not automatically label them as a payload.
+Determine whether the high-scoring nodes form a coherent
+structural region.
 
-STEP 7 — COUNTER-EVIDENCE
-Report only evidence actually present in the supplied data.
+STEP 3 — STRUCTURAL INTERPRETATION
 
-STEP 8 — FINAL ASSESSMENT
-Choose exactly one:
+Examine:
+
+- gate-type composition
+- combinational logic
+- sequential-like logic
+- fan-in
+- fan-out
+- internal connectivity
+- boundary connectivity
+- region exits
+
+STEP 4 — TROJAN CONSISTENCY
+
+Determine whether the structural characteristics provide
+additional support for the GNN's Trojan suspicion.
+
+You do NOT need to prove malicious intent.
+
+STEP 5 — COUNTER-EVIDENCE
+
+Identify genuine evidence that contradicts the GNN finding.
+
+Do not treat "unknown functionality" as counter-evidence.
+
+STEP 6 — FINAL DECISION
+
+Select exactly one:
 
 SUSPICIOUS
 NORMAL
 UNCERTAIN
 
-Base the assessment on:
-- GNN signal
-- seed concentration
-- structural coherence
-- connectivity
-- observable logic structure
-- counter-evidence
-
-Do not invent a Trojan narrative and then use it to justify the GNN result.
-
 ============================================================
-REASONING HIERARCHY
+OUTPUT FORMAT
 ============================================================
 
-    GNN detection signal
-            ↓
-    suspicious seed concentration
-            ↓
-    structural coherence
-            ↓
-    observable topology
-            ↓
-    cautious interpretation
-            ↓
-    explanation / assessment
-
-============================================================
-REQUIRED OUTPUT FORMAT
-============================================================
+Return exactly:
 
 DECISION: <SUSPICIOUS | NORMAL | UNCERTAIN>
 
 CONFIDENCE: <LOW | MEDIUM | HIGH>
 
-OBSERVED_EVIDENCE:
-- 3 to 5 concrete observations
-- include the authoritative seed count and region size when relevant
-- do not perform new calculations
+GNN_ASSESSMENT:
+<2 concise sentences describing what the GNN found>
 
-STRUCTURAL_INTERPRETATION:
-- 2 to 4 cautious interpretations
-- use "consistent with", "could indicate", or similar wording
-- do not invent trigger/payload functionality
+STRUCTURAL_EVIDENCE:
+- <fact>
+- <fact>
+- <fact>
+
+INTERPRETATION:
+- <structural interpretation>
+- <structural interpretation>
 
 COUNTER_EVIDENCE:
-- 1 to 3 observations that weaken the interpretation
-
-If none are visible, write exactly:
-
-No significant counter-evidence is visible in the supplied evidence.
+- <fact>
+- <fact>
 
 REASONING:
-A short paragraph connecting the GNN signal and structural evidence to
-the final assessment.
+<maximum 5 sentences connecting the GNN result and structural
+evidence to the final decision>
 
-Do not add another classification elsewhere.
-
-FINAL LANGUAGE CONSTRAINTS
-===========================
-
-- Do not call the suspicious region a "payload".
-- Do not claim malicious intent.
-- Do not claim an exact trigger unless explicitly supported.
-- Do not claim sequential logic proves a Trojan.
-- Do not invent numerical values.
-- Do not report "X seeds above Y" unless that exact count is present in
-  AUTHORITATIVE NUMERICAL FACTS.
-- Prefer precise phrases such as:
-  "The GNN identified N suspicious seeds."
-  "The expanded region contains M nodes."
-  "The region contains sequential logic."
-  "The structure is consistent with suspicious or Trojan-like logic."
+Do not add another final classification.
