@@ -1,24 +1,22 @@
 """
-Hardware Trojan LLM reasoning stage.
+LLM prompt builder for Hardware Trojan detection.
 
 Pipeline:
-
     evidence.json
         ↓
-    compact evidence extraction
+    deterministic evidence extraction
         ↓
-    GNN-primary reasoning prompt
+    strict reasoning prompt
         ↓
     Qwen / other LLM
 
-Important:
-- GNN is the PRIMARY detector/localizer.
-- LLM is a downstream structural reasoning + explanation component.
+Design:
+- GNN is the primary detector/localizer.
+- LLM performs structural interpretation and explanation.
 - Heuristic output is NOT provided to the LLM.
-- Node names are anonymized.
-- The full circuit graph is NOT sent to the LLM.
-- Only the suspicious region and decision-relevant structural evidence
-  are provided.
+- Node names are anonymized and never used as evidence.
+- GNN suspicious seeds are explicitly separated from the expanded region.
+- Numerical facts used by the LLM are computed deterministically here.
 """
 
 from __future__ import annotations
@@ -33,599 +31,570 @@ from pathlib import Path
 # ============================================================
 
 ROOT = Path(__file__).resolve().parent.parent
-
 DEFAULT_OUTPUT_DIR = ROOT / "results" / "llm"
+
+MAX_REGION_NODES = 20
+MAX_REGION_EXITS = 15
+MAX_SEQUENTIAL_GATES = 15
 
 
 # ============================================================
 # Helpers
 # ============================================================
 
-def safe_float(value, default=0.0):
+def safe_float(value, default=0.0) -> float:
+    """Safely convert a value to float."""
     try:
         return float(value)
     except (TypeError, ValueError):
         return default
 
 
-def safe_int(value, default=0):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
-# ============================================================
-# GNN seed compression
-# ============================================================
-
 def compact_seed(node: dict) -> dict:
-    """
-    Keep only the information needed to communicate the
-    authoritative GNN ranking.
-    """
-
+    """Compact representation of an actual GNN suspicious seed."""
     return {
-        "gate": node.get("gate"),
         "type": node.get("type"),
-        "gnn_score": round(
-            safe_float(node.get("gnn_score")),
-            4,
-        ),
+        "gnn_score": round(safe_float(node.get("gnn_score")), 6),
+        "fanin": node.get("fanin", 0),
+        "fanout": node.get("fanout", 0),
     }
 
-
-def build_seed_summary(evidence: dict) -> list[dict]:
-
-    seeds = evidence.get("suspicious_seeds", [])
-
-    seeds = sorted(
-        seeds,
-        key=lambda x: safe_float(
-            x.get("gnn_score")
-        ),
-        reverse=True,
-    )
-
-    return [
-        compact_seed(seed)
-        for seed in seeds
-    ]
-
-
-# ============================================================
-# Region node compression
-# ============================================================
 
 def compact_region_node(node: dict) -> dict:
     """
-    Compact representation of one suspicious-region node.
+    Compact representation of a representative expanded-region node.
 
-    We retain topology and GNN information but remove
-    redundant metadata.
+    Node identifiers and full connectivity lists are intentionally
+    omitted because they are not needed for high-level reasoning.
     """
-
     result = {
-        "gate": node.get("gate"),
         "type": node.get("type"),
-        "gnn": round(
-            safe_float(node.get("gnn_score")),
-            4,
-        ),
-        "fanin": safe_int(
-            node.get("fanin"),
-            0,
-        ),
-        "fanout": safe_int(
-            node.get("fanout"),
-            0,
-        ),
+        "gnn_score": round(safe_float(node.get("gnn_score")), 6),
+        "fanin": node.get("fanin", 0),
+        "fanout": node.get("fanout", 0),
     }
 
-    # Keep positional information if available.
     if "depth_from_input" in node:
         result["depth"] = node["depth_from_input"]
 
     if "distance_to_output" in node:
-        result["dist_to_output"] = node[
-            "distance_to_output"
-        ]
+        result["output_distance"] = node["distance_to_output"]
 
-    # Primary input/output status is useful.
     if node.get("primary_input"):
         result["primary_input"] = True
 
     if node.get("primary_output"):
         result["primary_output"] = True
 
-    # IMPORTANT:
-    # Keep local topology because this is what the LLM
-    # actually needs for structural reasoning.
-    if "inputs" in node:
-        result["inputs"] = node["inputs"]
-
-    if "outputs" in node:
-        result["outputs"] = node["outputs"]
-
-    # Region boundary information.
     if node.get("region_exit"):
         result["region_exit"] = True
 
-    if "external_outputs" in node:
-        result["external_outputs"] = node[
-            "external_outputs"
-        ]
-
     return result
 
 
-def build_region_nodes(evidence: dict) -> list[dict]:
+def compact_graph(graph: dict) -> dict:
+    """Keep only aggregate graph statistics."""
+    return {
+        "nodes": graph.get("nodes", 0),
+        "edges": graph.get("edges", 0),
+    }
 
-    nodes = evidence.get("nodes", [])
 
-    compact = [
-        compact_region_node(node)
-        for node in nodes
+def deterministic_gnn_facts(gnn: dict, seeds: list[dict]) -> dict:
+    """
+    Compute numerical facts in Python so the LLM never has to count
+    or infer threshold statistics itself.
+    """
+    scores = [
+        safe_float(seed.get("gnn_score"))
+        for seed in seeds
+        if seed.get("gnn_score") is not None
     ]
 
-    # Keep the most suspicious nodes first.
-    compact.sort(
-        key=lambda x: safe_float(
-            x.get("gnn")
+    threshold = safe_float(gnn.get("threshold"))
+
+    facts = {
+        "threshold": threshold,
+        "suspicious_seed_count": len(seeds),
+        "seed_score_max": round(max(scores), 6) if scores else None,
+        "seed_score_min": round(min(scores), 6) if scores else None,
+        "seed_score_mean": round(sum(scores) / len(scores), 6)
+        if scores else None,
+        "seed_count_at_or_above_threshold": sum(
+            score >= threshold for score in scores
         ),
-        reverse=True,
-    )
-
-    return compact
-
-
-# ============================================================
-# Structural evidence compression
-# ============================================================
-
-def build_structural_summary(
-    evidence: dict,
-) -> dict:
-
-    region = evidence.get(
-        "region",
-        {},
-    )
-
-    structural = evidence.get(
-        "structural_evidence",
-        {},
-    )
-
-    result = {
-        "internal_edges": structural.get(
-            "internal_edges",
-            region.get(
-                "internal_edges",
-                0,
-            ),
-        ),
-        "boundary_edges": structural.get(
-            "boundary_edges",
-            region.get(
-                "boundary_edges",
-                0,
-            ),
-        ),
-        "region_exits": structural.get(
-            "region_exits",
-            [],
-        ),
-        "sequential_like_gates": structural.get(
-            "sequential_like_gates",
-            [],
+        "seed_count_at_or_above_0_99": sum(
+            score >= 0.99 for score in scores
         ),
     }
 
-    return result
+    # Keep the evidence-file GNN statistics as separate reference values.
+    # They are not recomputed here because they may describe all graph nodes.
+    if "max_score" in gnn:
+        facts["graph_score_max"] = gnn["max_score"]
+    if "mean_score" in gnn:
+        facts["graph_score_mean"] = gnn["mean_score"]
+    if "median_score" in gnn:
+        facts["graph_score_median"] = gnn["median_score"]
+    if "min_score" in gnn:
+        facts["graph_score_min"] = gnn["min_score"]
+
+    return facts
 
 
-# ============================================================
-# GNN summary
-# ============================================================
-
-def build_gnn_summary(
-    evidence: dict,
-) -> dict:
-
-    gnn = evidence.get(
-        "gnn",
-        {},
-    )
-
-    region = evidence.get(
-        "region",
-        {},
-    )
-
-    result = {}
-
-    # Preserve relevant GNN statistics.
-    important_fields = [
-        "threshold",
-        "max_score",
-        "mean_score",
-        "median_score",
-        "num_suspicious_nodes",
-        "suspicious_node_count",
-    ]
-
-    for field in important_fields:
-
-        if field in gnn:
-            result[field] = gnn[field]
-
-    # Region-level values are useful if not already
-    # present in the GNN section.
-    if "size" in region:
-        result["region_size"] = region["size"]
-
-    if "region_size" in region:
-        result["region_size"] = region[
-            "region_size"
-        ]
-
-    return result
-
-
-# ============================================================
-# Region summary
-# ============================================================
-
-def build_region_summary(
-    evidence: dict,
-) -> dict:
-
-    region = evidence.get(
-        "region",
-        {},
-    )
-
-    result = {}
-
-    # Only retain compact, high-value region information.
-    fields = [
-        "region_size",
-        "size",
-        "seed_count",
-        "suspicious_seed_count",
+def compact_structural(structural: dict, region: dict) -> dict:
+    """Keep compact structural evidence."""
+    internal_edges = structural.get(
         "internal_edges",
+        region.get("internal_edges", 0),
+    )
+
+    boundary_edges = structural.get(
         "boundary_edges",
-        "gate_types",
-        "sequential_like_gates",
-    ]
+        region.get("boundary_edges", 0),
+    )
 
-    for field in fields:
+    region_exits = structural.get("region_exits", [])
+    sequential_like = structural.get("sequential_like_gates", [])
 
-        if field in region:
-            result[field] = region[field]
-
-    return result
+    return {
+        "internal_edges": internal_edges,
+        "boundary_edges": boundary_edges,
+        "region_exit_count": len(region_exits),
+        "region_exits": region_exits[:MAX_REGION_EXITS],
+        "sequential_like_gate_count": len(sequential_like),
+        "sequential_like_gates": sequential_like[:MAX_SEQUENTIAL_GATES],
+    }
 
 
 # ============================================================
-# Main prompt builder
+# Prompt Builder
 # ============================================================
 
 def build_prompt(evidence: dict) -> str:
+    graph = evidence.get("graph", {})
+    gnn = evidence.get("gnn", {})
+    region = evidence.get("region", {})
+    structural = evidence.get("structural_evidence", {})
 
-    gnn_summary = build_gnn_summary(
-        evidence
+    # --------------------------------------------------------
+    # GNN suspicious seeds
+    # --------------------------------------------------------
+
+    seeds = evidence.get("suspicious_seeds", [])
+
+    seeds = sorted(
+        seeds,
+        key=lambda x: safe_float(x.get("gnn_score")),
+        reverse=True,
     )
 
-    seeds = build_seed_summary(
-        evidence
+    seed_count = len(seeds)
+
+    compact_seeds = [compact_seed(seed) for seed in seeds]
+
+    # Deterministic facts: Python calculates these before the LLM sees them.
+    gnn_facts = deterministic_gnn_facts(gnn, seeds)
+
+    # --------------------------------------------------------
+    # Expanded region
+    # --------------------------------------------------------
+
+    raw_nodes = evidence.get("nodes", [])
+
+    region_size = region.get("size", len(raw_nodes))
+
+    representative_nodes = sorted(
+        raw_nodes,
+        key=lambda x: safe_float(x.get("gnn_score")),
+        reverse=True,
+    )[:MAX_REGION_NODES]
+
+    compact_nodes = [
+        compact_region_node(node)
+        for node in representative_nodes
+    ]
+
+    # --------------------------------------------------------
+    # Gate types
+    # --------------------------------------------------------
+
+    gate_types = region.get("gate_types", {})
+
+    # --------------------------------------------------------
+    # Compact summaries
+    # --------------------------------------------------------
+
+    graph_summary = compact_graph(graph)
+
+    structural_summary = compact_structural(
+        structural,
+        region,
     )
 
-    region_summary = build_region_summary(
-        evidence
-    )
-
-    structural = build_structural_summary(
-        evidence
-    )
-
-    region_nodes = build_region_nodes(
-        evidence
-    )
-
-    graph_info = evidence.get(
-        "graph",
-        {},
-    )
-
-    # Only retain basic graph statistics.
-    compact_graph = {}
-
-    for field in [
-        "nodes",
-        "edges",
-        "num_nodes",
-        "num_edges",
-    ]:
-
-        if field in graph_info:
-            compact_graph[field] = graph_info[
-                field
-            ]
+    region_summary = {
+        "expanded_region_size": region_size,
+        "gate_types": gate_types,
+        "representative_nodes_shown": len(compact_nodes),
+    }
 
     # --------------------------------------------------------
     # Prompt
     # --------------------------------------------------------
 
     prompt = f"""
-You are analyzing a suspicious hardware region identified
-by a trained Graph Neural Network (GNN).
+You are analyzing gate-level structural evidence for Hardware Trojan detection.
 
-Your task is to interpret the GNN detection using the
-provided structural evidence and produce a clear explanation.
+The system has already used a trained GNN as the PRIMARY detector and localizer.
+
+Your role is NOT to replace the GNN and NOT to perform numerical computation.
+Your role is to interpret the supplied structural evidence and explain whether
+the observed structure is consistent with Hardware Trojan behavior.
 
 ============================================================
-IMPORTANT SYSTEM DESIGN
+CRITICAL NUMERICAL RULE
 ============================================================
 
-The GNN is the PRIMARY DETECTOR and LOCALIZER.
+All numerical facts in this prompt were computed or copied by the Python
+pipeline before you received them.
 
-The GNN has already analyzed the complete circuit and
-identified suspicious nodes.
+Treat the section "AUTHORITATIVE NUMERICAL FACTS" as ground truth.
 
-The LLM is a DOWNSTREAM REASONING AND EXPLANATION COMPONENT.
+DO NOT:
+- recount nodes or scores yourself
+- calculate percentages or ratios
+- change a count
+- infer a threshold count from the displayed seed list
+- substitute one GNN statistic for another
+
+If a number is not explicitly supplied, do not invent it.
+
+In particular, distinguish:
+- suspicious_seed_count = actual GNN-positive seed count
+- expanded_region_size = structural neighborhood size
+
+These are different quantities.
+
+============================================================
+SYSTEM ROLES
+============================================================
+
+1. GNN
+   Primary detector and localizer.
+
+2. Structural evidence
+   Provides observable graph/topology information around the GNN seeds.
+
+3. LLM
+   Interprets the supplied evidence and produces a concise explanation.
+
+4. Heuristic
+   The heuristic is an independent comparison method.
+   Its output is NOT provided here and MUST NOT be inferred.
+
+============================================================
+AUTHORITATIVE NUMERICAL FACTS
+============================================================
+
+{json.dumps(gnn_facts, indent=2)}
+
+The expanded suspicious region size is:
+
+{region_size}
+
+IMPORTANT:
+The expanded region is a structural neighborhood around the GNN seeds.
+It is NOT equivalent to the GNN-positive set.
+
+============================================================
+STRICT EVIDENCE RULES
+============================================================
+
+1. NODE IDENTIFIERS
+
+Node identifiers are anonymized and have no semantic meaning.
+Never use node names as evidence.
+
+------------------------------------------------------------
+
+2. OBSERVED FACT VS INTERPRETATION
+
+Observed fact:
+Something explicitly present in the supplied evidence.
+
+Interpretation:
+A cautious explanation of what the observed structure could indicate.
+
+Never present an interpretation as an observed fact.
+
+------------------------------------------------------------
+
+3. GNN SCORES
+
+A high GNN score means the trained GNN considers that node suspicious.
+
+This is detection evidence, not proof of malicious functionality.
+
+------------------------------------------------------------
+
+4. DO NOT INVENT FUNCTIONALITY
+
+The evidence does NOT automatically establish:
+- a trigger
+- a payload
+- a backdoor
+- a reset mechanism
+- a state machine
+- a safety mechanism
+- a control signal
+- malicious intent
+
+Do not claim any of these as facts unless explicitly supported.
+
+------------------------------------------------------------
+
+5. EXPANDED REGION
+
+The expanded region contains structural neighbors around suspicious seeds.
 
 Therefore:
 
-1. Start from the GNN result.
-2. Evaluate whether the suspicious region is coherent.
-3. Use structural evidence to explain and validate the GNN result.
-4. Do not require mathematical proof of a Trojan.
-5. Do not independently search the entire circuit for another
-   suspicious region.
-6. Do not ignore a strong GNN result merely because the exact
-   Trojan trigger or payload cannot be proven from the supplied
-   evidence.
+    GNN suspicious seeds != expanded region
 
-The purpose of your reasoning is:
+Do not call the entire expanded region Trojan logic.
 
-    GNN detection
-        +
-    structural interpretation
-        =
-    explainable Trojan assessment
+------------------------------------------------------------
 
-============================================================
-STRICT RULES
-============================================================
+6. SEQUENTIAL LOGIC
 
-1. NODE NAMES ARE NOT EVIDENCE.
+If DFFs or other sequential-like gates appear, you may say:
 
-All identifiers such as NODE_0001 or NODE_0042 are anonymized.
+"The region contains sequential logic."
 
-Never infer malicious behavior from a node name.
+You may also say:
 
-2. DO NOT INVENT FUNCTIONALITY.
+"This could be relevant to state-dependent behavior."
 
-Do not claim a signal is a reset, security signal, trigger,
-payload, backdoor, or critical control signal unless the
-provided structural evidence supports that interpretation.
+Do NOT automatically conclude:
+- "this is a state machine"
+- "this stores malicious state"
+- "this is a Trojan payload"
 
-3. GNN SCORES ARE THE PRIMARY DETECTION SIGNAL.
+unless explicitly supported.
 
-A high GNN score means the trained detector considers that
-node suspicious.
+------------------------------------------------------------
 
-Multiple high-scoring nodes forming a coherent region provide
-stronger evidence than isolated high-scoring nodes.
+7. TRIGGER-LIKE STRUCTURE
 
-4. STRUCTURAL EVIDENCE IS USED TO INTERPRET THE GNN RESULT.
+You may describe topology as potentially consistent with a hidden trigger.
 
-Look for:
+Use cautious wording such as:
+- "consistent with"
+- "could indicate"
+- "may represent"
+- "provides structural evidence for"
 
-- concentration of suspicious nodes
-- connected suspicious logic
-- unusual reconvergence
-- multiple inputs converging into logic
-- sequential elements
-- region exits
-- logic feeding external circuit regions
-- trigger-like structures
-- possible trigger-to-payload relationships
+Do not claim an exact trigger has been proven.
 
-5. DO NOT REQUIRE COMPLETE FUNCTIONAL PROOF.
+------------------------------------------------------------
 
-If the GNN strongly identifies a coherent suspicious region,
-lack of an explicitly proven trigger/payload mechanism alone
-is NOT sufficient reason to mark the result UNCERTAIN.
+8. REGION EXITS
 
-6. COUNTER-EVIDENCE MATTERS.
+Region exits are structural connections from the suspicious region to
+logic outside the region.
 
-If the region appears structurally ordinary or the suspicious
-nodes are isolated and weakly connected, explain that.
+Describe them as topology.
 
-7. USE ONLY THE PROVIDED EVIDENCE.
+Do not automatically call them payload outputs.
 
-Do not invent missing circuit behavior.
+------------------------------------------------------------
+
+9. COUNTER-EVIDENCE
+
+Only report counter-evidence that is actually visible in the supplied evidence.
+
+Examples include:
+- isolated suspicious seeds
+- weak connectivity
+- little interaction among suspicious nodes
+- broad low-confidence suspicion
+- ordinary-looking structure
+
+If no meaningful counter-evidence is visible, say so explicitly.
 
 ============================================================
-CIRCUIT SUMMARY
+GRAPH SUMMARY
 ============================================================
 
-{json.dumps(compact_graph, indent=2)}
+{json.dumps(graph_summary, indent=2)}
 
 ============================================================
-GNN PRIMARY RESULT
+GNN SUSPICIOUS SEEDS
 ============================================================
 
-The following is the primary detection signal produced by
-the trained GNN:
+The following are the actual GNN suspicious seeds. They crossed the
+GNN threshold in the evidence-generation step.
 
-{json.dumps(gnn_summary, indent=2)}
+They are sorted by GNN score.
 
-============================================================
-TOP GNN SUSPICIOUS NODES
-============================================================
+{json.dumps(compact_seeds, indent=2)}
 
-These nodes are ranked by the GNN.
+IMPORTANT:
+This list is authoritative for the GNN-positive seed set.
 
-{json.dumps(seeds, indent=2)}
-
-Treat this ranking as authoritative.
+Do not redefine that set using the representative region nodes.
 
 ============================================================
-SUSPICIOUS REGION SUMMARY
+EXPANDED REGION SUMMARY
 ============================================================
 
 {json.dumps(region_summary, indent=2)}
+
+The representative nodes below are selected from the expanded region.
+They are NOT necessarily GNN-positive.
 
 ============================================================
 STRUCTURAL EVIDENCE
 ============================================================
 
-{json.dumps(structural, indent=2)}
+{json.dumps(structural_summary, indent=2)}
 
 ============================================================
-SUSPICIOUS REGION LOCAL TOPOLOGY
+REPRESENTATIVE REGION NODES
 ============================================================
 
-The following contains the local topology of the suspicious
-region only.
+Only a subset of region nodes is shown for local structural context.
 
-Use it to understand relationships between suspicious nodes.
-
-Do NOT use it to search for a completely different detection.
-
-{json.dumps(region_nodes, indent=2)}
+{json.dumps(compact_nodes, indent=2)}
 
 ============================================================
 REASONING PROCEDURE
 ============================================================
 
-Follow these steps.
+STEP 1 — GNN SIGNAL
+Use the AUTHORITATIVE NUMERICAL FACTS.
+Report the suspicious seed count, score statistics, and threshold facts
+accurately.
 
-STEP 1 — ASSESS THE GNN SIGNAL
+STEP 2 — SEED CONCENTRATION
+Discuss whether the suspicious seeds appear localized within the
+expanded structural region.
 
-Determine:
+STEP 3 — CONNECTIVITY
+Use internal edges, boundary edges, fan-in, fan-out, and region exits
+to describe observable topology.
 
-- how many suspicious seeds were identified
-- how high their GNN scores are
-- whether suspicious scores are concentrated
-- how large the resulting suspicious region is
+STEP 4 — LOGIC STRUCTURE
+Discuss the supplied gate types and sequential/combinational structure.
+Do not invent functionality.
 
-STEP 2 — ASSESS REGION COHERENCE
+STEP 5 — POSSIBLE TRIGGER-LIKE STRUCTURE
+If the topology supports it, explain cautiously why some structure could
+be consistent with trigger-like behavior.
 
-Determine whether the high-scoring nodes form a connected
-or structurally meaningful region.
+STEP 6 — EXTERNAL CONNECTIONS
+Describe connections from the suspicious region to surrounding circuitry.
+Do not automatically label them as a payload.
 
-STEP 3 — INTERPRET THE STRUCTURE
+STEP 7 — COUNTER-EVIDENCE
+Report only evidence actually present in the supplied data.
 
-Use:
+STEP 8 — FINAL ASSESSMENT
+Choose exactly one:
 
-- gate types
-- fan-in
-- fan-out
-- local connectivity
-- internal edges
-- boundary edges
-- region exits
-- sequential elements
+SUSPICIOUS
+NORMAL
+UNCERTAIN
 
-to explain the structure.
+Base the assessment on:
+- GNN signal
+- seed concentration
+- structural coherence
+- connectivity
+- observable logic structure
+- counter-evidence
 
-STEP 4 — LOOK FOR TROJAN-LIKE STRUCTURE
-
-Check whether the region contains evidence consistent with:
-
-- trigger/control logic
-- unusual reconvergence
-- state-dependent logic
-- payload-like logic
-- reconnection to the surrounding circuit
-
-Do not claim these mechanisms exist unless the topology
-supports the interpretation.
-
-STEP 5 — CONSIDER COUNTER-EVIDENCE
-
-Identify any evidence suggesting that the region could instead
-be ordinary circuit logic.
-
-STEP 6 — FINAL DECISION
-
-Use the following guidance:
-
-STRONG GNN SIGNAL:
-If many nodes have high GNN scores and form a coherent
-suspicious region, this strongly supports SUSPICIOUS.
-
-MODERATE GNN SIGNAL:
-If several nodes are suspicious but the structural coherence
-is weaker, use the structural evidence to determine whether
-the evidence supports SUSPICIOUS or whether UNCERTAIN is
-appropriate.
-
-WEAK GNN SIGNAL:
-If only a few isolated nodes have elevated scores and there
-is little structural support, NORMAL or UNCERTAIN may be
-appropriate.
-
-Do NOT convert "I cannot prove the exact Trojan mechanism"
-into UNCERTAIN when the GNN signal and structural evidence
-strongly support the suspicious region.
+Do not invent a Trojan narrative and then use it to justify the GNN result.
 
 ============================================================
-REQUIRED FINAL OUTPUT
+REASONING HIERARCHY
 ============================================================
 
-Return exactly this structure:
+    GNN detection signal
+            ↓
+    suspicious seed concentration
+            ↓
+    structural coherence
+            ↓
+    observable topology
+            ↓
+    cautious interpretation
+            ↓
+    explanation / assessment
 
-DECISION: SUSPICIOUS | NORMAL | UNCERTAIN
+============================================================
+REQUIRED OUTPUT FORMAT
+============================================================
 
-CONFIDENCE: LOW | MEDIUM | HIGH
+DECISION: <SUSPICIOUS | NORMAL | UNCERTAIN>
+
+CONFIDENCE: <LOW | MEDIUM | HIGH>
 
 OBSERVED_EVIDENCE:
-- concise factual observations from the GNN
-- concise factual observations from the region
-- concise structural observations
+- 3 to 5 concrete observations
+- include the authoritative seed count and region size when relevant
+- do not perform new calculations
 
 STRUCTURAL_INTERPRETATION:
-- explain what the suspicious structure indicates
-- explain how the structure supports or weakens the GNN result
+- 2 to 4 cautious interpretations
+- use "consistent with", "could indicate", or similar wording
+- do not invent trigger/payload functionality
 
 COUNTER_EVIDENCE:
-- mention relevant evidence against the detection
-- write "None identified" if there is no meaningful
-  counter-evidence in the supplied data
+- 1 to 3 observations that weaken the interpretation
+
+If none are visible, write exactly:
+
+No significant counter-evidence is visible in the supplied evidence.
 
 REASONING:
-Give a concise explanation connecting the GNN result,
-the suspicious region, and the structural evidence.
+A short paragraph connecting the GNN signal and structural evidence to
+the final assessment.
 
-Do not use node names as evidence.
+Do not add another classification elsewhere.
 
-Do not invent circuit functionality.
+FINAL LANGUAGE CONSTRAINTS
+===========================
 
-Do not output another decision after the final DECISION line.
-"""
+- Do not call the suspicious region a "payload".
+- Do not claim malicious intent.
+- Do not claim an exact trigger unless explicitly supported.
+- Do not claim sequential logic proves a Trojan.
+- Do not invent numerical values.
+- Do not report "X seeds above Y" unless that exact count is present in
+  AUTHORITATIVE NUMERICAL FACTS.
+- Prefer precise phrases such as:
+  "The GNN identified N suspicious seeds."
+  "The expanded region contains M nodes."
+  "The region contains sequential logic."
+  "The structure is consistent with suspicious or Trojan-like logic."
+    Do not connect a structural feature to a Trojan mechanism unless the
+    supplied evidence contains the specific topology required to support
+    that connection.
+
+    For example:
+    - sequential gates → may indicate sequential/state-dependent structure
+    - region exits → indicate connectivity to surrounding logic
+
+    Do NOT infer:
+    - trigger mechanism
+    - payload mechanism
+    - exploitability
+    - malicious state
+    from these features alone.
+""".strip()
 
     return prompt
-
-
-# ============================================================
-# Load evidence
-# ============================================================
-
-def load_evidence(
-    path: Path,
-) -> dict:
-
-    return json.loads(
-        path.read_text(
-            encoding="utf-8"
-        )
-    )
 
 
 # ============================================================
@@ -633,79 +602,45 @@ def load_evidence(
 # ============================================================
 
 def main():
-
     if len(sys.argv) != 2:
-
         print(
             "Usage:\n"
-            "  python src/llm_prompt.py <evidence.json>"
+            "  python src/llm_prompt.py <evidence_anonymized.json>"
         )
-
         sys.exit(1)
 
-    evidence_path = Path(
-        sys.argv[1]
-    )
+    evidence_path = Path(sys.argv[1])
 
     if not evidence_path.exists():
-
         raise FileNotFoundError(
-            f"Evidence file not found: "
-            f"{evidence_path}"
+            f"Evidence file not found: {evidence_path}"
         )
 
-    evidence = load_evidence(
-        evidence_path
-    )
+    with evidence_path.open("r", encoding="utf-8") as f:
+        evidence = json.load(f)
 
-    prompt = build_prompt(
-        evidence
-    )
+    prompt = build_prompt(evidence)
 
     DEFAULT_OUTPUT_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    output_name = (
-        evidence_path.stem
-        + "_prompt.txt"
-    )
-
-    output_path = (
-        DEFAULT_OUTPUT_DIR
-        / output_name
-    )
+    output_name = evidence_path.stem + "_prompt.txt"
+    output_path = DEFAULT_OUTPUT_DIR / output_name
 
     output_path.write_text(
         prompt,
         encoding="utf-8",
     )
 
-    print(
-        "========== LLM PROMPT =========="
-    )
-
-    print(
-        "Evidence:",
-        evidence_path,
-    )
-
-    print(
-        "Prompt:",
-        output_path,
-    )
-
-    print(
-        "Prompt length:",
-        len(prompt),
-        "characters",
-    )
-
-    print(
-        "Approx tokens:",
-        round(len(prompt) / 4),
-    )
+    print("========== HARDWARE TROJAN LLM PROMPT ==========")
+    print("Evidence:", evidence_path)
+    print()
+    print("Prompt generated successfully.")
+    print("Prompt length:", len(prompt), "characters")
+    print("Approx. tokens:", len(prompt) // 4)
+    print("Saved to:", output_path.resolve())
 
 
 if __name__ == "__main__":
