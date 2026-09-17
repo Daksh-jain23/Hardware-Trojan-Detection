@@ -1,0 +1,1294 @@
+
+You are analyzing a suspicious hardware region identified
+by a trained Graph Neural Network (GNN).
+
+Your task is to interpret the GNN detection using the
+provided structural evidence and produce a clear explanation.
+
+============================================================
+IMPORTANT SYSTEM DESIGN
+============================================================
+
+The GNN is the PRIMARY DETECTOR and LOCALIZER.
+
+The GNN has already analyzed the complete circuit and
+identified suspicious nodes.
+
+The LLM is a DOWNSTREAM REASONING AND EXPLANATION COMPONENT.
+
+Therefore:
+
+1. Start from the GNN result.
+2. Evaluate whether the suspicious region is coherent.
+3. Use structural evidence to explain and validate the GNN result.
+4. Do not require mathematical proof of a Trojan.
+5. Do not independently search the entire circuit for another
+   suspicious region.
+6. Do not ignore a strong GNN result merely because the exact
+   Trojan trigger or payload cannot be proven from the supplied
+   evidence.
+
+The purpose of your reasoning is:
+
+    GNN detection
+        +
+    structural interpretation
+        =
+    explainable Trojan assessment
+
+============================================================
+STRICT RULES
+============================================================
+
+1. NODE NAMES ARE NOT EVIDENCE.
+
+All identifiers such as NODE_0001 or NODE_0042 are anonymized.
+
+Never infer malicious behavior from a node name.
+
+2. DO NOT INVENT FUNCTIONALITY.
+
+Do not claim a signal is a reset, security signal, trigger,
+payload, backdoor, or critical control signal unless the
+provided structural evidence supports that interpretation.
+
+3. GNN SCORES ARE THE PRIMARY DETECTION SIGNAL.
+
+A high GNN score means the trained detector considers that
+node suspicious.
+
+Multiple high-scoring nodes forming a coherent region provide
+stronger evidence than isolated high-scoring nodes.
+
+4. STRUCTURAL EVIDENCE IS USED TO INTERPRET THE GNN RESULT.
+
+Look for:
+
+- concentration of suspicious nodes
+- connected suspicious logic
+- unusual reconvergence
+- multiple inputs converging into logic
+- sequential elements
+- region exits
+- logic feeding external circuit regions
+- trigger-like structures
+- possible trigger-to-payload relationships
+
+5. DO NOT REQUIRE COMPLETE FUNCTIONAL PROOF.
+
+If the GNN strongly identifies a coherent suspicious region,
+lack of an explicitly proven trigger/payload mechanism alone
+is NOT sufficient reason to mark the result UNCERTAIN.
+
+6. COUNTER-EVIDENCE MATTERS.
+
+If the region appears structurally ordinary or the suspicious
+nodes are isolated and weakly connected, explain that.
+
+7. USE ONLY THE PROVIDED EVIDENCE.
+
+Do not invent missing circuit behavior.
+
+============================================================
+CIRCUIT SUMMARY
+============================================================
+
+{}
+
+============================================================
+GNN PRIMARY RESULT
+============================================================
+
+The following is the primary detection signal produced by
+the trained GNN:
+
+{
+  "threshold": 0.95,
+  "region_size": 47
+}
+
+============================================================
+TOP GNN SUSPICIOUS NODES
+============================================================
+
+These nodes are ranked by the GNN.
+
+[
+  {
+    "gate": "NODE_0003",
+    "type": "PI",
+    "gnn_score": 0.9991
+  },
+  {
+    "gate": "NODE_0033",
+    "type": "nor2s1",
+    "gnn_score": 0.999
+  },
+  {
+    "gate": "NODE_0005",
+    "type": "PI",
+    "gnn_score": 0.9988
+  },
+  {
+    "gate": "NODE_0041",
+    "type": "nnd2s1",
+    "gnn_score": 0.9988
+  },
+  {
+    "gate": "NODE_0032",
+    "type": "xnr2s1",
+    "gnn_score": 0.9988
+  },
+  {
+    "gate": "NODE_0042",
+    "type": "hi1s1",
+    "gnn_score": 0.9986
+  },
+  {
+    "gate": "NODE_0045",
+    "type": "dffles2",
+    "gnn_score": 0.9969
+  },
+  {
+    "gate": "NODE_0038",
+    "type": "and3s1",
+    "gnn_score": 0.9965
+  },
+  {
+    "gate": "NODE_0035",
+    "type": "xnr2s1",
+    "gnn_score": 0.992
+  },
+  {
+    "gate": "NODE_0034",
+    "type": "hi1s1",
+    "gnn_score": 0.9915
+  },
+  {
+    "gate": "NODE_0039",
+    "type": "xnr2s1",
+    "gnn_score": 0.9911
+  },
+  {
+    "gate": "NODE_0047",
+    "type": "xor2s1",
+    "gnn_score": 0.9909
+  },
+  {
+    "gate": "NODE_0043",
+    "type": "dffs2",
+    "gnn_score": 0.99
+  },
+  {
+    "gate": "NODE_0031",
+    "type": "dffs2",
+    "gnn_score": 0.9892
+  },
+  {
+    "gate": "NODE_0044",
+    "type": "dffles2",
+    "gnn_score": 0.9883
+  },
+  {
+    "gate": "NODE_0046",
+    "type": "dffles2",
+    "gnn_score": 0.9795
+  },
+  {
+    "gate": "NODE_0009",
+    "type": "xor2s3",
+    "gnn_score": 0.9769
+  },
+  {
+    "gate": "NODE_0037",
+    "type": "xnr2s1",
+    "gnn_score": 0.9684
+  }
+]
+
+Treat this ranking as authoritative.
+
+============================================================
+SUSPICIOUS REGION SUMMARY
+============================================================
+
+{
+  "size": 47,
+  "internal_edges": 61,
+  "boundary_edges": 56,
+  "gate_types": {
+    "nor2s3": 7,
+    "xor2s3": 6,
+    "PI": 5,
+    "hi1s1": 4,
+    "nnd2s3": 4,
+    "xnr2s1": 4,
+    "dffles2": 3,
+    "dffs2": 2,
+    "nor6s3": 2,
+    "and3s1": 1,
+    "nnd2s1": 1,
+    "nnd3s1": 1,
+    "nnd3s3": 1,
+    "nnd4s1": 1,
+    "nor2s1": 1,
+    "nor5s1": 1,
+    "or3s1": 1,
+    "xnr2s3": 1,
+    "xor2s1": 1
+  }
+}
+
+============================================================
+STRUCTURAL EVIDENCE
+============================================================
+
+{
+  "internal_edges": 61,
+  "boundary_edges": 56,
+  "region_exits": [
+    {
+      "gate": "NODE_0011",
+      "gate_type": "nnd3s1",
+      "connections": [
+        "U356"
+      ]
+    },
+    {
+      "gate": "NODE_0017",
+      "gate_type": "nor2s3",
+      "connections": [
+        "NODE_00167"
+      ]
+    },
+    {
+      "gate": "NODE_0002",
+      "gate_type": "PI",
+      "connections": [
+        "U756",
+        "NODE_001002"
+      ]
+    },
+    {
+      "gate": "NODE_0027",
+      "gate_type": "nnd2s3",
+      "connections": [
+        "U73"
+      ]
+    },
+    {
+      "gate": "NODE_0006",
+      "gate_type": "nnd2s3",
+      "connections": [
+        "U10",
+        "U9"
+      ]
+    },
+    {
+      "gate": "NODE_0026",
+      "gate_type": "nnd3s3",
+      "connections": [
+        "NODE_00136",
+        "U124",
+        "U57",
+        "U83",
+        "NODE_00102",
+        "U37",
+        "U264"
+      ]
+    }
+  ],
+  "sequential_like_gates": [
+    "NODE_0045",
+    "NODE_0043",
+    "NODE_0031",
+    "NODE_0044",
+    "NODE_0046"
+  ]
+}
+
+============================================================
+SUSPICIOUS REGION LOCAL TOPOLOGY
+============================================================
+
+The following contains the local topology of the suspicious
+region only.
+
+Use it to understand relationships between suspicious nodes.
+
+Do NOT use it to search for a completely different detection.
+
+[
+  {
+    "gate": "NODE_0003",
+    "type": "PI",
+    "gnn": 0.9991,
+    "fanin": 0,
+    "fanout": 3,
+    "depth": 0,
+    "dist_to_output": 1,
+    "primary_input": true,
+    "inputs": [],
+    "outputs": [
+      "NODE_0033",
+      "NODE_0035",
+      "NODE_0044"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0033",
+    "type": "nor2s1",
+    "gnn": 0.999,
+    "fanin": 2,
+    "fanout": 3,
+    "depth": 1,
+    "dist_to_output": 2,
+    "inputs": [
+      "NODE_0003",
+      "NODE_0034"
+    ],
+    "outputs": [
+      "NODE_0041",
+      "NODE_0038",
+      "NODE_0032"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0005",
+    "type": "PI",
+    "gnn": 0.9988,
+    "fanin": 0,
+    "fanout": 3,
+    "depth": 0,
+    "dist_to_output": 1,
+    "primary_input": true,
+    "inputs": [],
+    "outputs": [
+      "NODE_0032",
+      "NODE_0045",
+      "NODE_0042"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0041",
+    "type": "nnd2s1",
+    "gnn": 0.9988,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 2,
+    "inputs": [
+      "NODE_0042",
+      "NODE_0033"
+    ],
+    "outputs": [
+      "NODE_0039"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0032",
+    "type": "xnr2s1",
+    "gnn": 0.9988,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 1,
+    "inputs": [
+      "NODE_0005",
+      "NODE_0033"
+    ],
+    "outputs": [
+      "NODE_0045"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0042",
+    "type": "hi1s1",
+    "gnn": 0.9986,
+    "fanin": 1,
+    "fanout": 2,
+    "depth": 1,
+    "dist_to_output": 3,
+    "inputs": [
+      "NODE_0005"
+    ],
+    "outputs": [
+      "NODE_0041",
+      "NODE_0038"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0045",
+    "type": "dffles2",
+    "gnn": 0.9969,
+    "fanin": 4,
+    "fanout": 0,
+    "depth": 1,
+    "dist_to_output": 0,
+    "primary_output": true,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0036",
+      "NODE_0032",
+      "NODE_0005"
+    ],
+    "outputs": [],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0038",
+    "type": "and3s1",
+    "gnn": 0.9965,
+    "fanin": 3,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 8,
+    "inputs": [
+      "NODE_0042",
+      "NODE_0040",
+      "NODE_0033"
+    ],
+    "outputs": [
+      "NODE_0031"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0035",
+    "type": "xnr2s1",
+    "gnn": 0.992,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 1,
+    "inputs": [
+      "NODE_0003",
+      "NODE_0043"
+    ],
+    "outputs": [
+      "NODE_0044"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0034",
+    "type": "hi1s1",
+    "gnn": 0.9915,
+    "fanin": 1,
+    "fanout": 2,
+    "depth": 2,
+    "dist_to_output": 3,
+    "inputs": [
+      "NODE_0043"
+    ],
+    "outputs": [
+      "NODE_0033",
+      "NODE_0037"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0039",
+    "type": "xnr2s1",
+    "gnn": 0.9911,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 1,
+    "inputs": [
+      "NODE_0040",
+      "NODE_0041"
+    ],
+    "outputs": [
+      "NODE_0046"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0047",
+    "type": "xor2s1",
+    "gnn": 0.9909,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 6,
+    "inputs": [
+      "NODE_0022",
+      "NODE_0031"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0043",
+    "type": "dffs2",
+    "gnn": 0.99,
+    "fanin": 2,
+    "fanout": 2,
+    "depth": 1,
+    "dist_to_output": 2,
+    "inputs": [
+      "NODE_0037",
+      "NODE_0001"
+    ],
+    "outputs": [
+      "NODE_0034",
+      "NODE_0035"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0031",
+    "type": "dffs2",
+    "gnn": 0.9892,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 7,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0038"
+    ],
+    "outputs": [
+      "NODE_0047"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0044",
+    "type": "dffles2",
+    "gnn": 0.9883,
+    "fanin": 4,
+    "fanout": 0,
+    "depth": 1,
+    "dist_to_output": 0,
+    "primary_output": true,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0035",
+      "NODE_0036",
+      "NODE_0003"
+    ],
+    "outputs": [],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0046",
+    "type": "dffles2",
+    "gnn": 0.9795,
+    "fanin": 4,
+    "fanout": 0,
+    "depth": 1,
+    "dist_to_output": 0,
+    "primary_output": true,
+    "inputs": [
+      "NODE_0001",
+      "NODE_0036",
+      "NODE_0039",
+      "NODE_0004"
+    ],
+    "outputs": [],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0009",
+    "type": "xor2s3",
+    "gnn": 0.9769,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 5,
+    "dist_to_output": 4,
+    "inputs": [
+      "NODE_0014",
+      "NODE_0010"
+    ],
+    "outputs": [
+      "NODE_0008"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0037",
+    "type": "xnr2s1",
+    "gnn": 0.9684,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 3,
+    "dist_to_output": 3,
+    "inputs": [
+      "NODE_0028",
+      "NODE_0034"
+    ],
+    "outputs": [
+      "NODE_0043"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0040",
+    "type": "hi1s1",
+    "gnn": 0.9096,
+    "fanin": 1,
+    "fanout": 2,
+    "depth": 1,
+    "dist_to_output": 2,
+    "inputs": [
+      "NODE_0004"
+    ],
+    "outputs": [
+      "NODE_0038",
+      "NODE_0039"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0008",
+    "type": "nnd2s3",
+    "gnn": 0.8996,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 3,
+    "inputs": [
+      "NODE_0009",
+      "NODE_0002"
+    ],
+    "outputs": [
+      "NODE_0006"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0006",
+    "type": "nnd2s3",
+    "gnn": 0.8877,
+    "fanin": 2,
+    "fanout": 2,
+    "depth": 2,
+    "dist_to_output": 2,
+    "inputs": [
+      "NODE_0008",
+      "U12"
+    ],
+    "outputs": [
+      "U10",
+      "U9"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U10",
+      "U9"
+    ]
+  },
+  {
+    "gate": "NODE_0001",
+    "type": "PI",
+    "gnn": 0.8681,
+    "fanin": 0,
+    "fanout": 5,
+    "depth": 0,
+    "dist_to_output": 1,
+    "primary_input": true,
+    "inputs": [],
+    "outputs": [
+      "NODE_0045",
+      "NODE_0043",
+      "NODE_0044",
+      "NODE_0046",
+      "NODE_0031"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0010",
+    "type": "xor2s3",
+    "gnn": 0.8064,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 4,
+    "dist_to_output": 5,
+    "inputs": [
+      "NODE_0013",
+      "NODE_0012"
+    ],
+    "outputs": [
+      "NODE_0009"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0004",
+    "type": "PI",
+    "gnn": 0.77,
+    "fanin": 0,
+    "fanout": 2,
+    "depth": 0,
+    "dist_to_output": 1,
+    "primary_input": true,
+    "inputs": [],
+    "outputs": [
+      "NODE_0046",
+      "NODE_0040"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0014",
+    "type": "xor2s3",
+    "gnn": 0.7688,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 4,
+    "dist_to_output": 5,
+    "inputs": [
+      "NODE_0016",
+      "NODE_0015"
+    ],
+    "outputs": [
+      "NODE_0009"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0036",
+    "type": "hi1s1",
+    "gnn": 0.7668,
+    "fanin": 1,
+    "fanout": 3,
+    "depth": 3,
+    "dist_to_output": 1,
+    "inputs": [
+      "NODE_0028"
+    ],
+    "outputs": [
+      "NODE_0045",
+      "NODE_0044",
+      "NODE_0046"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0012",
+    "type": "xor2s3",
+    "gnn": 0.6919,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 3,
+    "dist_to_output": 6,
+    "inputs": [
+      "NODE_00166",
+      "U100"
+    ],
+    "outputs": [
+      "NODE_0010"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0016",
+    "type": "xnr2s3",
+    "gnn": 0.6885,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 3,
+    "dist_to_output": 6,
+    "inputs": [
+      "U138",
+      "U23"
+    ],
+    "outputs": [
+      "NODE_0014"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0013",
+    "type": "xor2s3",
+    "gnn": 0.6644,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 4,
+    "dist_to_output": 6,
+    "inputs": [
+      "NODE_00126",
+      "U257"
+    ],
+    "outputs": [
+      "NODE_0010"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0015",
+    "type": "xor2s3",
+    "gnn": 0.499,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 4,
+    "dist_to_output": 6,
+    "inputs": [
+      "NODE_0027",
+      "U48"
+    ],
+    "outputs": [
+      "NODE_0014"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0028",
+    "type": "nor5s1",
+    "gnn": 0.4498,
+    "fanin": 5,
+    "fanout": 2,
+    "depth": 2,
+    "dist_to_output": 2,
+    "inputs": [
+      "NODE_0027",
+      "NODE_0011",
+      "NODE_0030",
+      "NODE_0029",
+      "NODE_0007"
+    ],
+    "outputs": [
+      "NODE_0037",
+      "NODE_0036"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0022",
+    "type": "nor2s3",
+    "gnn": 0.4037,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 3,
+    "dist_to_output": 7,
+    "inputs": [
+      "NODE_0026",
+      "NODE_0023"
+    ],
+    "outputs": [
+      "NODE_0047"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0017",
+    "type": "nor2s3",
+    "gnn": 0.2771,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 3,
+    "dist_to_output": 4,
+    "inputs": [
+      "U260",
+      "NODE_0018"
+    ],
+    "outputs": [
+      "NODE_00167"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "NODE_00167"
+    ]
+  },
+  {
+    "gate": "NODE_0027",
+    "type": "nnd2s3",
+    "gnn": 0.1425,
+    "fanin": 2,
+    "fanout": 3,
+    "depth": 3,
+    "dist_to_output": 2,
+    "inputs": [
+      "U93",
+      "U75"
+    ],
+    "outputs": [
+      "U73",
+      "NODE_0015",
+      "NODE_0028"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U73"
+    ]
+  },
+  {
+    "gate": "NODE_0026",
+    "type": "nnd3s3",
+    "gnn": 0.1391,
+    "fanin": 3,
+    "fanout": 8,
+    "depth": 2,
+    "dist_to_output": 7,
+    "inputs": [
+      "U297",
+      "U323",
+      "U266"
+    ],
+    "outputs": [
+      "NODE_00136",
+      "NODE_0022",
+      "U124",
+      "U57",
+      "U83",
+      "NODE_00102",
+      "U37",
+      "U264"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "NODE_00136",
+      "U124",
+      "U57",
+      "U83",
+      "NODE_00102",
+      "U37",
+      "U264"
+    ]
+  },
+  {
+    "gate": "NODE_0030",
+    "type": "nnd4s1",
+    "gnn": 0.0468,
+    "fanin": 4,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 3,
+    "inputs": [
+      "NODE_000835",
+      "U622",
+      "NODE_001006",
+      "trig70_0U4"
+    ],
+    "outputs": [
+      "NODE_0028"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0029",
+    "type": "or3s1",
+    "gnn": 0.0295,
+    "fanin": 3,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 3,
+    "inputs": [
+      "NODE_000807",
+      "NODE_000970",
+      "U721"
+    ],
+    "outputs": [
+      "NODE_0028"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0018",
+    "type": "nor6s3",
+    "gnn": 0.0174,
+    "fanin": 6,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 5,
+    "inputs": [
+      "NODE_0025",
+      "NODE_0024",
+      "NODE_0047",
+      "NODE_0021",
+      "NODE_0020",
+      "NODE_0019"
+    ],
+    "outputs": [
+      "NODE_0017"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0024",
+    "type": "nor2s3",
+    "gnn": 0.0145,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 6,
+    "inputs": [
+      "U296",
+      "PI_n1469"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0025",
+    "type": "nor2s3",
+    "gnn": 0.0081,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 6,
+    "inputs": [
+      "U299",
+      "PI_n1428"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0002",
+    "type": "PI",
+    "gnn": 0.0025,
+    "fanin": 0,
+    "fanout": 3,
+    "depth": 0,
+    "dist_to_output": 4,
+    "primary_input": true,
+    "inputs": [],
+    "outputs": [
+      "U756",
+      "NODE_001002",
+      "NODE_0008"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U756",
+      "NODE_001002"
+    ]
+  },
+  {
+    "gate": "NODE_0023",
+    "type": "nor6s3",
+    "gnn": 0.001,
+    "fanin": 6,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 8,
+    "inputs": [
+      "U269",
+      "U229",
+      "U228",
+      "U227",
+      "U226",
+      "U225"
+    ],
+    "outputs": [
+      "NODE_0022"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0007",
+    "type": "nnd2s3",
+    "gnn": 0.0008,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 2,
+    "dist_to_output": 3,
+    "inputs": [
+      "U1212",
+      "U1211"
+    ],
+    "outputs": [
+      "NODE_0028"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0019",
+    "type": "nor2s3",
+    "gnn": 0.0001,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 6,
+    "inputs": [
+      "U290",
+      "PI_n2144"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0020",
+    "type": "nor2s3",
+    "gnn": 0.0,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 6,
+    "inputs": [
+      "U302",
+      "PI_n2254"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "external_outputs": []
+  },
+  {
+    "gate": "NODE_0011",
+    "type": "nnd3s1",
+    "gnn": 0.0,
+    "fanin": 3,
+    "fanout": 2,
+    "depth": 1,
+    "dist_to_output": 2,
+    "inputs": [
+      "PI_n1440",
+      "U713",
+      "U1378"
+    ],
+    "outputs": [
+      "NODE_0028",
+      "U356"
+    ],
+    "region_exit": true,
+    "external_outputs": [
+      "U356"
+    ]
+  },
+  {
+    "gate": "NODE_0021",
+    "type": "nor2s3",
+    "gnn": 0.0,
+    "fanin": 2,
+    "fanout": 1,
+    "depth": 1,
+    "dist_to_output": 6,
+    "inputs": [
+      "U292",
+      "PI_n2149"
+    ],
+    "outputs": [
+      "NODE_0018"
+    ],
+    "external_outputs": []
+  }
+]
+
+============================================================
+REASONING PROCEDURE
+============================================================
+
+Follow these steps.
+
+STEP 1 — ASSESS THE GNN SIGNAL
+
+Determine:
+
+- how many suspicious seeds were identified
+- how high their GNN scores are
+- whether suspicious scores are concentrated
+- how large the resulting suspicious region is
+
+STEP 2 — ASSESS REGION COHERENCE
+
+Determine whether the high-scoring nodes form a connected
+or structurally meaningful region.
+
+STEP 3 — INTERPRET THE STRUCTURE
+
+Use:
+
+- gate types
+- fan-in
+- fan-out
+- local connectivity
+- internal edges
+- boundary edges
+- region exits
+- sequential elements
+
+to explain the structure.
+
+STEP 4 — LOOK FOR TROJAN-LIKE STRUCTURE
+
+Check whether the region contains evidence consistent with:
+
+- trigger/control logic
+- unusual reconvergence
+- state-dependent logic
+- payload-like logic
+- reconnection to the surrounding circuit
+
+Do not claim these mechanisms exist unless the topology
+supports the interpretation.
+
+STEP 5 — CONSIDER COUNTER-EVIDENCE
+
+Identify any evidence suggesting that the region could instead
+be ordinary circuit logic.
+
+STEP 6 — FINAL DECISION
+
+Use the following guidance:
+
+STRONG GNN SIGNAL:
+If many nodes have high GNN scores and form a coherent
+suspicious region, this strongly supports SUSPICIOUS.
+
+MODERATE GNN SIGNAL:
+If several nodes are suspicious but the structural coherence
+is weaker, use the structural evidence to determine whether
+the evidence supports SUSPICIOUS or whether UNCERTAIN is
+appropriate.
+
+WEAK GNN SIGNAL:
+If only a few isolated nodes have elevated scores and there
+is little structural support, NORMAL or UNCERTAIN may be
+appropriate.
+
+Do NOT convert "I cannot prove the exact Trojan mechanism"
+into UNCERTAIN when the GNN signal and structural evidence
+strongly support the suspicious region.
+
+============================================================
+REQUIRED FINAL OUTPUT
+============================================================
+
+Return exactly this structure:
+
+DECISION: SUSPICIOUS | NORMAL | UNCERTAIN
+
+CONFIDENCE: LOW | MEDIUM | HIGH
+
+OBSERVED_EVIDENCE:
+- concise factual observations from the GNN
+- concise factual observations from the region
+- concise structural observations
+
+STRUCTURAL_INTERPRETATION:
+- explain what the suspicious structure indicates
+- explain how the structure supports or weakens the GNN result
+
+COUNTER_EVIDENCE:
+- mention relevant evidence against the detection
+- write "None identified" if there is no meaningful
+  counter-evidence in the supplied data
+
+REASONING:
+Give a concise explanation connecting the GNN result,
+the suspicious region, and the structural evidence.
+
+Do not use node names as evidence.
+
+Do not invent circuit functionality.
+
+Do not output another decision after the final DECISION line.
