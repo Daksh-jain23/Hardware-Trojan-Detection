@@ -32,9 +32,10 @@ TEST:
     s35932
 """
 
-from __future__ import annotations
-
+import argparse
+import random
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -226,6 +227,64 @@ def prepare_dataset():
 
     samples = build_node_level_dataset()
 
+    if split_strategy in ("stratified", "random"):
+        rng = random.Random(seed)
+        train_samples = []
+        val_samples = []
+        test_samples = []
+
+        if split_strategy == "stratified":
+            # Group netlists by circuit family to ensure balanced representation across splits
+            family_groups = defaultdict(list)
+            for s in samples:
+                family_groups[s.family].append(s)
+
+            for fam, fam_samples in family_groups.items():
+                shuffled = list(fam_samples)
+                rng.shuffle(shuffled)
+                n = len(shuffled)
+                n_train = max(1, int(round(n * train_ratio)))
+                n_val = max(1, int(round(n * val_ratio)))
+                if n_train + n_val >= n:
+                    n_train = max(1, n - 2)
+                    n_val = 1
+                train_samples.extend(shuffled[:n_train])
+                val_samples.extend(shuffled[n_train:n_train + n_val])
+                test_samples.extend(shuffled[n_train + n_val:])
+        else:
+            # Simple random split across entire pooled dataset
+            shuffled = list(samples)
+            rng.shuffle(shuffled)
+            n = len(shuffled)
+            n_train = int(round(n * train_ratio))
+            n_val = int(round(n * val_ratio))
+            train_samples = shuffled[:n_train]
+            val_samples = shuffled[n_train:n_train + n_val]
+            test_samples = shuffled[n_train + n_val:]
+
+        print()
+        print("========== DATASET SPLIT (WHOLE DATASET) ==========")
+        print(f"Strategy           : {split_strategy.upper()}")
+        print(f"Total netlists     : {len(samples)}")
+        print(f"Training netlists  : {len(train_samples)}")
+        print(f"Validation netlists: {len(val_samples)}")
+        print(f"Test netlists      : {len(test_samples)}")
+
+        # Family distribution across splits
+        print("Breakdown by family:")
+        for fam in sorted(list({s.family for s in samples})):
+            n_tr = sum(1 for s in train_samples if s.family == fam)
+            n_va = sum(1 for s in val_samples if s.family == fam)
+            n_te = sum(1 for s in test_samples if s.family == fam)
+            print(f"  {fam:<8}: train={n_tr:<3} val={n_va:<3} test={n_te:<3}")
+
+        return (
+            train_samples,
+            val_samples,
+            test_samples,
+        )
+
+    # Default: family holdout split
     train_samples = []
     val_samples = []
     test_samples = []
@@ -704,6 +763,54 @@ def print_confusion_matrix(
 
 def main():
 
+    parser = argparse.ArgumentParser(description="Hardware Trojan GNN Training")
+    parser.add_argument(
+        "--split-strategy",
+        choices=["family", "stratified", "random"],
+        default="family",
+        help="Data split strategy: 'family' (held-out circuit family), 'stratified' (whole dataset split stratified by family), 'random' (whole dataset random split).",
+    )
+    parser.add_argument(
+        "--train-ratio",
+        type=float,
+        default=0.70,
+        help="Train ratio for whole dataset split (default: 0.70).",
+    )
+    parser.add_argument(
+        "--val-ratio",
+        type=float,
+        default=0.15,
+        help="Validation ratio for whole dataset split (default: 0.15).",
+    )
+    parser.add_argument(
+        "--test-ratio",
+        type=float,
+        default=0.15,
+        help="Test ratio for whole dataset split (default: 0.15).",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=EPOCHS,
+        help=f"Number of training epochs (default: {EPOCHS}).",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default=str(CHECKPOINT_PATH),
+        help=f"Path to save best model checkpoint (default: {CHECKPOINT_PATH}).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for data splitting and weight initialization.",
+    )
+    args = parser.parse_args()
+
+    checkpoint_path = Path(args.checkpoint)
+    epochs = args.epochs
+
     print(
         "========== HARDWARE TROJAN GNN =========="
     )
@@ -738,7 +845,13 @@ def main():
         train_samples,
         val_samples,
         test_samples,
-    ) = prepare_dataset()
+    ) = prepare_dataset(
+        split_strategy=args.split_strategy,
+        train_ratio=args.train_ratio,
+        val_ratio=args.val_ratio,
+        test_ratio=args.test_ratio,
+        seed=args.seed,
+    )
 
     # --------------------------------------------------------
     # CONVERT GRAPHS
@@ -819,14 +932,14 @@ def main():
 
     best_epoch = 0
 
-    CHECKPOINT_DIR.mkdir(
+    checkpoint_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     for epoch in range(
         1,
-        EPOCHS + 1,
+        epochs + 1,
     ):
 
         loss = train_one_epoch(
@@ -889,7 +1002,7 @@ def main():
                     "threshold":
                         val_threshold,
                 },
-                CHECKPOINT_PATH,
+                checkpoint_path,
             )
 
         # ----------------------------------------------------
@@ -915,7 +1028,7 @@ def main():
     # --------------------------------------------------------
 
     checkpoint = torch.load(
-        CHECKPOINT_PATH,
+        checkpoint_path,
         map_location=DEVICE,
     )
 
@@ -949,7 +1062,7 @@ def main():
 
     print(
         "Checkpoint:",
-        CHECKPOINT_PATH,
+        checkpoint_path,
     )
 
     # --------------------------------------------------------

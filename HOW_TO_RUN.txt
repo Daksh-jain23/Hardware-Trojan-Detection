@@ -1,0 +1,135 @@
+================================================================================
+HARDWARE TROJAN DETECTION SYSTEM: EXECUTION & REPRODUCTION GUIDE
+================================================================================
+
+1. ENVIRONMENT ACTIVATION
+--------------------------------------------------------------------------------
+source /home/daksh-jain/Code/Minor-Project/.venv/bin/activate
+cd "/home/daksh-jain/Code/Minor-Project/Hardware trojan detection"
+
+
+2. TRAINING THE GNN MODEL FROM SCRATCH
+--------------------------------------------------------------------------------
+Option 1 (Family-Holdout Split - Default):
+    python src/train_gnn.py --split-strategy family
+
+    - Training data   : Benchmark families s13207, s1423
+    - Validation data : Benchmark family s15850 (used for threshold selection)
+    - Test data       : Benchmark family s35932 (held out)
+    - Output weights  : checkpoints/trojan_gnn.pt
+
+Option 2 (Whole-Dataset Stratified Split):
+    python src/train_gnn.py \
+        --split-strategy stratified \
+        --train-ratio 0.70 \
+        --val-ratio 0.15 \
+        --test-ratio 0.15 \
+        --checkpoint checkpoints/trojan_gnn_whole_dataset.pt
+
+    - Pools all 338 netlists across all 4 circuit families.
+    - Stratifies across families: 70% train (236 netlists), 15% val (51), 15% test (51).
+    - Guarantees zero graph leakage (each circuit is an independent graph).
+
+
+3. EVALUATING STANDALONE GNN MODEL (EXPERIMENT A)
+--------------------------------------------------------------------------------
+Command:
+    python src/run_experiments.py --experiment A
+
+Details:
+    - Evaluates checkpoints/trojan_gnn.pt on unseen family s35932.
+    - Computes: Precision (94.35%), Recall (79.15%), F1 (86.08%), ROC-AUC (99.70%).
+    - Output: results/gnn/experiment_a_s35932.json
+
+
+4. EVALUATING INDEPENDENT HEURISTIC BASELINE (EXPERIMENT B)
+--------------------------------------------------------------------------------
+Command:
+    python src/run_experiments.py --experiment B
+
+Details:
+    - Runs standalone deterministic structural anomaly heuristic on s35932.
+    - Zero GNN input, zero LLM input (strictly independent baseline).
+    - Computes: Precision (100.00%), Recall (17.06%), F1 (29.15%), ROC-AUC (72.82%).
+    - Output: results/heuristic/experiment_b_s35932.json
+
+
+5. GNN VS. HEURISTIC QUANTITATIVE COMPARISON
+--------------------------------------------------------------------------------
+Metric               GNN Model (Exp A)    Heuristic Baseline (Exp B)    Winner
+--------------------------------------------------------------------------------
+Precision            94.35%               100.00%                       Heuristic (+5.65%)
+Recall               79.15%               17.06%                        GNN (+62.09%)
+F1-Score             86.08%               29.15%                        GNN (+56.93%)
+ROC-AUC              99.70%               72.82%                        GNN (+26.88%)
+Average Precision    94.52%               18.89%                        GNN (+75.63%)
+Trojans Detected     167 / 211            36 / 211                      GNN (+131 gates)
+False Positives      10 gates             0 gates                       Heuristic (-10)
+
+
+6. GNN + STRUCTURAL EVIDENCE + LLM PIPELINE (EXPERIMENT C)
+--------------------------------------------------------------------------------
+Command:
+    python src/run_experiments.py --experiment C --circuit data/TRIT-TS/s13207_T421/s13207_T421.v
+or:
+    python src/pipeline.py data/TRIT-TS/s13207_T421/s13207_T421.v
+
+Details:
+    - GNN scores netlist and extracts suspicious seeds (score >= 0.95).
+    - Expands 2-hop structural region around seeds (max 50 nodes).
+    - Extracts topological evidence, boundary exits, and local structural patterns.
+    - Anonymizes identifiers with zero benchmark/Trojan leakage.
+    - Queries LLM (Gemini or local Qwen) for structural explanation and verdict.
+    - Outputs:
+        results/evidence/s13207_T421_evidence.json
+        results/anonymized/s13207_T421_evidence_anonymized.json
+        results/llm/s13207_T421_prompt.txt
+        results/llm/s13207_T421_gemini_llm.json
+
+
+7. CONTROLLED A/B SWAP-CONSISTENCY EVALUATION (EXPERIMENT D)
+--------------------------------------------------------------------------------
+Command:
+    python src/run_experiments.py --experiment D --circuit data/TRIT-TS/s13207_T421/s13207_T421.v
+or:
+    python src/ab_evaluation.py data/TRIT-TS/s13207_T421/s13207_T421.v
+
+Details:
+    - Extracts Trojan region and matched clean region (identical size and depth).
+    - Trial 1: Region A = Trojan, Region B = Clean
+    - Trial 2: Region A = Clean, Region B = Trojan (Presentation order swapped)
+    - Results for s13207_T421:
+        Trial 1 assessment : REGION_A (Correct, HIGH confidence)
+        Trial 2 assessment : REGION_B (Correct, HIGH confidence)
+        Swap Consistent    : True
+        Position Bias      : False
+    - Output: results/ab_evaluation/s13207_T421_ab_result.json
+
+
+8. RUNNING COMPLETE SUITE (ALL EXPERIMENTS CONSOLIDATED)
+--------------------------------------------------------------------------------
+Command:
+    python src/run_experiments.py --experiment all
+
+Details:
+    - Runs Experiments A, B, C, and D in sequence.
+    - Compiles consolidated metrics report into results/final_metrics.json.
+
+
+9. RUNNING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+    python -m unittest discover -s tests -p "test_*.py" -v
+
+Details:
+    - 17 unit tests verifying parser, 41-dim features, region expansion,
+      anonymizer zero-leakage assertions, heuristic detector, and A/B swap evaluation.
+    - All 17 tests pass.
+
+
+10. SWITCHING LLM PROVIDERS
+--------------------------------------------------------------------------------
+Edit src/llm.py:
+    To use Google Gemini API : ACTIVE_PROVIDER = "gemini"
+    To use local Ollama Qwen : ACTIVE_PROVIDER = "ollama"
+================================================================================

@@ -25,6 +25,13 @@ import json
 import sys
 from pathlib import Path
 
+# Make sure src is on sys.path
+SRC_DIR = Path(__file__).resolve().parent
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from anonymizer import assert_no_leakage
+
 
 # ============================================================
 # Configuration
@@ -100,11 +107,21 @@ def compact_graph(graph: dict) -> dict:
     }
 
 
-def deterministic_gnn_facts(gnn: dict, seeds: list[dict]) -> dict:
+def deterministic_gnn_facts(
+    gnn: dict,
+    seeds: list[dict],
+    graph: dict,
+    region: dict,
+    structural: dict,
+    patterns: dict | None = None,
+) -> dict:
     """
-    Compute numerical facts in Python so the LLM never has to count
-    or infer threshold statistics itself.
+    Compute authoritative numerical facts in Python.
+
+    The LLM must only interpret these values. It must not
+    recalculate, estimate, or replace them.
     """
+
     scores = [
         safe_float(seed.get("gnn_score"))
         for seed in seeds
@@ -114,32 +131,95 @@ def deterministic_gnn_facts(gnn: dict, seeds: list[dict]) -> dict:
     threshold = safe_float(gnn.get("threshold"))
 
     facts = {
-        "threshold": threshold,
+        # Graph
+        "total_nodes": graph.get("nodes", 0),
+        "total_edges": graph.get("edges", 0),
+
+        # GNN
+        "gnn_threshold": threshold,
         "suspicious_seed_count": len(seeds),
         "seed_score_max": round(max(scores), 6) if scores else None,
         "seed_score_min": round(min(scores), 6) if scores else None,
         "seed_score_mean": round(sum(scores) / len(scores), 6)
-        if scores else None,
+        if scores
+        else None,
         "seed_count_at_or_above_threshold": sum(
             score >= threshold for score in scores
         ),
         "seed_count_at_or_above_0_99": sum(
             score >= 0.99 for score in scores
         ),
+
+        # Expanded region
+        "expanded_region_size": region.get(
+            "size",
+            len(region.get("nodes", [])),
+        ),
+
+        # Structural evidence
+        "internal_edges": structural.get(
+            "internal_edges",
+            region.get("internal_edges", 0),
+        ),
+        "boundary_edges": structural.get(
+            "boundary_edges",
+            region.get("boundary_edges", 0),
+        ),
+        "region_exit_count": len(
+            structural.get("region_exits", [])
+        ),
+        "sequential_like_gate_count": len(
+            structural.get("sequential_like_gates", [])
+        ),
     }
 
-    # Keep the evidence-file GNN statistics as separate reference values.
-    # They are not recomputed here because they may describe all graph nodes.
-    if "max_score" in gnn:
-        facts["graph_score_max"] = gnn["max_score"]
-    if "mean_score" in gnn:
-        facts["graph_score_mean"] = gnn["mean_score"]
-    if "median_score" in gnn:
-        facts["graph_score_median"] = gnn["median_score"]
-    if "min_score" in gnn:
-        facts["graph_score_min"] = gnn["min_score"]
+    reg_size = facts["expanded_region_size"]
+    exit_count = facts["region_exit_count"]
+    seed_cnt = facts["suspicious_seed_count"]
+    hs_internal = patterns.get("high_score_internal_edges", 0) if patterns else 0
+
+    facts["high_score_internal_edges"] = hs_internal
+    facts["high_score_to_sequential_count"] = patterns.get("high_score_to_sequential_count", 0) if patterns else 0
+    facts["internal_seed_edge_density"] = round(hs_internal / max(1, seed_cnt), 4)
+    facts["region_exit_ratio"] = round(exit_count / max(1, reg_size), 4)
 
     return facts
+
+
+def compact_local_structural_patterns(
+    patterns: dict,
+    max_nodes: int = 15,
+) -> dict:
+    """Keep compact representation of local topological relationships."""
+    if not patterns:
+        return {}
+
+    rep_nodes = patterns.get("representative_nodes", [])[:max_nodes]
+    compact_rep_nodes = []
+    for node in rep_nodes:
+        compact_rep_nodes.append({
+            "node": node.get("gate"),
+            "gate_type": node.get("gate_type"),
+            "gnn_score": round(safe_float(node.get("gnn_score")), 6),
+            "fanin": node.get("fanin", 0),
+            "fanout": node.get("fanout", 0),
+            "region_fanin": node.get("region_fanin", 0),
+            "region_fanout": node.get("region_fanout", 0),
+            "high_score_region_fanin": node.get("high_score_region_fanin", 0),
+            "high_score_region_fanout": node.get("high_score_region_fanout", 0),
+            "region_predecessors": node.get("region_predecessors", [])[:5],
+            "region_successors": node.get("region_successors", [])[:5],
+        })
+
+    return {
+        "high_score_node_count": patterns.get("high_score_node_count", 0),
+        "high_score_internal_edges": patterns.get("high_score_internal_edges", 0),
+        "high_score_to_sequential_count": patterns.get("high_score_to_sequential_count", 0),
+        "high_score_to_sequential_connections": patterns.get(
+            "high_score_to_sequential", []
+        )[:10],
+        "representative_nodes": compact_rep_nodes,
+    }
 
 
 def compact_structural(structural: dict, region: dict) -> dict:
@@ -189,12 +269,24 @@ def build_prompt(evidence: dict) -> str:
         reverse=True,
     )
 
-    seed_count = len(seeds)
-
     compact_seeds = [compact_seed(seed) for seed in seeds]
 
+    # --------------------------------------------------------
+    # Local structural patterns
+    # --------------------------------------------------------
+
+    patterns = evidence.get("local_structural_patterns", {})
+    local_patterns_summary = compact_local_structural_patterns(patterns)
+
     # Deterministic facts: Python calculates these before the LLM sees them.
-    gnn_facts = deterministic_gnn_facts(gnn, seeds)
+    gnn_facts = deterministic_gnn_facts(
+        gnn,
+        seeds,
+        graph,
+        region,
+        structural,
+        patterns=patterns,
+    )
 
     # --------------------------------------------------------
     # Expanded region
@@ -266,12 +358,17 @@ DO NOT:
 - change a count
 - infer a threshold count from the displayed seed list
 - substitute one GNN statistic for another
-
+- derive boundary_edges from region_exit_count
+- derive region_exit_count from boundary_edges
+- derive any structural count from another structural count
 If a number is not explicitly supplied, do not invent it.
 
 In particular, distinguish:
 - suspicious_seed_count = actual GNN-positive seed count
 - expanded_region_size = structural neighborhood size
+- internal_edges = edges whose source and destination are both in the region
+- boundary_edges = all edges crossing between the region and outside circuitry
+- region_exit_count = number of region nodes with outgoing connections outside the region
 
 These are different quantities.
 
@@ -298,9 +395,11 @@ AUTHORITATIVE NUMERICAL FACTS
 
 {json.dumps(gnn_facts, indent=2)}
 
-The expanded suspicious region size is:
+The expanded region size is already provided in
+AUTHORITATIVE NUMERICAL FACTS as expanded_region_size.
 
-{region_size}
+Use that value exactly.
+
 
 IMPORTANT:
 The expanded region is a structural neighborhood around the GNN seeds.
@@ -460,6 +559,15 @@ STRUCTURAL EVIDENCE
 {json.dumps(structural_summary, indent=2)}
 
 ============================================================
+LOCAL STRUCTURAL PATTERNS
+============================================================
+
+The following local patterns describe direct connectivity among high-scoring nodes
+and relationships to sequential elements within the suspicious region:
+
+{json.dumps(local_patterns_summary, indent=2)}
+
+============================================================
 REPRESENTATIVE REGION NODES
 ============================================================
 
@@ -484,37 +592,46 @@ STEP 3 — CONNECTIVITY
 Use internal edges, boundary edges, fan-in, fan-out, and region exits
 to describe observable topology.
 
-STEP 4 — LOGIC STRUCTURE
+STEP 4 — LOCAL TOPOLOGY & STRUCTURAL PATTERNS
+Examine the LOCAL STRUCTURAL PATTERNS:
+- Check high_score_internal_edges: do the suspicious nodes form an interconnected subnetwork or are they isolated?
+- Check high_score_to_sequential_count: do suspicious nodes directly feed into sequential gates (e.g. flip-flops/registers)?
+- Reason about local signal flows using region_predecessors and region_successors among representative nodes.
+
+STEP 5 — LOGIC STRUCTURE
 Discuss the supplied gate types and sequential/combinational structure.
 Do not invent functionality.
 
-STEP 5 — POSSIBLE TRIGGER-LIKE STRUCTURE
+STEP 6 — POSSIBLE TRIGGER-LIKE STRUCTURE
 If the topology supports it, explain cautiously why some structure could
 be consistent with trigger-like behavior.
 
-STEP 6 — EXTERNAL CONNECTIONS
+STEP 7 — EXTERNAL CONNECTIONS
 Describe connections from the suspicious region to surrounding circuitry.
 Do not automatically label them as a payload.
 
-STEP 7 — COUNTER-EVIDENCE
-Report only evidence actually present in the supplied data.
+STEP 8 — COUNTER-EVIDENCE & FALSE ALARM DISCRIMINATION
+Auditing for false alarm patterns using the topological ratios:
+1. Scan Chain & Pipeline Register Discrimination:
+   - If the suspicious seeds form a sparse linear chain (internal_seed_edge_density < 0.5) and connect outwards with a high boundary exit ratio (region_exit_ratio > 0.35), this is an industrial scan chain or datapath register bank, NOT a Trojan trigger!
+   - Mark as COUNTER-EVIDENCE.
+2. Isolated Boundary Outliers:
+   - If suspicious_seed_count <= 3 and high_score_internal_edges == 0, these are isolated statistical boundary noise with no mutual trigger interaction.
+   - Mark as COUNTER-EVIDENCE.
+3. True Trojan Signatures:
+   - Genuine Hardware Trojans exhibit high internal seed edge density (internal_seed_edge_density >= 0.70) and a narrow, stealthy exit ratio (region_exit_ratio <= 0.35).
 
-STEP 8 — FINAL ASSESSMENT
+STEP 9 — FINAL ASSESSMENT
 Choose exactly one:
 
 SUSPICIOUS
 NORMAL
 UNCERTAIN
 
-Base the assessment on:
-- GNN signal
-- seed concentration
-- structural coherence
-- connectivity
-- observable logic structure
-- counter-evidence
-
-Do not invent a Trojan narrative and then use it to justify the GNN result.
+Decision Rules:
+- If topological false alarm indicators are present (sparse linear chain or isolated seeds with zero internal edges), you MUST decide NORMAL or UNCERTAIN.
+- Decide SUSPICIOUS only if there is both a GNN signal AND cohesive structural evidence (dense internal seed connections or stealthy closed sequential feedback).
+- If evidence is borderline, ambiguous, or weak, choose UNCERTAIN.
 
 ============================================================
 REASONING HIERARCHY
@@ -593,6 +710,8 @@ FINAL LANGUAGE CONSTRAINTS
     - malicious state
     from these features alone.
 """.strip()
+
+    assert_no_leakage(prompt)
 
     return prompt
 

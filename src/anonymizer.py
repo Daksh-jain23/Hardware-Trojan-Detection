@@ -42,6 +42,24 @@ from typing import Any
 # ============================================================
 
 DEFAULT_OUTPUT_DIR = Path("results/anonymized")
+IDENTIFIER_LIST_KEYS = {
+    "sequential_like_gates",
+    "region_nodes",
+    "suspicious_seeds",
+    "region_exits",
+    "region_predecessors",
+    "region_successors",
+    "predecessors",
+    "successors",
+    "nodes",
+}
+
+FORBIDDEN_LEAKAGE_PATTERNS = [
+    re.compile(r"\btroj[a-zA-Z0-9_]*\b", re.IGNORECASE),
+    re.compile(r"\btrojan[a-zA-Z0-9_]*\b", re.IGNORECASE),
+    re.compile(r"\bcounter_reg[a-zA-Z0-9_]*\b", re.IGNORECASE),
+    re.compile(r"\btrojan_out[a-zA-Z0-9_]*\b", re.IGNORECASE),
+]
 
 
 # ============================================================
@@ -66,19 +84,19 @@ def anonymize_identifier(identifier: str, index: int) -> str:
 
 def collect_identifiers(value: Any, identifiers: set[str]) -> None:
     """
-    Recursively collect strings that look like hardware identifiers.
+    Recursively collect hardware node/net identifiers from evidence.
 
-    We collect identifiers from evidence rather than inventing a
-    separate node list.
+    Handles both:
+    - identifier-bearing fields such as node/source/target/gate
+    - lists containing identifiers such as sequential_like_gates, region_exits, etc.
     """
 
     if isinstance(value, dict):
 
         for key, item in value.items():
+            key_lower = key.lower()
 
-            # Keys such as "node", "source", "target", "name"
-            # frequently contain identifiers.
-            if key.lower() in {
+            if key_lower in {
                 "node",
                 "name",
                 "source",
@@ -90,6 +108,20 @@ def collect_identifiers(value: Any, identifiers: set[str]) -> None:
 
                 if isinstance(item, str):
                     identifiers.add(item)
+
+                elif isinstance(item, list):
+                    for element in item:
+                        if isinstance(element, str):
+                            identifiers.add(element)
+
+            elif key_lower in IDENTIFIER_LIST_KEYS:
+
+                if isinstance(item, list):
+                    for element in item:
+                        if isinstance(element, str):
+                            identifiers.add(element)
+                        elif isinstance(element, dict):
+                            collect_identifiers(element, identifiers)
 
             collect_identifiers(item, identifiers)
 
@@ -268,11 +300,53 @@ def anonymize_evidence(
         "enabled": True,
         "identifier_scheme": "NODE_XXXX",
         "original_identifiers_removed": True,
-        "lexical_trojan_clues_removed": True,
+        "lexical_clues_removed": True,
         "mapping_available_to_llm": False,
     }
 
+    assert_no_leakage(anonymized, mapping)
+
     return anonymized, mapping
+
+
+def assert_no_leakage(
+    data: Any,
+    original_mapping: dict[str, str] | None = None,
+) -> bool:
+    """
+    Assert that evidence or prompt does not leak benchmark Trojan names or raw identifiers.
+
+    Checks:
+    1. Benchmark Trojan naming patterns: 'troj[0-9]+', 'counter_reg', 'trojan_out'.
+    2. Any original un-anonymized identifier from original_mapping.
+
+    Returns True if clean; raises ValueError if any leakage is found.
+    """
+    text = json.dumps(data) if not isinstance(data, str) else data
+
+    # Check benchmark Trojan naming leakage
+    leakage_patterns = [
+        re.compile(r"\btroj[0-9_][a-zA-Z0-9_]*\b", re.IGNORECASE),
+        re.compile(r"\bcounter_reg[a-zA-Z0-9_]*\b", re.IGNORECASE),
+        re.compile(r"\btrojan_out[a-zA-Z0-9_]*\b", re.IGNORECASE),
+    ]
+    for pattern in leakage_patterns:
+        match = pattern.search(text)
+        if match:
+            matched_str = match.group(0)
+            raise ValueError(
+                f"Identifier/Trojan leakage detected: found forbidden term '{matched_str}' in data!"
+            )
+
+    # Check original identifiers if mapping provided
+    if original_mapping:
+        for orig_id, anon_id in original_mapping.items():
+            if len(orig_id) >= 4 and orig_id in text:
+                raise ValueError(
+                    f"Original identifier leakage detected: '{orig_id}' found in anonymized content!"
+                )
+
+    return True
 
 
 # ============================================================

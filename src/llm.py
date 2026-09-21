@@ -51,12 +51,8 @@ ACTIVE_PROVIDER = "gemini"
 OLLAMA_MODEL = "qwen3:4b"
 
 
-# ------------------------------------------------------------
-# Gemini configuration
-# ------------------------------------------------------------
-
-# Change this if you want to test another Gemini model.
-GEMINI_MODEL = "gemini-3.6-flash"
+# Active Gemini model
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 
 # ============================================================
@@ -145,7 +141,8 @@ def run_ollama(prompt: str) -> str:
         options={
             "temperature": 0.0,
             "seed": 42,
-            "num_ctx": 32768,
+            "num_ctx": 8192,
+            "num_predict": 1024,
         },
     )
 
@@ -180,12 +177,30 @@ def run_gemini(prompt: str) -> str:
         api_key=api_key
     )
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-    )
-
-    return response.text or ""
+    import time
+    last_error = None
+    for attempt in range(4):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+            )
+            return response.text or ""
+        except Exception as err:
+            last_error = err
+            if attempt < 3:
+                err_str = str(err).lower()
+                if "429" in err_str or "resource_exhausted" in err_str:
+                    print("Gemini rate limit encountered. Waiting 25s for quota window...")
+                    time.sleep(25)
+                else:
+                    time.sleep(2 ** attempt)
+            else:
+                err_str = str(last_error).lower()
+                if "429" in err_str or "resource_exhausted" in err_str:
+                    print("Gemini quota exceeded. Falling back to local Ollama (qwen3:4b)...")
+                    return run_ollama(prompt)
+                raise last_error
 
 
 # ============================================================
