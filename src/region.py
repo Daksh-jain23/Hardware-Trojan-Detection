@@ -79,6 +79,25 @@ class SuspiciousRegion:
         return len(self.nodes)
 
 
+@dataclass
+class RefinedRegion:
+
+    nodes: Set[str]
+
+    seed_nodes: List[str]
+
+    pruned_nodes: Set[str]
+
+    scores: Dict[str, float]
+
+    retention_ratio: float
+
+    source: str | None = None
+
+    def __len__(self):
+        return len(self.nodes)
+
+
 # ============================================================
 # Load trained GNN
 # ============================================================
@@ -107,6 +126,7 @@ def load_model(
     checkpoint = torch.load(
         checkpoint_path,
         map_location=DEVICE,
+        weights_only=False,
     )
 
     # Support both:
@@ -327,23 +347,148 @@ def extract_region(
 
 
 # ============================================================
+# Heuristic Suspicious-Region Refinement
+# ============================================================
+
+def refine_suspicious_region(
+    graph: nx.DiGraph,
+    region: SuspiciousRegion,
+    scores: Dict[str, float],
+    gnn_threshold: float = 0.95,
+    prune_threshold: float = 0.30,
+    preserve_critical_paths: bool = True,
+    preserve_sequential: bool = True,
+) -> RefinedRegion:
+    """
+    Graph-theoretic suspicious-region refinement for Hardware Trojan detection.
+
+    Prunes non-suspicious peripheral leaves that dilute internal connectivity and
+    add unnecessary token overhead, while guaranteeing the preservation of core
+    seeds, sequential trigger elements, and active trigger-to-payload reconnection paths.
+
+    Parameters:
+    -----------
+    graph: nx.DiGraph
+        Complete netlist graph
+    region: SuspiciousRegion
+        Initial unrefined candidate region
+    scores: Dict[str, float]
+        GNN node suspiciousness probabilities
+    gnn_threshold: float
+        Threshold defining high-confidence seeds that cannot be pruned
+    prune_threshold: float
+        Suspicion boundary below which peripheral leaf nodes are pruned
+    preserve_critical_paths: bool
+        Whether to protect all nodes along shortest paths between seeds and exits
+    preserve_sequential: bool
+        Whether to protect sequential flip-flops/registers connected to seeds
+
+    Returns:
+    --------
+    RefinedRegion: Compact, high-precision candidate region
+    """
+    candidate_nodes = set(region.nodes)
+    if not candidate_nodes:
+        return RefinedRegion(
+            nodes=set(),
+            seed_nodes=[],
+            pruned_nodes=set(),
+            scores=scores,
+            retention_ratio=1.0,
+            source=region.source,
+        )
+
+    # 1. Core Anchors (High-confidence seeds)
+    core_anchors = {
+        n for n in candidate_nodes
+        if scores.get(n, 0.0) >= gnn_threshold or n in region.seed_nodes
+    }
+
+    # 2. Sequential State Anchors (Flip-flops, registers characteristic of triggers)
+    sequential_anchors = set()
+    if preserve_sequential:
+        for n in candidate_nodes:
+            if n not in graph:
+                continue
+            gate_data = graph.nodes[n]
+            gtype = str(gate_data.get("gate_type", "")).lower()
+            if any(k in gtype for k in ["dff", "reg", "latch"]):
+                # Retain sequential gates with moderate score or connected to seeds
+                if scores.get(n, 0.0) >= 0.40 or any(
+                    pred in core_anchors for pred in graph.predecessors(n)
+                ) or any(
+                    succ in core_anchors for succ in graph.successors(n)
+                ):
+                    sequential_anchors.add(n)
+
+    # 3. Critical Path Protection (Seed-to-Exit Reconnection Paths)
+    critical_path_nodes = set()
+    if preserve_critical_paths:
+        sub_undirected = graph.subgraph(candidate_nodes).to_undirected()
+        exit_nodes = {
+            n for n in candidate_nodes
+            if any(succ not in candidate_nodes for succ in graph.successors(n))
+        }
+
+        for seed in core_anchors:
+            for ex in exit_nodes:
+                if nx.has_path(sub_undirected, seed, ex):
+                    try:
+                        for path in nx.all_shortest_paths(sub_undirected, seed, ex):
+                            critical_path_nodes.update(path)
+                    except Exception:
+                        pass
+
+    # Protected set: cannot be pruned under any circumstances
+    protected_nodes = core_anchors.union(sequential_anchors).union(critical_path_nodes)
+
+    # 4. Multi-pass Iterative Leaf Pruning
+    current_nodes = set(candidate_nodes)
+    changed = True
+    while changed:
+        changed = False
+        sub_current = graph.subgraph(current_nodes).to_undirected()
+        to_prune = set()
+
+        for node in current_nodes:
+            if node in protected_nodes:
+                continue
+
+            node_score = scores.get(node, 0.0)
+            internal_degree = sub_current.degree(node)
+
+            # Prune dead-end leaf nodes with low GNN suspicion
+            if node_score < prune_threshold and internal_degree <= 1:
+                to_prune.add(node)
+
+        if to_prune:
+            current_nodes -= to_prune
+            changed = True
+
+    pruned_nodes = candidate_nodes - current_nodes
+    retention_ratio = len(current_nodes) / len(candidate_nodes) if candidate_nodes else 1.0
+
+    return RefinedRegion(
+        nodes=current_nodes,
+        seed_nodes=region.seed_nodes,
+        pruned_nodes=pruned_nodes,
+        scores=scores,
+        retention_ratio=round(retention_ratio, 4),
+        source=region.source,
+    )
+
+
+# ============================================================
 # Structural region description
 # ============================================================
 
 def region_description(
     graph,
-    region: SuspiciousRegion,
+    region: SuspiciousRegion | RefinedRegion,
 ):
     """
-    Convert a suspicious region into a compact textual description.
-
-    This is NOT the final LLM prompt yet.
-
-    It is the intermediate representation between:
-
-        GNN → region → LLM
+    Convert a suspicious or refined region into a compact textual description.
     """
-
     lines = []
 
     lines.append(
@@ -353,6 +498,12 @@ def region_description(
     lines.append(
         f"Seed gates: {len(region.seed_nodes)}"
     )
+
+    if isinstance(region, RefinedRegion) and region.pruned_nodes:
+        lines.append(
+            f"Pruned peripheral gates: {len(region.pruned_nodes)} "
+            f"(compression ratio: {1.0 - region.retention_ratio:.1%})"
+        )
 
     lines.append("")
 
@@ -594,28 +745,33 @@ def analyze_netlist(
     # --------------------------------------------------------
 
     print()
-    print("========== SUSPICIOUS REGION ==========")
+    print("========== NAIVE SUSPICIOUS REGION ==========")
+    print("Region size:", len(region.nodes))
+    print("Seed gates :", len(region.seed_nodes))
+    print()
+    print(region_description(graph, region))
 
-    print(
-        "Region size:",
-        len(region.nodes)
+    # --------------------------------------------------------
+    # Phase 3: Heuristic-Guided Suspicious Region Refinement
+    # --------------------------------------------------------
+    print()
+    print("========== REFINED SUSPICIOUS REGION ==========")
+    refined_region = refine_suspicious_region(
+        graph=graph,
+        region=region,
+        scores=scores,
     )
 
-    print(
-        "Seed gates:",
-        region.seed_nodes
-    )
+    print("Refined size           :", len(refined_region.nodes))
+    print("Pruned peripheral gates:", len(refined_region.pruned_nodes))
+    print("Size compression ratio :", f"{1.0 - refined_region.retention_ratio:.1%}")
+    if refined_region.pruned_nodes:
+        print("Pruned nodes           :", sorted(refined_region.pruned_nodes)[:10])
 
     print()
+    print(region_description(graph, refined_region))
 
-    print(
-        region_description(
-            graph,
-            region,
-        )
-    )
-
-    return graph, region
+    return graph, region, refined_region
 
 
 # ============================================================
@@ -627,17 +783,8 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-
-        print(
-            "Usage:"
-        )
-
-        print(
-            "python src/region.py <netlist.v>"
-        )
-
+        print("Usage:")
+        print("python src/region.py <netlist.v>")
         sys.exit(1)
 
-    analyze_netlist(
-        sys.argv[1]
-    )
+    analyze_netlist(sys.argv[1])
