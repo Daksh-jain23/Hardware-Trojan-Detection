@@ -13,8 +13,16 @@ INSTANCE_RE = re.compile(
 )
 
 NAMED_PORT_RE = re.compile(
-    r"\.(?P<port>\w+)\s*\(\s*(?P<net>\w+)\s*\)"
+    # A net can be a normal identifier or an escaped Verilog identifier.  An
+    # escaped identifier begins with ``\\`` and ends at whitespace, so names
+    # such as ``\\DFF_436/net723`` must not be dropped from the graph.
+    r"\.(?P<port>[A-Za-z_$][A-Za-z0-9_$]*)\s*"
+    r"\(\s*(?P<net>\\[^\s(),;]+|[A-Za-z_$][A-Za-z0-9_$]*)\s*\)"
 )
+
+# Trust-Hub cells use Q for the normal output and QN for the complemented
+# output of sequential cells.  Both are driven nets, not gate inputs.
+OUTPUT_PORTS = {"q", "qn", "qb"}
 
 
 
@@ -82,9 +90,9 @@ def parse_netlist(file_path):
 
             for port, net in named_ports:
 
-                # Trust-Hub TjIn convention:
-                # Q = output
-                if port.lower() == "q":
+                # Trust-Hub TjIn convention: Q is the normal output and QN
+                # (occasionally QB) is the complemented output.
+                if port.lower() in OUTPUT_PORTS:
                     output_nets.append(net)
                 else:
                     input_nets.append(net)

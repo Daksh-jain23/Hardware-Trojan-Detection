@@ -275,6 +275,46 @@ def anonymize_evidence(
     return anonymized, mapping
 
 
+def assert_no_leakage(
+    data: Any,
+    original_mapping: dict[str, str] | None = None,
+) -> bool:
+    """
+    Assert that evidence or prompt does not leak benchmark Trojan names or raw identifiers.
+
+    Checks:
+    1. Benchmark Trojan naming patterns: 'troj[0-9]+', 'counter_reg', 'trojan_out'.
+    2. Any original un-anonymized identifier from original_mapping.
+
+    Returns True if clean; raises ValueError if any leakage is found.
+    """
+    text = json.dumps(data) if not isinstance(data, str) else data
+
+    # Check benchmark Trojan naming leakage
+    leakage_patterns = [
+        re.compile(r"\btroj[0-9_][a-zA-Z0-9_]*\b", re.IGNORECASE),
+        re.compile(r"\bcounter_reg[a-zA-Z0-9_]*\b", re.IGNORECASE),
+        re.compile(r"\btrojan_out[a-zA-Z0-9_]*\b", re.IGNORECASE),
+    ]
+    for pattern in leakage_patterns:
+        match = pattern.search(text)
+        if match:
+            matched_str = match.group(0)
+            raise ValueError(
+                f"Identifier/Trojan leakage detected: found forbidden term '{matched_str}' in data!"
+            )
+
+    # Check original identifiers if mapping provided
+    if original_mapping:
+        for orig_id, anon_id in original_mapping.items():
+            if len(orig_id) >= 4 and orig_id in text:
+                raise ValueError(
+                    f"Original identifier leakage detected: '{orig_id}' found in anonymized content!"
+                )
+
+    return True
+
+
 # ============================================================
 # File processing
 # ============================================================

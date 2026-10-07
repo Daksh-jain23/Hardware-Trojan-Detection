@@ -213,20 +213,16 @@ def select_suspicious_seeds(
     threshold: float = DEFAULT_THRESHOLD,
 ) -> List:
     """
-    Select initial suspicious gates.
+    Select actual GNN-positive gates.
 
-    We use two mechanisms:
-
-    1. Gates above the trained decision threshold.
-    2. Top-K GNN-ranked gates.
-
-    The union makes the evidence layer robust when a Trojan contains
-    multiple gates with slightly different scores.
+    A suspicious seed is strictly a gate whose score meets the trained
+    decision threshold.  Lower-scoring ranked gates may still be used as
+    structural context, but must never be represented as positive seeds.
     """
 
     ranked = sorted(
         scores.items(),
-        key=lambda item: item[1],
+        key=lambda item: (-item[1], str(item[0])),
         reverse=True,
     )
 
@@ -236,23 +232,23 @@ def select_suspicious_seeds(
         if score >= threshold
     ]
 
-    top_nodes = [
+    return threshold_nodes
+
+
+def select_ranked_context_nodes(
+    scores: Dict,
+    top_k: int = TOP_K,
+) -> List:
+    """Return deterministic top-ranked nodes used only to anchor context."""
+    ranked = sorted(
+        scores.items(),
+        key=lambda item: (-item[1], str(item[0])),
+    )
+
+    return [
         node
         for node, _ in ranked[:top_k]
     ]
-
-    selected = []
-
-    seen = set()
-
-    for node in threshold_nodes + top_nodes:
-
-        if node not in seen:
-
-            selected.append(node)
-            seen.add(node)
-
-    return selected
 
 
 # ============================================================
@@ -309,9 +305,10 @@ def expand_region(
 
         if len(next_frontier) > remaining:
 
-            # Prefer nodes with stronger GNN-local connectivity.
+            # Stable ordering makes prompt generation reproducible across
+            # Python processes with different hash randomization.
             next_frontier = set(
-                list(next_frontier)[:remaining]
+                sorted(next_frontier, key=str)[:remaining]
             )
 
         region.update(next_frontier)
@@ -870,15 +867,26 @@ def build_evidence(
     It only reports evidence.
     """
 
-    seeds = select_suspicious_seeds(
+    suspicious_seeds = select_suspicious_seeds(
         scores=scores,
         top_k=top_k,
         threshold=threshold,
     )
 
+    ranked_context_nodes = select_ranked_context_nodes(
+        scores=scores,
+        top_k=top_k,
+    )
+
+    # Ranked nodes provide a bounded context even when no score crosses the
+    # decision threshold. They remain separate from the positive seed set.
+    region_anchors = list(
+        dict.fromkeys(suspicious_seeds + ranked_context_nodes)
+    )
+
     region = expand_region(
         graph=graph,
-        seeds=seeds,
+        seeds=region_anchors,
         hops=hops,
         max_size=max_region_size,
     )
@@ -948,7 +956,9 @@ def build_evidence(
 
             "top_k": int(top_k),
 
-            "suspicious_seed_count": len(seeds),
+            "suspicious_seed_count": len(suspicious_seeds),
+
+            "ranked_context_count": len(ranked_context_nodes),
 
             "suspicious_region_size": len(region),
 
@@ -970,7 +980,16 @@ def build_evidence(
                     6,
                 ),
             }
-            for node in seeds
+            for node in suspicious_seeds
+        ],
+
+        "ranked_context_nodes": [
+            {
+                "gate": str(node),
+                "type": gate_type(graph, node),
+                "gnn_score": round(float(scores[node]), 6),
+            }
+            for node in ranked_context_nodes
         ],
 
         "high_confidence_nodes": [
@@ -1042,6 +1061,32 @@ def build_evidence(
                         "latch",
                         "reg",
                     )
+                )
+            ],
+
+            "internal_edge_density": round(
+                len(internal_edges) / max(1, len(region)),
+                4,
+            ),
+
+            "exit_ratio": round(
+                len(exits) / max(1, len(region)),
+                4,
+            ),
+
+            "multi_input_gates": [
+                item["gate"]
+                for item in nodes
+                if item["fanin"] >= 3
+            ],
+
+            "payload_candidate_gates": [
+                item["gate"]
+                for item in nodes
+                if item.get("region_exit")
+                and any(
+                    op in item["type"].lower()
+                    for op in ("xor", "xnr", "xnor", "mux", "and", "or", "inv")
                 )
             ],
 

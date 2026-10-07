@@ -32,8 +32,7 @@ TEST:
     s35932
 """
 
-from __future__ import annotations
-
+import argparse
 import sys
 from pathlib import Path
 
@@ -62,23 +61,28 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from dataset import build_node_level_dataset, graph_to_pyg
+from dataset import (
+    build_node_level_dataset,
+    graph_to_pyg,
+    split_dataset,
+    GraphSample,
+)
 
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
 
-TRAIN_FAMILIES = [
+DEFAULT_TRAIN_FAMILIES = [
     "s13207",
     "s1423",
 ]
 
-VAL_FAMILIES = [
+DEFAULT_VAL_FAMILIES = [
     "s15850",
 ]
 
-TEST_FAMILIES = [
+DEFAULT_TEST_FAMILIES = [
     "s35932",
 ]
 
@@ -106,6 +110,75 @@ DEVICE = torch.device(
     if torch.cuda.is_available()
     else "cpu"
 )
+
+
+# ============================================================
+# DATASET PREPARATION
+# ============================================================
+
+def prepare_dataset(
+    data_roots=None,
+    files=None,
+    train_families=None,
+    val_families=None,
+    test_families=None,
+    split_by="family",
+    train_ratio=0.70,
+    val_ratio=0.15,
+    test_ratio=0.15,
+    max_samples=None,
+    seed=42,
+):
+    """
+    Build the dataset from files/roots and split into Train, Validation, Test.
+    """
+    # If no explicit families or files given, check default family splits
+    has_custom_split = (
+        train_families is not None
+        or val_families is not None
+        or test_families is not None
+        or files is not None
+        or split_by == "file"
+    )
+
+    if not has_custom_split and data_roots is None:
+        train_families = DEFAULT_TRAIN_FAMILIES
+        val_families = DEFAULT_VAL_FAMILIES
+        test_families = DEFAULT_TEST_FAMILIES
+
+    all_filter_families = None
+    if train_families or val_families or test_families:
+        all_filter_families = list(set((train_families or []) + (val_families or []) + (test_families or [])))
+
+    samples = build_node_level_dataset(
+        families=all_filter_families,
+        data_roots=data_roots,
+        files=files,
+        max_samples=max_samples,
+    )
+
+    train_samples, val_samples, test_samples = split_dataset(
+        samples=samples,
+        split_by=split_by,
+        train_ratio=train_ratio,
+        val_ratio=val_ratio,
+        test_ratio=test_ratio,
+        train_families=train_families,
+        val_families=val_families,
+        test_families=test_families,
+        seed=seed,
+    )
+
+    if len(train_samples) == 0:
+        raise RuntimeError("Training set is empty.")
+    if len(val_samples) == 0:
+        print("[WARNING] Validation set is empty, using 1 sample from train.")
+        val_samples = [train_samples[0]]
+    if len(test_samples) == 0:
+        print("[WARNING] Test set is empty, using validation set as test.")
+        test_samples = list(val_samples)
+
+    return train_samples, val_samples, test_samples
 
 
 # ============================================================
@@ -202,149 +275,6 @@ class TrojanGNN(nn.Module):
         x = self.classifier(x)
 
         return x.squeeze(-1)
-
-
-# ============================================================
-# DATASET SPLIT
-# ============================================================
-
-def prepare_dataset():
-    """
-    Build the complete dataset and split it by family.
-
-    IMPORTANT:
-    We use membership checks:
-
-        sample.family in TEST_FAMILIES
-
-    rather than:
-
-        sample.family == TEST_FAMILIES
-
-    because TEST_FAMILIES is a list.
-    """
-
-    samples = build_node_level_dataset()
-
-    train_samples = []
-    val_samples = []
-    test_samples = []
-
-    for sample in samples:
-
-        if sample.family in TEST_FAMILIES:
-
-            test_samples.append(sample)
-
-        elif sample.family in VAL_FAMILIES:
-
-            val_samples.append(sample)
-
-        elif sample.family in TRAIN_FAMILIES:
-
-            train_samples.append(sample)
-
-        else:
-
-            print(
-                f"[WARNING] Ignoring unknown family: "
-                f"{sample.family}"
-            )
-
-    # --------------------------------------------------------
-    # Safety checks
-    # --------------------------------------------------------
-
-    if len(train_samples) == 0:
-        raise RuntimeError(
-            "Training set is empty."
-        )
-
-    if len(val_samples) == 0:
-        raise RuntimeError(
-            "Validation set is empty."
-        )
-
-    if len(test_samples) == 0:
-        raise RuntimeError(
-            "Test set is empty."
-        )
-
-    # --------------------------------------------------------
-    # Verify there is no family leakage
-    # --------------------------------------------------------
-
-    train_families = {
-        x.family for x in train_samples
-    }
-
-    val_families = {
-        x.family for x in val_samples
-    }
-
-    test_families = {
-        x.family for x in test_samples
-    }
-
-    if train_families & val_families:
-        raise RuntimeError(
-            "Family leakage between training and validation."
-        )
-
-    if train_families & test_families:
-        raise RuntimeError(
-            "Family leakage between training and test."
-        )
-
-    if val_families & test_families:
-        raise RuntimeError(
-            "Family leakage between validation and test."
-        )
-
-    # --------------------------------------------------------
-    # Print split
-    # --------------------------------------------------------
-
-    print()
-    print("========== DATASET SPLIT ==========")
-
-    print(
-        "Training families   :",
-        TRAIN_FAMILIES,
-    )
-
-    print(
-        "Validation families :",
-        VAL_FAMILIES,
-    )
-
-    print(
-        "Test families       :",
-        TEST_FAMILIES,
-    )
-
-    print()
-
-    print(
-        "Training graphs    :",
-        len(train_samples),
-    )
-
-    print(
-        "Validation graphs  :",
-        len(val_samples),
-    )
-
-    print(
-        "Test graphs        :",
-        len(test_samples),
-    )
-
-    return (
-        train_samples,
-        val_samples,
-        test_samples,
-    )
 
 
 # ============================================================
@@ -703,6 +633,86 @@ def print_confusion_matrix(
 # ============================================================
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Train GAT-based Hardware Trojan detector."
+    )
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        nargs="+",
+        default=None,
+        help="Path or list of paths to dataset roots (e.g. data/TRIT-TS, data/TRIT-TC).",
+    )
+    parser.add_argument(
+        "--files",
+        type=Path,
+        nargs="+",
+        default=None,
+        help="Explicit list of Verilog (.v) files to train on.",
+    )
+    parser.add_argument(
+        "--train-families",
+        nargs="+",
+        default=None,
+        help="Circuit families for training (e.g. s13207 s1423 or c2670).",
+    )
+    parser.add_argument(
+        "--val-families",
+        nargs="+",
+        default=None,
+        help="Circuit families for validation (e.g. s15850 or c3540).",
+    )
+    parser.add_argument(
+        "--test-families",
+        nargs="+",
+        default=None,
+        help="Circuit families for test (e.g. s35932 or c6288).",
+    )
+    parser.add_argument(
+        "--split-by",
+        choices=["family", "file"],
+        default="family",
+        help="How to split the dataset ('family' to prevent circuit leakage, or 'file' for random split).",
+    )
+    parser.add_argument(
+        "--split-ratio",
+        type=float,
+        nargs=3,
+        default=[0.70, 0.15, 0.15],
+        help="Train, validation, test ratio (default: 0.70 0.15 0.15).",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=EPOCHS,
+        help=f"Number of training epochs (default: {EPOCHS}).",
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=LEARNING_RATE,
+        help=f"Learning rate (default: {LEARNING_RATE}).",
+    )
+    parser.add_argument(
+        "--hidden-dim",
+        type=int,
+        default=HIDDEN_DIM,
+        help=f"Hidden dimension (default: {HIDDEN_DIM}).",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=CHECKPOINT_PATH,
+        help=f"Path to save model checkpoint (default: {CHECKPOINT_PATH}).",
+    )
+    parser.add_argument(
+        "--max-samples",
+        type=int,
+        default=None,
+        help="Maximum number of netlists to load.",
+    )
+
+    args = parser.parse_args()
 
     print(
         "========== HARDWARE TROJAN GNN =========="
@@ -738,7 +748,22 @@ def main():
         train_samples,
         val_samples,
         test_samples,
-    ) = prepare_dataset()
+    ) = prepare_dataset(
+        data_roots=args.data_dir,
+        files=args.files,
+        train_families=args.train_families,
+        val_families=args.val_families,
+        test_families=args.test_families,
+        split_by=args.split_by,
+        train_ratio=args.split_ratio[0],
+        val_ratio=args.split_ratio[1],
+        test_ratio=args.split_ratio[2],
+        max_samples=args.max_samples,
+    )
+
+    print(f"Training graphs    : {len(train_samples)}")
+    print(f"Validation graphs  : {len(val_samples)}")
+    print(f"Test graphs        : {len(test_samples)}")
 
     # --------------------------------------------------------
     # CONVERT GRAPHS
@@ -776,7 +801,7 @@ def main():
 
     model = TrojanGNN(
         input_dim=input_dim,
-        hidden_dim=HIDDEN_DIM,
+        hidden_dim=args.hidden_dim,
     ).to(DEVICE)
 
     print()
@@ -802,7 +827,7 @@ def main():
 
     optimizer = torch.optim.Adam(
         model.parameters(),
-        lr=LEARNING_RATE,
+        lr=args.lr,
         weight_decay=WEIGHT_DECAY,
     )
 
@@ -819,14 +844,14 @@ def main():
 
     best_epoch = 0
 
-    CHECKPOINT_DIR.mkdir(
+    args.checkpoint.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     for epoch in range(
         1,
-        EPOCHS + 1,
+        args.epochs + 1,
     ):
 
         loss = train_one_epoch(
@@ -878,7 +903,7 @@ def main():
                         input_dim,
 
                     "hidden_dim":
-                        HIDDEN_DIM,
+                        args.hidden_dim,
 
                     "epoch":
                         epoch,
@@ -889,7 +914,7 @@ def main():
                     "threshold":
                         val_threshold,
                 },
-                CHECKPOINT_PATH,
+                args.checkpoint,
             )
 
         # ----------------------------------------------------
@@ -915,7 +940,7 @@ def main():
     # --------------------------------------------------------
 
     checkpoint = torch.load(
-        CHECKPOINT_PATH,
+        args.checkpoint,
         map_location=DEVICE,
     )
 
@@ -926,6 +951,7 @@ def main():
     best_threshold = float(
         checkpoint["threshold"]
     )
+
 
     print()
     print(
@@ -949,7 +975,7 @@ def main():
 
     print(
         "Checkpoint:",
-        CHECKPOINT_PATH,
+        args.checkpoint,
     )
 
     # --------------------------------------------------------
@@ -1007,9 +1033,10 @@ def main():
         "========== TEST RESULT =========="
     )
 
+    test_family_names = sorted(set(s.family for s in test_samples))
     print(
         "Test families:",
-        TEST_FAMILIES,
+        test_family_names,
     )
 
     print(

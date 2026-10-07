@@ -1,0 +1,161 @@
+You are an expert hardware security verification engineer performing a blind comparative evaluation between two candidate circuit subnetworks (Region A and Region B) extracted from the same integrated circuit.
+
+TASK:
+Examine the structural, topological, and GNN suspiciousness metrics of both candidate regions and determine which region exhibits structural characteristics typical of a Hardware Trojan (stealthy trigger comparator tree, sequential state counter, or datapath payload injection), or whether neither region is malicious.
+
+HARDWARE TROJAN STRUCTURAL INDICATORS TO LOOK FOR:
+1. GNN Suspicious Seeds & Concentration: Concentrated high GNN suspicion scores localized within a tight subnetwork.
+2. High Internal Edge Density: Trojan logic forms a tightly coupled local subnetwork (internal edge density >= 0.70).
+3. Low Boundary Exit Ratio: Stealthy Trojans minimize external visibility (exit ratio <= 0.35 with few exit gates).
+4. Sequential Trigger Logic: Multiple tightly connected flip-flops (DFFs) driving internal trigger signals with zero primary output visibility.
+5. Benign Baseline Behavior: Diffuse gate connections, high boundary exit ratio (> 0.40), low internal edge density, or typical functional datapath trees.
+
+------------------------------------------------------------
+REGION A STRUCTURAL EVIDENCE:
+------------------------------------------------------------
+- Region Size               : 50 gates
+- GNN Suspicious Seeds      : 0
+- Max GNN Score             : 0.7103
+- Avg GNN Score             : 0.0677
+- Internal Edges            : 50
+- Boundary Edges            : 100
+- Internal Edge Density     : 1.0
+- Boundary Exits Count      : 37 (Exit Ratio: 0.74)
+- Sequential Gates (DFFs)   : 0
+- Gate Types Distribution   : {"nnd2s3": 31, "i1s3": 4, "pi": 4, "ib1s9": 1, "and3s3": 3, "nnd4s2": 1, "nnd3s3": 1, "xor2s3": 3, "nor2s3": 1, "nor6s3": 1}
+- Sample Gate Connectivity  :
+[
+  {
+    "gate": "NODE_0001",
+    "gate_type": "PI",
+    "gnn_score": 0.0,
+    "fanin": 0,
+    "fanout": 17,
+    "region_fanin": 0,
+    "region_fanout": 17
+  },
+  {
+    "gate": "NODE_0002",
+    "gate_type": "PI",
+    "gnn_score": 0.0,
+    "fanin": 0,
+    "fanout": 2,
+    "region_fanin": 0,
+    "region_fanout": 1
+  },
+  {
+    "gate": "NODE_0003",
+    "gate_type": "PI",
+    "gnn_score": 0.0003,
+    "fanin": 0,
+    "fanout": 2,
+    "region_fanin": 0,
+    "region_fanout": 2
+  },
+  {
+    "gate": "NODE_0004",
+    "gate_type": "PI",
+    "gnn_score": 0.0019,
+    "fanin": 0,
+    "fanout": 1,
+    "region_fanin": 0,
+    "region_fanout": 1
+  },
+  {
+    "gate": "NODE_0005",
+    "gate_type": "and3s3",
+    "gnn_score": 0.0086,
+    "fanin": 3,
+    "fanout": 1,
+    "region_fanin": 1,
+    "region_fanout": 0
+  },
+  {
+    "gate": "NODE_0006",
+    "gate_type": "and3s3",
+    "gnn_score": 0.0776,
+    "fanin": 3,
+    "fanout": 1,
+    "region_fanin": 1,
+    "region_fanout": 0
+  }
+]
+
+------------------------------------------------------------
+REGION B STRUCTURAL EVIDENCE:
+------------------------------------------------------------
+- Region Size               : 50 gates
+- GNN Suspicious Seeds      : 15
+- Max GNN Score             : 0.9977
+- Avg GNN Score             : 0.6104
+- Internal Edges            : 45
+- Boundary Edges            : 118
+- Internal Edge Density     : 0.9
+- Boundary Exits Count      : 20 (Exit Ratio: 0.4)
+- Sequential Gates (DFFs)   : 0
+- Gate Types Distribution   : {"nor2s3": 2, "nnd2s3": 23, "ib1s9": 1, "and3s3": 1, "or2s3": 1, "xor2s3": 3, "nnd3s3": 7, "pi": 3, "i1s3": 6, "po": 1, "ib1s5": 2}
+- Sample Gate Connectivity  :
+[
+  {
+    "gate": "NODE_0001",
+    "gate_type": "PI",
+    "gnn_score": 0.0012,
+    "fanin": 0,
+    "fanout": 1,
+    "region_fanin": 0,
+    "region_fanout": 1
+  },
+  {
+    "gate": "NODE_0002",
+    "gate_type": "PI",
+    "gnn_score": 0.0,
+    "fanin": 0,
+    "fanout": 6,
+    "region_fanin": 0,
+    "region_fanout": 1
+  },
+  {
+    "gate": "NODE_0003",
+    "gate_type": "PI",
+    "gnn_score": 0.0,
+    "fanin": 0,
+    "fanout": 4,
+    "region_fanin": 0,
+    "region_fanout": 1
+  },
+  {
+    "gate": "NODE_0004",
+    "gate_type": "PO",
+    "gnn_score": 0.0,
+    "fanin": 1,
+    "fanout": 0,
+    "region_fanin": 1,
+    "region_fanout": 0
+  },
+  {
+    "gate": "NODE_0005",
+    "gate_type": "nnd2s3",
+    "gnn_score": 0.848,
+    "fanin": 2,
+    "fanout": 1,
+    "region_fanin": 2,
+    "region_fanout": 0
+  },
+  {
+    "gate": "NODE_0006",
+    "gate_type": "nnd3s3",
+    "gnn_score": 0.9628,
+    "fanin": 3,
+    "fanout": 1,
+    "region_fanin": 3,
+    "region_fanout": 1
+  }
+]
+
+------------------------------------------------------------
+REQUIRED OUTPUT FORMAT:
+You must conclude your assessment with this exact structured format:
+
+ASSESSMENT: <REGION_A | REGION_B | NEITHER>
+CONFIDENCE: <HIGH | MEDIUM | LOW>
+JUSTIFICATION: <Concise explanation comparing the internal density, boundary exits, GNN score distribution, and sequential connectivity of Region A versus Region B>

@@ -56,7 +56,7 @@ OLLAMA_MODEL = "qwen3:4b"
 # ------------------------------------------------------------
 
 # Change this if you want to test another Gemini model.
-GEMINI_MODEL = "gemini-3.6-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 
 
 # ============================================================
@@ -180,12 +180,22 @@ def run_gemini(prompt: str) -> str:
         api_key=api_key
     )
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-    )
-
-    return response.text or ""
+    import time
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+            )
+            return response.text or ""
+        except Exception as e:
+            err_str = str(e)
+            if ("503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str) and attempt < 4:
+                sleep_time = (attempt + 1) * 3
+                print(f"       [Gemini Retry] Rate limited ({e}). Waiting {sleep_time}s before retry...")
+                time.sleep(sleep_time)
+            else:
+                raise
 
 
 # ============================================================
