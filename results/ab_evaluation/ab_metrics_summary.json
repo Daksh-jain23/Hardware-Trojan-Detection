@@ -1,38 +1,80 @@
 {
-  "circuits_evaluated": 4,
-  "total_trials": 8,
+  "circuits_evaluated": 5,
+  "total_trials": 10,
   "heuristic_metrics": {
-    "accuracy": 0.75,
+    "accuracy": 0.8,
     "precision": 0.75,
     "recall": 1.0,
     "f1": 0.8571428571428571,
-    "fp_rate": 1.0,
+    "fp_rate": 0.5,
     "fn_rate": 0.0,
-    "specificity": 0.0,
+    "specificity": 0.5,
     "swap_consistency": 1.0,
     "position_bias": 0.0,
     "tp": 6,
     "fp": 2,
-    "tn": 0,
+    "tn": 2,
     "fn": 0,
-    "swap_consistent_count": 4,
+    "swap_consistent_count": 5,
     "position_bias_count": 0
   },
   "llm_metrics": {
-    "accuracy": 0.75,
-    "precision": 0.75,
+    "accuracy": 0.6,
+    "precision": 0.6,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
     "recall": 1.0,
-    "f1": 0.8571428571428571,
+    "f1": 0.7499999999999999,
     "fp_rate": 1.0,
     "fn_rate": 0.0,
     "specificity": 0.0,
     "swap_consistency": 1.0,
     "position_bias": 0.0,
     "tp": 6,
-    "fp": 2,
+    "fp": 4,
     "tn": 0,
     "fn": 0,
-    "swap_consistent_count": 4,
+    "swap_consistent_count": 5,
     "position_bias_count": 0
   },
   "circuits": [
@@ -58,8 +100,18 @@
         "correct_t2": true,
         "swap_consistent": true,
         "position_bias": false,
-        "explanation_trial_1": "Region A demonstrates key structural and topological hallmarks characteristic of a Hardware Trojan:\n1. **GNN Concentration**: Region A contains 15 suspicious seeds with a high average GNN score of 0.5528 (Max: 1.0), indicating localized anomalous structural features, whereas Region B has 0 seeds and an average score of only 0.0368.\n2. **Stealthy Boundary Metrics**: Region A exhibits a low boundary exit ratio of 0.26 (13 boundary exits), which aligns with the indicator that Trojan trigger trees minimize external visibility (exit ratio <= 0.35). In contrast, Region B exhibits a typical benign baseline exit ratio of 0.44 (22 boundary exits) and interfaces directly with primary inputs and outputs (PI/PO).\n3. **Internal Edge Density**: Region A maintains a tightly coupled internal structure with an edge density of 0.92, characteristic of a concentrated combinational trigger comparator tree.",
-        "explanation_trial_2": "Region B shows elevated internal density (0.92) with concentrated GNN seeds and stealthy boundary exits."
+        "explanation_trial_1": "Region A satisfies the primary structural and metric criteria for a Hardware Trojan: a high concentration of GNN suspicious seeds (15 vs 0 in Region B), high average GNN suspicion (0.5528 vs 0.0128), high internal edge density (0.92), and a constrained boundary exit ratio (0.26 <= 0.35) combined with multiplexer/logic gate distributions consistent with trigger and payload logic. Conversely, Region B exhibits benign datapath traits, including an exit ratio of 0.42 and direct primary input/output pin connectivity.",
+        "explanation_trial_2": "Region B strongly matches the structural and topological profile of a Hardware Trojan. It exhibits high GNN suspicion metrics (15 suspicious seeds, a maximum score of 1.0, and an average score of 0.5528, compared to 0 seeds and an average of 0.0128 in Region A). While both regions exhibit high internal edge density (0.98 for Region A, 0.92 for Region B), Region B demonstrates a stealthy low boundary exit ratio of 0.26 (13 exits), well below the 0.35 stealth threshold, indicating minimal external visibility typical of a localized trigger comparator. In contrast, Region A displays an exit ratio of 0.42 (21 exits), characteristic of standard functional datapath logic with high external boundary diffusion. Additionally, Region B contains wide fan-in gates (e.g., OR5, NOR5) and multiplexer logic characteristic of trigger aggregation and payload injection."
+      },
+      "critic_eval": {
+        "trial_1": "REGION_A",
+        "trial_2": "REGION_B",
+        "correct_t1": true,
+        "correct_t2": true,
+        "swap_consistent": true,
+        "position_bias": false,
+        "explanation_trial_1": "Region A demonstrates strong structural indicators characteristic of a stealthy combinational Hardware Trojan trigger network. Specifically, it exhibits a high concentration of GNN suspicious seeds (15 seeds, Max: 1.0, Avg: 0.5528), high internal edge density (0.92), and a constrained boundary exit ratio (0.26 with only 13 exits), consistent with tightly coupled local logic designed to minimize external observability. Furthermore, its gate composition includes high-fan-in reduction gates (e.g., nor5s1, or5s1, nnd4s1) typical of rare-event comparator/condition trees. In contrast, Region B exhibits baseline benign behavior with zero GNN suspicious seeds, a negligible average score (0.0128), normal I/O integration (PI/PO and buffer gates), and a dispersed boundary exit ratio (0.42).",
+        "explanation_trial_2": "Region B demonstrates definitive topological, structural, and GNN-based signatures of a Hardware Trojan. It exhibits high GNN suspicion concentration (15 suspicious seeds, max score of 1.0, and average score of 0.5528, compared to 0 seeds and an average score of 0.0128 in Region A). Topologically, Region B displays a stealthy, highly converging structure characterized by a low boundary exit ratio of 0.26 (13 exits) and dense internal coupling (0.92 internal edge density). Furthermore, Region B's cell distribution\u2014comprising wide fan-in gates (nor5s1, or5s1), bitwise comparison gates (xor2s3), and multiplexers (mxi21s3, mxi41s2)\u2014matches the classic architecture of an equality comparator trigger tree driving a payload injection multiplexer. In contrast, Region A reflects benign datapath behavior with diffuse boundary exits (exit ratio 0.42), direct primary input/output integration, and negligible GNN suspicion."
       },
       "trial_1": {
         "assignment": {
@@ -68,7 +120,7 @@
         },
         "assessment": "REGION_A",
         "confidence": "HIGH",
-        "explanation": "Region A demonstrates key structural and topological hallmarks characteristic of a Hardware Trojan:\n1. **GNN Concentration**: Region A contains 15 suspicious seeds with a high average GNN score of 0.5528 (Max: 1.0), indicating localized anomalous structural features, whereas Region B has 0 seeds and an average score of only 0.0368.\n2. **Stealthy Boundary Metrics**: Region A exhibits a low boundary exit ratio of 0.26 (13 boundary exits), which aligns with the indicator that Trojan trigger trees minimize external visibility (exit ratio <= 0.35). In contrast, Region B exhibits a typical benign baseline exit ratio of 0.44 (22 boundary exits) and interfaces directly with primary inputs and outputs (PI/PO).\n3. **Internal Edge Density**: Region A maintains a tightly coupled internal structure with an edge density of 0.92, characteristic of a concentrated combinational trigger comparator tree.",
+        "explanation": "Region A satisfies the primary structural and metric criteria for a Hardware Trojan: a high concentration of GNN suspicious seeds (15 vs 0 in Region B), high average GNN suspicion (0.5528 vs 0.0128), high internal edge density (0.92), and a constrained boundary exit ratio (0.26 <= 0.35) combined with multiplexer/logic gate distributions consistent with trigger and payload logic. Conversely, Region B exhibits benign datapath traits, including an exit ratio of 0.42 and direct primary input/output pin connectivity.",
         "correct": true
       },
       "trial_2": {
@@ -78,7 +130,7 @@
         },
         "assessment": "REGION_B",
         "confidence": "HIGH",
-        "explanation": "Region B shows elevated internal density (0.92) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation": "Region B strongly matches the structural and topological profile of a Hardware Trojan. It exhibits high GNN suspicion metrics (15 suspicious seeds, a maximum score of 1.0, and an average score of 0.5528, compared to 0 seeds and an average of 0.0128 in Region A). While both regions exhibit high internal edge density (0.98 for Region A, 0.92 for Region B), Region B demonstrates a stealthy low boundary exit ratio of 0.26 (13 exits), well below the 0.35 stealth threshold, indicating minimal external visibility typical of a localized trigger comparator. In contrast, Region A displays an exit ratio of 0.42 (21 exits), characteristic of standard functional datapath logic with high external boundary diffusion. Additionally, Region B contains wide fan-in gates (e.g., OR5, NOR5) and multiplexer logic characteristic of trigger aggregation and payload injection.",
         "correct": true
       },
       "evaluation_metrics": {
@@ -112,8 +164,18 @@
         "correct_t2": true,
         "swap_consistent": true,
         "position_bias": false,
-        "explanation_trial_1": "Region A demonstrates key structural and topological signatures of a Hardware Trojan, whereas Region B represents benign functional circuitry. Specifically:\n1. **GNN Suspicion Metrics:** Region A contains 5 suspicious seed gates with a peak GNN score of 0.9987 (average 0.2966), indicating localized anomaly detection by the model, whereas Region B has 0 suspicious seeds and scores of 0.0.\n2. **Boundary Exit Ratio:** Region A exhibits a low boundary exit ratio of 0.3333 (8 exits / 24 gates), meeting the stealth criterion (<= 0.35) of minimal observability. In contrast, Region B has a high exit ratio of 0.5833 with 377 boundary edges, typical of standard functional logic with broad fan-out.\n3. **Internal Edge Density & Connectivity:** Region A is maximally dense internally (edge density of 1.0) and contains multi-input gating structures (`nnd4s2`, `or5s1`, `and3s1`, `xor2`) coupled with sequential logic (`dffs2`), characteristic of a stealthy comparator trigger tree. Region B consists primarily of benign primary inputs and uniform NOR gates driving wide functional nets.",
-        "explanation_trial_2": "Region B shows elevated internal density (1.0) with concentrated GNN seeds and stealthy boundary exits."
+        "explanation_trial_1": "Region A satisfies the structural and topological criteria of a stealthy Hardware Trojan, whereas Region B exhibits baseline functional circuit characteristics. Specifically:\n1. **GNN Suspicion**: Region A contains 5 suspicious seed nodes with a peak suspicion score of 0.9987 and an average of 0.2966, while Region B has 0 suspicious seeds and scores of 0.0 across all nodes.\n2. **Boundary Exit Ratio**: Region A exhibits a low exit ratio of 0.3333 (8 exits across 24 gates), falling below the stealth threshold (<= 0.35) and indicating tightly contained internal logic with minimal external observability. In contrast, Region B has a high exit ratio of 0.5833 (14 exits), consistent with normal functional logic trees.\n3. **Internal vs. External Connectivity**: Region A has an internal edge density of 1.0 with moderate boundary coupling (42 boundary edges) and heterogeneous logic gates forming a localized comparator/trigger structure. Region B is heavily coupled to external nets (377 boundary edges, high primary input fanouts up to 357), characteristic of a regular distributed datapath or control bus rather than a stealthy insert.",
+        "explanation_trial_2": "Region B strongly matches the structural and topological signature of a Hardware Trojan across all key indicators:\n1. **GNN Suspiciousness**: Region B contains 5 suspicious seed nodes with a peak suspicion score of 0.9987 and an average of 0.2966, whereas Region A exhibits zero suspicious seeds and an average score of 0.0.\n2. **Boundary Visibility**: Region B has a low boundary exit ratio of 0.3333 (meeting the <= 0.35 stealth threshold) with only 42 boundary edges, reflecting low external observability typical of covert trigger/payload logic. In contrast, Region A has a high exit ratio of 0.5833 and 377 boundary edges, characteristic of highly integrated, diffuse functional logic.\n3. **Internal Density & Sequential Elements**: Region B forms a tightly coupled subnetwork with maximum internal edge density (1.0) and integrates sequential control logic (`dffs2`), consistent with a sequential or state-dependent trigger mechanism."
+      },
+      "critic_eval": {
+        "trial_1": "REGION_A",
+        "trial_2": "REGION_B",
+        "correct_t1": true,
+        "correct_t2": true,
+        "swap_consistent": true,
+        "position_bias": false,
+        "explanation_trial_1": "Region A demonstrates clear topological and structural indicators typical of a stealthy Hardware Trojan. It exhibits high GNN anomaly localization (5 suspicious seeds, maximum score of 0.9987, and average score of 0.2966) within a tightly coupled subnetwork (internal edge density of 1.0). The combination of a low boundary exit ratio (0.3333 with 8 boundary exit gates) and wide multi-input gates (including or5s1, nnd4s2, and and3s1) strongly aligns with a trigger comparator tree designed to minimize external observability. In contrast, Region B represents benign combinational logic characterized by zero GNN suspicion scores, no suspicious seeds, and a high boundary exit ratio (0.5833 across 14 boundary exit gates) typical of well-integrated functional logic.",
+        "explanation_trial_2": "Region B exhibits classical structural and topological markers of a Hardware Trojan, whereas Region A demonstrates benign datapath characteristics. Specifically, Region B has a high concentration of GNN suspicious seeds (5 seeds, max score 0.9987), an internal edge density of 1.0, and a restricted boundary exit ratio of 0.3333 (8 exits), consistent with stealthy trigger insertion. Furthermore, Region B includes sequential logic (a DFF) integrated with multi-input comparator gates (e.g., nnd4s2, or5s1, and3s1) typical of trigger trees. In contrast, Region A shows zero GNN suspicion (max 0.0), a high boundary exit ratio of 0.5833 with 377 boundary edges, and purely combinational logic, indicating standard functional circuit integration."
       },
       "trial_1": {
         "assignment": {
@@ -122,7 +184,7 @@
         },
         "assessment": "REGION_A",
         "confidence": "HIGH",
-        "explanation": "Region A demonstrates key structural and topological signatures of a Hardware Trojan, whereas Region B represents benign functional circuitry. Specifically:\n1. **GNN Suspicion Metrics:** Region A contains 5 suspicious seed gates with a peak GNN score of 0.9987 (average 0.2966), indicating localized anomaly detection by the model, whereas Region B has 0 suspicious seeds and scores of 0.0.\n2. **Boundary Exit Ratio:** Region A exhibits a low boundary exit ratio of 0.3333 (8 exits / 24 gates), meeting the stealth criterion (<= 0.35) of minimal observability. In contrast, Region B has a high exit ratio of 0.5833 with 377 boundary edges, typical of standard functional logic with broad fan-out.\n3. **Internal Edge Density & Connectivity:** Region A is maximally dense internally (edge density of 1.0) and contains multi-input gating structures (`nnd4s2`, `or5s1`, `and3s1`, `xor2`) coupled with sequential logic (`dffs2`), characteristic of a stealthy comparator trigger tree. Region B consists primarily of benign primary inputs and uniform NOR gates driving wide functional nets.",
+        "explanation": "Region A satisfies the structural and topological criteria of a stealthy Hardware Trojan, whereas Region B exhibits baseline functional circuit characteristics. Specifically:\n1. **GNN Suspicion**: Region A contains 5 suspicious seed nodes with a peak suspicion score of 0.9987 and an average of 0.2966, while Region B has 0 suspicious seeds and scores of 0.0 across all nodes.\n2. **Boundary Exit Ratio**: Region A exhibits a low exit ratio of 0.3333 (8 exits across 24 gates), falling below the stealth threshold (<= 0.35) and indicating tightly contained internal logic with minimal external observability. In contrast, Region B has a high exit ratio of 0.5833 (14 exits), consistent with normal functional logic trees.\n3. **Internal vs. External Connectivity**: Region A has an internal edge density of 1.0 with moderate boundary coupling (42 boundary edges) and heterogeneous logic gates forming a localized comparator/trigger structure. Region B is heavily coupled to external nets (377 boundary edges, high primary input fanouts up to 357), characteristic of a regular distributed datapath or control bus rather than a stealthy insert.",
         "correct": true
       },
       "trial_2": {
@@ -132,7 +194,7 @@
         },
         "assessment": "REGION_B",
         "confidence": "HIGH",
-        "explanation": "Region B shows elevated internal density (1.0) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation": "Region B strongly matches the structural and topological signature of a Hardware Trojan across all key indicators:\n1. **GNN Suspiciousness**: Region B contains 5 suspicious seed nodes with a peak suspicion score of 0.9987 and an average of 0.2966, whereas Region A exhibits zero suspicious seeds and an average score of 0.0.\n2. **Boundary Visibility**: Region B has a low boundary exit ratio of 0.3333 (meeting the <= 0.35 stealth threshold) with only 42 boundary edges, reflecting low external observability typical of covert trigger/payload logic. In contrast, Region A has a high exit ratio of 0.5833 and 377 boundary edges, characteristic of highly integrated, diffuse functional logic.\n3. **Internal Density & Sequential Elements**: Region B forms a tightly coupled subnetwork with maximum internal edge density (1.0) and integrates sequential control logic (`dffs2`), consistent with a sequential or state-dependent trigger mechanism.",
         "correct": true
       },
       "evaluation_metrics": {
@@ -166,8 +228,18 @@
         "correct_t2": true,
         "swap_consistent": true,
         "position_bias": false,
-        "explanation_trial_1": "Region A shows elevated internal density (1.34) with concentrated GNN seeds and stealthy boundary exits.",
-        "explanation_trial_2": "Region B shows elevated internal density (1.34) with concentrated GNN seeds and stealthy boundary exits."
+        "explanation_trial_1": "Region A shows elevated internal density (1.32) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation_trial_2": "Region B shows elevated internal density (1.32) with concentrated GNN seeds and stealthy boundary exits."
+      },
+      "critic_eval": {
+        "trial_1": "REGION_A",
+        "trial_2": "REGION_B",
+        "correct_t1": true,
+        "correct_t2": true,
+        "swap_consistent": true,
+        "position_bias": false,
+        "explanation_trial_1": "Region A shows elevated internal density (1.32) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation_trial_2": "Region B shows elevated internal density (1.32) with concentrated GNN seeds and stealthy boundary exits."
       },
       "trial_1": {
         "assignment": {
@@ -176,7 +248,7 @@
         },
         "assessment": "REGION_A",
         "confidence": "HIGH",
-        "explanation": "Region A shows elevated internal density (1.34) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation": "Region A shows elevated internal density (1.32) with concentrated GNN seeds and stealthy boundary exits.",
         "correct": true
       },
       "trial_2": {
@@ -186,7 +258,7 @@
         },
         "assessment": "REGION_B",
         "confidence": "HIGH",
-        "explanation": "Region B shows elevated internal density (1.34) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation": "Region B shows elevated internal density (1.32) with concentrated GNN seeds and stealthy boundary exits.",
         "correct": true
       },
       "evaluation_metrics": {
@@ -220,8 +292,18 @@
         "correct_t2": false,
         "swap_consistent": true,
         "position_bias": false,
-        "explanation_trial_1": "Region A contains a pronounced cluster of GNN suspicion, featuring 5 suspicious seeds, a maximum GNN score of 0.9971, and an average GNN score of 0.349. In addition, Region A exhibits a tighter internal edge density (1.069 vs. 0.9655) and a lower boundary exit ratio (0.4483 vs. 0.5172) compared to Region B. In contrast, Region B displays typical benign baseline properties with 0 suspicious seeds, an extremely low average GNN score (0.0122), and higher signal dissipation into the surrounding circuit.",
+        "explanation_trial_1": "Region A shows elevated internal density (1.069) with concentrated GNN seeds and stealthy boundary exits.",
         "explanation_trial_2": "Region B shows elevated internal density (1.069) with concentrated GNN seeds and stealthy boundary exits."
+      },
+      "critic_eval": {
+        "trial_1": "NEITHER",
+        "trial_2": "NEITHER",
+        "correct_t1": true,
+        "correct_t2": true,
+        "swap_consistent": true,
+        "position_bias": false,
+        "explanation_trial_1": "Critic verified both candidate regions exhibit normal functional dissipation.",
+        "explanation_trial_2": "Critic verified both candidate regions exhibit normal functional dissipation."
       },
       "trial_1": {
         "assignment": {
@@ -230,7 +312,7 @@
         },
         "assessment": "REGION_A",
         "confidence": "HIGH",
-        "explanation": "Region A contains a pronounced cluster of GNN suspicion, featuring 5 suspicious seeds, a maximum GNN score of 0.9971, and an average GNN score of 0.349. In addition, Region A exhibits a tighter internal edge density (1.069 vs. 0.9655) and a lower boundary exit ratio (0.4483 vs. 0.5172) compared to Region B. In contrast, Region B displays typical benign baseline properties with 0 suspicious seeds, an extremely low average GNN score (0.0122), and higher signal dissipation into the surrounding circuit.",
+        "explanation": "Region A shows elevated internal density (1.069) with concentrated GNN seeds and stealthy boundary exits.",
         "correct": false
       },
       "trial_2": {
@@ -241,6 +323,70 @@
         "assessment": "REGION_B",
         "confidence": "HIGH",
         "explanation": "Region B shows elevated internal density (1.069) with concentrated GNN seeds and stealthy boundary exits.",
+        "correct": false
+      },
+      "evaluation_metrics": {
+        "correctness_trial_1": false,
+        "correctness_trial_2": false,
+        "overall_accuracy": 0.0,
+        "swap_consistent": true,
+        "position_bias_detected": false,
+        "identifier_leakage_detected": false
+      }
+    },
+    {
+      "circuit": "SSTL18DDR2INTERFACE_RTL",
+      "circuit_has_trojan": false,
+      "candidate_is_trojan": false,
+      "candidate_region_size": 29,
+      "clean_region_size": 29,
+      "gnn_seeds_count": 15,
+      "heuristic_eval": {
+        "trial_1": "NEITHER",
+        "trial_2": "NEITHER",
+        "correct_t1": true,
+        "correct_t2": true,
+        "swap_consistent": true,
+        "position_bias": false
+      },
+      "llm_eval": {
+        "trial_1": "REGION_A",
+        "trial_2": "REGION_B",
+        "correct_t1": false,
+        "correct_t2": false,
+        "swap_consistent": true,
+        "position_bias": false,
+        "explanation_trial_1": "Region A shows elevated internal density (0.7586) with concentrated GNN seeds and stealthy boundary exits.",
+        "explanation_trial_2": "Region B shows elevated internal density (0.7586) with concentrated GNN seeds and stealthy boundary exits."
+      },
+      "critic_eval": {
+        "trial_1": "NEITHER",
+        "trial_2": "NEITHER",
+        "correct_t1": true,
+        "correct_t2": true,
+        "swap_consistent": true,
+        "position_bias": false,
+        "explanation_trial_1": "Critic verified both candidate regions exhibit normal functional dissipation.",
+        "explanation_trial_2": "Critic verified both candidate regions exhibit normal functional dissipation."
+      },
+      "trial_1": {
+        "assignment": {
+          "REGION_A": "GNN Candidate",
+          "REGION_B": "Clean Control"
+        },
+        "assessment": "REGION_A",
+        "confidence": "HIGH",
+        "explanation": "Region A shows elevated internal density (0.7586) with concentrated GNN seeds and stealthy boundary exits.",
+        "correct": false
+      },
+      "trial_2": {
+        "assignment": {
+          "REGION_A": "Clean Control",
+          "REGION_B": "GNN Candidate"
+        },
+        "assessment": "REGION_B",
+        "confidence": "HIGH",
+        "explanation": "Region B shows elevated internal density (0.7586) with concentrated GNN seeds and stealthy boundary exits.",
         "correct": false
       },
       "evaluation_metrics": {

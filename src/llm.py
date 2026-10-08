@@ -220,6 +220,25 @@ def run_llm(prompt: str) -> str:
         )
 
 
+def run_llm_critic(
+    prompt: str,
+    evidence_a: dict,
+    evidence_b: dict,
+) -> dict:
+    """
+    Executes the multi-turn Actor-Critic loop using the active LLM provider.
+    Falls back gracefully if network fails during any turn.
+    """
+    from critic import run_actor_critic_loop
+
+    return run_actor_critic_loop(
+        prompt=prompt,
+        evidence_a=evidence_a,
+        evidence_b=evidence_b,
+        llm_caller=run_llm,
+    )
+
+
 # ============================================================
 # Main
 # ============================================================

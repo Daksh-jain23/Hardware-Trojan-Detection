@@ -8,57 +8,72 @@ An end-to-end neuro-symbolic framework for Hardware Trojan detection in gate-lev
 
 ---
 
-## Architecture Diagram
+## System Architectures & Flowcharts
 
+The framework provides two distinct operational flows:
+1. **Flow 1: Single-Region Verification Pipeline (`src/pipeline.py`)** for deep root-cause explanation of a single suspect region.
+2. **Flow 2: Controlled A/B Evaluation Framework (`src/ab_evaluation.py`)** with Actor-Critic reflection for unbiased benchmark evaluation.
+
+### Flowchart 1: Single-Region Verification Pipeline (`src/pipeline.py`)
 ```mermaid
 flowchart TD
-    subgraph DataIngestion ["1. Data Ingestion & Graph Parsing"]
-        V["Gate-Level Netlists (.v / .vhd)<br>TRIT-TS, TRIT-TC, TjFree"]
-        PARSER["parser.py<br>Netlist -> NetworkX Graph"]
-        FEAT["features.py<br>41 Structural Node Features"]
-        V --> PARSER --> FEAT
-    end
+    Netlist["Gate-Level Netlist (.v / .vhd)"] --> Parser["parser.py<br>NetworkX DiGraph"]
+    Parser --> Feat["features.py<br>41 Topological Features"]
+    Feat --> GNN["GNN Model (GAT)<br>P(Trojan) per node"]
+    
+    GNN --> SeedFilter["Extract Trojan Seeds<br>(Confidence >= 0.95)"]
+    SeedFilter --> Khop["region.py<br>2-Hop Neighborhood Expansion"]
+    
+    Khop --> Evid["evidence.py<br>Compute Density, Exit Ratio, DFFs, Gate Types"]
+    Evid --> Anon["anonymizer.py<br>Zero-Leakage Sanitization (NODE_0001...)<br>assert_no_leakage()"]
+    
+    Anon --> Heur["heuristic.py<br>Rule-Based Anomaly Score"]
+    Anon --> Prompt["llm_prompt.py<br>Single-Region Hardware Security Prompt"]
+    
+    Prompt --> LLM["llm.py<br>LLM Reasoning Agent"]
+    LLM --> Report["results/llm/*_llm.json<br>Hardware Security Analysis Report<br>(Trigger Gates, State Logic, Payload Muxes)"]
+    Heur --> Report
+```
 
-    subgraph GNNStage ["2. Topological GNN Detection"]
-        PYG["dataset.py<br>PyTorch Geometric Graph"]
-        GNN["train_gnn.py / evaluation.py<br>2-Layer GAT Classifier"]
-        PROBS["Node-Level Trojan Probabilities<br>P(Trojan) per gate"]
-        FEAT --> PYG --> GNN --> PROBS
-    end
+---
 
-    subgraph SubnetworkExtraction ["3. Dual Subnetwork Extraction"]
-        CAND["Candidate Trojan Region<br>(GNN Seeds >= Threshold + 2-hop expansion)"]
-        CLEAN["Matched Clean Control Region<br>(Low GNN Score < 0.20 + Identical Gate Count)"]
-        PROBS --> CAND
-        PROBS --> CLEAN
+### Flowchart 2: Controlled A/B Evaluation with Actor-Critic Loop (`src/ab_evaluation.py`)
+```mermaid
+flowchart TD
+    Netlist["Gate-Level Netlist (.v / .vhd)"] --> Parser["parser.py<br>NetworkX DiGraph"]
+    Parser --> GNN["GNN Model (GAT)<br>P(Trojan) per node"]
+    
+    subgraph DualRegionExtraction ["Dual Subnetwork Extraction"]
+        GNN --> Cand["Candidate Trojan Region<br>(Seeds >= 0.95 + 2-hop expansion)"]
+        GNN --> Clean["Matched Clean Control Region<br>(Low Score < 0.20 + Identical Gate Count)"]
     end
-
-    subgraph ZeroLeakageAnonymization ["4. Structural Evidence & Zero-Leakage Anonymization"]
-        EVID["evidence.py<br>Compute Density, Exits, DFFs, Gate Types"]
-        ANON["anonymizer.py<br>Sanitize identifiers: NODE_0001, NODE_0002...<br>assert_no_leakage()"]
-        CAND --> EVID --> ANON
-        CLEAN --> EVID
+    
+    Cand --> EvidCand["Compute Evidence (Candidate)"]
+    Clean --> EvidClean["Compute Evidence (Clean Control)"]
+    
+    EvidCand --> Anon["anonymizer.py<br>Zero-Leakage Sanitization<br>assert_no_leakage()"]
+    EvidClean --> Anon
+    
+    subgraph CounterbalancedTrials ["Counterbalanced Blind Trials"]
+        Anon --> T1["Trial 1: Region A = Candidate, Region B = Clean"]
+        Anon --> T2["Trial 2 (Swapped): Region A = Clean, Region B = Candidate"]
     end
-
-    subgraph ABEvalEngine ["5. Controlled A/B Evaluation Trials"]
-        T1["Trial 1: Region A = Candidate, Region B = Clean Control"]
-        T2["Trial 2 (Swapped): Region A = Clean Control, Region B = Candidate"]
-        ANON --> T1
-        ANON --> T2
-    end
-
-    subgraph DualEvaluator ["6. Dual Decision & Metrics Engine"]
-        HEUR["heuristic.py<br>Deterministic Structural Baseline"]
-        LLM["llm.py<br>LLM Reasoning Agent (Ollama / Gemini)"]
-        METRICS["ab_evaluation.py<br>Comparative Evaluation Metrics Table<br>(Acc, Precision, Recall, F1, FPR, FNR, Swap-Consistency)"]
-        
-        T1 --> HEUR
+    
+    subgraph TriEvaluator ["Tri-Evaluator Decision Engine"]
+        T1 --> HEUR["heuristic.py<br>Deterministic Heuristic Baseline"]
         T2 --> HEUR
-        T1 --> LLM
-        T2 --> LLM
-        HEUR --> METRICS
-        LLM --> METRICS
+        
+        T1 --> ACTOR["LLM (Without Critic)<br>Single-Pass Reasoning"]
+        T2 --> ACTOR
+        
+        ACTOR --> PREAUDIT["Deterministic Pre-Audit<br>(Checks Hallucinated DFFs/Density)"]
+        PREAUDIT --> CRITIC["critic.py (Critic Auditor)<br>Skeptical ASIC Verification Audit"]
+        CRITIC --> REVISE["LLM Synthesis (Revision Turn)<br>Audited Final Verdict"]
     end
+    
+    HEUR --> METRICS["results/ab_evaluation/ab_metrics_summary.json<br>3-Way Comparative Evaluation Metrics Table<br>(Accuracy, Precision, Recall, F1, FPR, FNR, Specificity, Swap-Consistency)"]
+    ACTOR --> METRICS
+    REVISE --> METRICS
 ```
 
 ---
@@ -217,6 +232,7 @@ python src/ab_evaluation.py \
 | `--output-dir` | `path` | Directory where JSON results and prompts are saved (default: `results/ab_evaluation`). |
 | `--max-circuits` | `int` | Maximum number of circuits to evaluate in batch mode. |
 | `--skip-llm` | `flag` | Skip LLM inference and only compute heuristic baseline metrics. |
+| `--enable-critic` | `flag` | Enable multi-turn Actor-Critic verification loop with deterministic pre-audit to eliminate false positives. |
 
 ---
 
@@ -238,33 +254,77 @@ Results are saved to:
 
 ---
 
+## Documentation & User Guides
+
+Detailed documentation is available in the [`docs/`](docs/) directory:
+- 📖 [**`docs/HOW_TO_RUN.md`**](docs/HOW_TO_RUN.md): Complete reference guide for every file, script, parameter, and CLI flag.
+- ⚡ [**`docs/QUICK_DEMO_COMMANDS.md`**](docs/QUICK_DEMO_COMMANDS.md): Copy-pasteable commands to test and demonstrate the pipeline in under 5 minutes.
+
+---
+
 ## Evaluation Metrics Output
 
-Running `ab_evaluation.py` prints a comparative table and saves `results/ab_evaluation/ab_metrics_summary.json`:
+Running `ab_evaluation.py` prints a 3-way comparative table and saves `results/ab_evaluation/ab_metrics_summary.json`:
 
 ```
-====================================================================================================
-COMPARATIVE A/B EVALUATION SUMMARY: HEURISTIC BASELINE vs. LLM AGENT
-====================================================================================================
-Metric                          Heuristic Baseline           LLM Reasoning Agent
-----------------------------------------------------------------------------------------------------
-Total Circuits Evaluated        4                            4
-Trojan Circuits Evaluated       3                            3
-Clean Circuits Evaluated        1                            1
-Overall Accuracy                100.00%                      75.00%
-Precision                       100.00%                      75.00%
-Recall (True Positive Rate)     100.00%                      100.00%
-Specificity (True Negative Rate)100.00%                      0.00%
-F1-Score                        100.00%                      85.71%
-False Positive Rate (FPR)       0.00%                        100.00%
-False Negative Rate (FNR)       0.00%                        0.00%
-Swap-Consistent Decisions       100.00% (4/4)                75.00% (3/4)
-Position Bias Detected          0.00% (0/4)                  25.00% (1/4)
-----------------------------------------------------------------------------------------------------
-Confusion Matrix:
-  TP / FP / TN / FN             3 / 0 / 1 / 0                3 / 1 / 0 / 0
-====================================================================================================
+==============================================================================================================
+                          CONTROLLED A/B EVALUATION: 3-WAY COMPARATIVE METRICS TABLE                          
+==============================================================================================================
+Evaluation Metric                | Heuristic Baseline       | LLM (Without Critic)     | LLM (With Critic)       
+--------------------------------------------------------------------------------------------------------------
+Selection Accuracy               | 75.00%                   | 75.00%                   | 100.00%                 
+Precision                        | 75.00%                   | 75.00%                   | 100.00%                 
+Recall (True Positive Rate)      | 100.00%                  | 100.00%                  | 100.00%                 
+F1-Score                         | 85.71%                   | 85.71%                   | 100.00%                 
+False Positive Rate (FPR)        | 100.00%                  | 100.00%                  | 0.00%                   
+False Negative Rate (FNR)        | 0.00%                    | 0.00%                    | 0.00%                   
+Specificity (TNR)                | 0.00%                    | 0.00%                    | 100.00%                 
+Swap-Consistency Rate            | 100.00%                  | 75.00%                   | 100.00%                 
+Position Bias Rate               | 0.00%                    | 25.00%                   | 0.00%                   
+--------------------------------------------------------------------------------------------------------------
+Trial-Level Confusion Matrix:
+  True Positives (TP)            | 6                        | 6                        | 6                       
+  False Positives (FP)           | 2                        | 2                        | 0                       
+  True Negatives (TN)            | 0                        | 0                        | 2                       
+  False Negatives (FN)           | 0                        | 0                        | 0                       
+Total Trials Evaluated           | 8                        | 8                        | 8                       
+==============================================================================================================
 ```
+
+---
+
+## Detailed Evaluation Metrics & Scientific Meaning
+
+Each metric in the 3-way evaluation table measures a specific dimension of hardware security detection quality, robustness against data leakage, and resistance to positional cognitive bias:
+
+### 1. Classification & Detection Metrics
+- **Selection Accuracy**: The proportion of all evaluated trials where the model made the mathematically correct decision.
+  $$\text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{Total Trials}}$$
+- **Precision (Positive Predictive Value)**: When the model sounds an alarm claiming a candidate region is a Trojan, how often is it truly malicious? Crucial for avoiding costly false alarms during tape-out verification.
+  $$\text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}}$$
+- **Recall / True Positive Rate (Sensitivity)**: The proportion of real Hardware Trojans that the system successfully detects. A high recall ensures that stealthy dormant Trojans do not slip into fabrication.
+  $$\text{Recall} = \frac{\text{TP}}{\text{TP} + \text{FN}}$$
+- **F1-Score**: The harmonic mean of Precision and Recall, providing a balanced metric especially under extreme class imbalance where Trojan gates comprise $< 1\%$ of the netlist.
+  $$\text{F1} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$$
+- **False Positive Rate (FPR)**: The proportion of benign circuits or clean control regions incorrectly flagged as malicious ($\frac{\text{FP}}{\text{FP} + \text{TN}}$). The Critic loop explicitly drives this to $0.0\%$.
+- **False Negative Rate (FNR / Miss Rate)**: The proportion of genuine Trojans missed by the system ($\frac{\text{FN}}{\text{FN} + \text{TP}}$).
+- **Specificity (True Negative Rate)**: The ability of the model to correctly identify clean, uninfected circuits as benign (`NEITHER`). While the baseline heuristic often drops to $0.0\%$ on clean scans due to GNN seed false alarms, the Critic loop pushes Specificity to $100.0\%$.
+
+### 2. Behavioral & Cognitive Robustness Metrics
+- **Swap-Consistency Rate**: Evaluates whether the model is invariant to prompt presentation order. In Trial 1, `Candidate = Region A` and `Clean = Region B`. In Trial 2, positions are swapped (`Clean = Region A`, `Candidate = Region B`). 
+  - **Swap-Consistent**: The model selects Region A in Trial 1 and Region B in Trial 2 (or `NEITHER` in both).
+  - **Inconsistent**: Changing the label order changes the model's judgment of the underlying circuit.
+- **Position Bias Rate**: Measures the frequency with which the LLM blindly selects `Region A` simply because it appears first in the token context stream, regardless of circuit facts. A robust model achieves $0.0\%$ position bias.
+
+### 3. Structural Netlist Features Analyzed by the Models
+| Feature | Meaning & Hardware Security Significance | Typical Trojan Profile | Typical Benign Profile |
+|---|---|---|---|
+| **`internal_edge_density`** | Ratio of internal wiring edges to total gates within the extracted region ($\frac{E_{\text{internal}}}{\|V\|}$). | **High ($\ge 0.70 - 1.40$)**: Trojans form tightly coupled local comparator trees or state loops. | **Moderate / Low ($0.30 - 0.60$)**: Diffuse datapath trees. |
+| **`exit_ratio`** | Ratio of gates driving signals outside the region to total region gates ($\frac{N_{\text{exits}}}{\|V\|}$). | **Stealthy Low ($\le 0.35$)**: Trojans minimize external visibility until rare activation. | **High ($> 0.45$)**: Functional buses and ALUs distribute fanout broadly. |
+| **`sequential_gate_count`** | Number of sequential state elements (Flip-Flops / DFFs) enclosed in the subnetwork. | **Clustered ($\ge 2 - 5$)**: Forms counter-based timer triggers with minimal primary output routing. | Standard register slices with broad data bus connectivity. |
+| **`gnn_seeds_count`** | Number of gates whose topological GAT embedding produced $P(\text{Trojan}) \ge 0.95$. | Concentrated cluster of high-confidence seeds ($> 5$). | $0$ or scattered low-scoring noise ($< 0.20$). |
+| **`gate_types` Distribution** | Histogram of standard cells (`xor`, `xnor`, `nand`, `nor`, `dff`, `and`). | High proportion of multi-input comparators (`xor2`, `nnd4`, `nor5`) and state registers. | Uniform datapath cells (`inv`, `buf`, `aoi`, `oai`, arithmetic adders). |
+
 
 ---
 

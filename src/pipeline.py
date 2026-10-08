@@ -154,6 +154,7 @@ def run_circuit_pipeline(
     heuristic_threshold: float = DEFAULT_HEURISTIC_THRESHOLD,
     llm_provider: str = "ollama",
     run_ab_test: bool = False,
+    enable_critic: bool = False,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
 ) -> Dict[str, Any]:
     """
@@ -242,11 +243,35 @@ def run_circuit_pipeline(
     print(f"      Heuristic Standalone    : {heuristic_circuit['decision']} (Score: {heuristic_circuit['score']:.4f})")
 
     # --------------------------------------------------------
-    # Stage 6: LLM Reasoning Agent Execution
+    # Stage 6: LLM Reasoning Agent Execution (with optional Critic)
     # --------------------------------------------------------
-    print(f"[6/6] Invoking LLM Reasoning Agent ({llm_provider})...")
-    llm_result = run_llm_reasoning(prompt_text, provider=llm_provider, offline_fallback=True)
-    print(f"      LLM Verdict    : {llm_result['decision']} (Confidence: {llm_result['confidence']})")
+    critic_result = None
+    if enable_critic:
+        print(f"[6/6] Invoking Multi-Turn Actor-Critic Reasoning Engine ({llm_provider})...")
+        from critic import run_single_circuit_critic_loop
+        from llm import extract_confidence, extract_decision
+
+        c_loop = run_single_circuit_critic_loop(
+            prompt=prompt_text,
+            evidence=anonymized_evidence,
+            llm_caller=lambda p: run_llm_reasoning(p, provider=llm_provider, offline_fallback=True)["response"],
+        )
+        final_resp = c_loop.get("final_response", "")
+        llm_result = {
+            "status": "success",
+            "provider": llm_provider,
+            "decision": extract_decision(final_resp),
+            "confidence": extract_confidence(final_resp),
+            "response": final_resp,
+            "critic_feedback": c_loop.get("critic_feedback", ""),
+            "fact_check_warnings": c_loop.get("fact_check_warnings", []),
+            "turns_completed": c_loop.get("turns_completed", 1),
+        }
+        print(f"      Critic-Audited Verdict : {llm_result['decision']} (Confidence: {llm_result['confidence']})")
+    else:
+        print(f"[6/6] Invoking LLM Reasoning Agent ({llm_provider})...")
+        llm_result = run_llm_reasoning(prompt_text, provider=llm_provider, offline_fallback=True)
+        print(f"      LLM Verdict    : {llm_result['decision']} (Confidence: {llm_result['confidence']})")
 
     # Optional: Controlled A/B Evaluation
     ab_result = None
@@ -259,6 +284,7 @@ def run_circuit_pipeline(
                 hops=2,
                 output_dir=output_dir / "ab",
                 skip_llm=False,
+                enable_critic=enable_critic,
             )
             print(f"    Trial 1 (Trojan=A, Clean=B) : {ab_result['trial_1']['assessment']}")
             print(f"    Trial 2 (Clean=A, Trojan=B) : {ab_result['trial_2']['assessment']}")
@@ -399,6 +425,11 @@ def main():
         help="Also execute Controlled A/B Evaluation protocol.",
     )
     parser.add_argument(
+        "--enable-critic",
+        action="store_true",
+        help="Enable multi-turn Actor-Critic verification loop with deterministic fact-checking.",
+    )
+    parser.add_argument(
         "--max-circuits",
         type=int,
         default=None,
@@ -446,6 +477,7 @@ def main():
                 heuristic_threshold=args.heuristic_threshold,
                 llm_provider=args.llm_provider,
                 run_ab_test=args.ab_test,
+                enable_critic=args.enable_critic,
                 output_dir=args.output_dir,
             )
             results.append(res)
