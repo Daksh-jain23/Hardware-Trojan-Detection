@@ -41,14 +41,14 @@ from dotenv import load_dotenv
 # "ollama"  -> local Qwen3
 # "gemini"  -> Gemini API
 #
-ACTIVE_PROVIDER = "gemini"
+ACTIVE_PROVIDER = "ollama"
 
 
 # ------------------------------------------------------------
 # Ollama configuration
 # ------------------------------------------------------------
 
-OLLAMA_MODEL = "qwen3:4b"
+OLLAMA_MODEL = "qwen3:1.7b"
 
 
 # ------------------------------------------------------------
@@ -56,7 +56,7 @@ OLLAMA_MODEL = "qwen3:4b"
 # ------------------------------------------------------------
 
 # Change this if you want to test another Gemini model.
-GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 
 # ============================================================
@@ -134,18 +134,57 @@ def extract_confidence(text: str) -> str:
 
 
 # ============================================================
+# Trojan Type extraction
+# ============================================================
+
+VALID_TROJAN_TYPES = {
+    "COMBINATIONAL",
+    "SEQUENTIAL_COUNTER",
+    "FSM",
+    "NONE",
+    "UNCERTAIN",
+}
+
+
+def extract_trojan_type(text: str) -> str:
+    """Extract Trojan architectural type from LLM response."""
+    match = re.search(
+        r"TROJAN_TYPE\s*:\s*(COMBINATIONAL|SEQUENTIAL_COUNTER|FSM|NONE|UNCERTAIN)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        return match.group(1).upper()
+
+    # Fallback heuristics on response text
+    t_upper = text.upper()
+    if "FSM" in t_upper or "STATE MACHINE" in t_upper:
+        return "FSM"
+    elif "COUNTER" in t_upper or "SEQUENTIAL" in t_upper:
+        return "SEQUENTIAL_COUNTER"
+    elif "COMBINATIONAL" in t_upper or "TRIGGER TREE" in t_upper:
+        return "COMBINATIONAL"
+    elif "NORMAL" in t_upper or "BENIGN" in t_upper:
+        return "NONE"
+
+    return "UNCERTAIN"
+
+
+# ============================================================
 # Ollama
 # ============================================================
 
 def run_ollama(prompt: str) -> str:
 
+    # num_ctx: 4096 keeps the KV-cache inside 4GB GPU VRAM
+    # (avoiding slow CPU memory swapping that caused 30-min runtimes)
     response = ollama.generate(
         model=OLLAMA_MODEL,
         prompt=prompt,
         options={
             "temperature": 0.0,
             "seed": 42,
-            "num_ctx": 32768,
+            "num_ctx": 4096,
         },
     )
 

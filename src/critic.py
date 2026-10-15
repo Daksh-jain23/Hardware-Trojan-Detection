@@ -63,37 +63,57 @@ def audit_actor_factual_claims(
             )
 
     # Check internal edge density claims
-    density_matches = re.findall(r"density\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)", text_lower)
+    density_matches = re.findall(r"density\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
     if density_matches:
-        claimed_density = float(density_matches[0])
+        val_str, is_pct = density_matches[0]
+        claimed_density = float(val_str)
+        # Normalize percentage claims (e.g. 78% -> 0.78), but keep raw ratios (e.g. 1.38)
+        if is_pct == "%" or (claimed_density > 10.0 and not is_pct):
+            claimed_density /= 100.0
+
         actual_density_a = float(evidence_a.get("internal_edge_density", 0.0))
         actual_density_b = float(evidence_b.get("internal_edge_density", 0.0))
         if target_region == "A" and abs(claimed_density - actual_density_a) > 0.15:
             warnings.append(
-                f"[FACT-CHECK]: Claimed internal edge density of {claimed_density} for Region A, "
-                f"but actual calculated density is {actual_density_a}."
+                f"[FACT-CHECK]: Claimed internal edge density of {claimed_density:.2f} for Region A, "
+                f"but actual calculated density is {actual_density_a:.2f}."
             )
         elif target_region == "B" and abs(claimed_density - actual_density_b) > 0.15:
             warnings.append(
-                f"[FACT-CHECK]: Claimed internal edge density of {claimed_density} for Region B, "
-                f"but actual calculated density is {actual_density_b}."
+                f"[FACT-CHECK]: Claimed internal edge density of {claimed_density:.2f} for Region B, "
+                f"but actual calculated density is {actual_density_b:.2f}."
             )
 
     # Check for boundary exit ratio claims
-    exit_matches = re.findall(r"exit\s*ratio\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)", text_lower)
+    exit_matches = re.findall(r"exit\s*ratio\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
     if exit_matches:
-        claimed_exit = float(exit_matches[0])
+        val_str, is_pct = exit_matches[0]
+        claimed_exit = float(val_str)
+        if is_pct == "%" or claimed_exit > 1.0:
+            claimed_exit /= 100.0
+
         actual_exit_a = float(evidence_a.get("exit_ratio", 1.0))
         actual_exit_b = float(evidence_b.get("exit_ratio", 1.0))
         if target_region == "A" and abs(claimed_exit - actual_exit_a) > 0.15:
             warnings.append(
-                f"[FACT-CHECK]: Claimed exit ratio {claimed_exit} for Region A, "
-                f"but actual exit ratio is {actual_exit_a}."
+                f"[FACT-CHECK]: Claimed exit ratio {claimed_exit:.2f} for Region A, "
+                f"but actual exit ratio is {actual_exit_a:.2f}."
             )
         elif target_region == "B" and abs(claimed_exit - actual_exit_b) > 0.15:
             warnings.append(
-                f"[FACT-CHECK]: Claimed exit ratio {claimed_exit} for Region B, "
-                f"but actual exit ratio is {actual_exit_b}."
+                f"[FACT-CHECK]: Claimed exit ratio {claimed_exit:.2f} for Region B, "
+                f"but actual exit ratio is {actual_exit_b:.2f}."
+            )
+
+    # Check for sequential / FSM hallucination on combinational logic
+    if "fsm" in text_lower or "counter" in text_lower:
+        actual_dff_a = evidence_a.get("sequential_gate_count", 0)
+        actual_dff_b = evidence_b.get("sequential_gate_count", 0)
+        target_dff = actual_dff_a if target_region == "A" else (actual_dff_b if target_region == "B" else min(actual_dff_a, actual_dff_b))
+        if target_dff == 0:
+            warnings.append(
+                f"[FACT-CHECK]: Claimed sequential state counter/FSM Trojan for Region {target_region or 'candidate'}, "
+                f"but ground-truth evidence indicates exactly 0 sequential flip-flops (pure combinational logic)."
             )
 
     return warnings
@@ -162,18 +182,33 @@ RECOMMENDED_ASSESSMENT: <REGION_A | REGION_B | NEITHER>
 
 
 # ============================================================
-# 3. Actor Refinement Prompt Construction
+# 3. Actor Refinement Prompt Construction (Compact & Fast)
 # ============================================================
 
 def build_actor_refinement_prompt(
     original_prompt: str,
     actor_initial_response: str,
     critic_audit: str,
+    evidence_a: Dict[str, Any] | None = None,
+    evidence_b: Dict[str, Any] | None = None,
 ) -> str:
     """
-    Constructs the revision prompt for the Actor to synthesize the Critic's objections.
+    Constructs a streamlined revision prompt for the Actor to synthesize the Critic's objections.
+    Uses compact factual evidence rather than duplicating the entire multi-thousand-word initial prompt.
     """
-    prompt = f"""{original_prompt}
+    if evidence_a and evidence_b:
+        evidence_summary = f"""------------------------------------------------------------
+GROUND-TRUTH STRUCTURAL EVIDENCE SUMMARY:
+------------------------------------------------------------
+REGION A: Size={evidence_a.get('region_size')}, GNN Seeds={evidence_a.get('gnn_seeds_count', 0)}, Max GNN={evidence_a.get('max_gnn_score', 0.0)}, Density={evidence_a.get('internal_edge_density')}, Exits={evidence_a.get('region_exits_count')}, DFFs={evidence_a.get('sequential_gate_count')}
+REGION B: Size={evidence_b.get('region_size')}, GNN Seeds={evidence_b.get('gnn_seeds_count', 0)}, Max GNN={evidence_b.get('max_gnn_score', 0.0)}, Density={evidence_b.get('internal_edge_density')}, Exits={evidence_b.get('region_exits_count')}, DFFs={evidence_b.get('sequential_gate_count')}"""
+    else:
+        # Fallback to truncated original prompt if evidence dicts not passed
+        evidence_summary = original_prompt[:1200]
+
+    prompt = f"""You are revising your Hardware Trojan assessment in light of an audit critique.
+
+{evidence_summary}
 
 ------------------------------------------------------------
 YOUR INITIAL HYPOTHESIS:
@@ -187,6 +222,7 @@ SENIOR HARDWARE AUDITOR CRITIQUE:
 
 ------------------------------------------------------------
 REVISION TASK:
+------------------------------------------------------------
 Carefully review the auditor's critique and factual corrections.
 If the auditor showed that the logic can be explained by benign datapath functionality, or if both candidate regions lack genuine stealth, update your assessment to NEITHER or the appropriate region.
 
@@ -242,7 +278,13 @@ def run_actor_critic_loop(
         }
 
     # Turn 3: Actor Revision
-    refine_prompt = build_actor_refinement_prompt(prompt, initial_raw, critic_raw)
+    refine_prompt = build_actor_refinement_prompt(
+        original_prompt=prompt,
+        actor_initial_response=initial_raw,
+        critic_audit=critic_raw,
+        evidence_a=evidence_a,
+        evidence_b=evidence_b,
+    )
     assert_no_leakage(refine_prompt)
     try:
         final_raw = llm_caller(refine_prompt)
@@ -333,14 +375,22 @@ def build_single_circuit_actor_refinement_prompt(
     original_prompt: str,
     actor_initial_response: str,
     critic_audit: str,
+    evidence: Dict[str, Any] | None = None,
 ) -> str:
     """Prompt for Actor to refine single-circuit assessment based on Critic review."""
-    prompt = f"""{original_prompt.strip()}
+    if evidence:
+        norm_ev = _normalize_evidence(evidence)
+        ev_summary = (
+            f"Factual Evidence: Region Size={norm_ev.get('region_size')}, "
+            f"GNN Seeds={norm_ev.get('gnn_seeds_count')}, Density={norm_ev.get('internal_edge_density')}, "
+            f"Exits={norm_ev.get('region_exits_count')}, DFFs={norm_ev.get('sequential_gate_count')}"
+        )
+    else:
+        ev_summary = original_prompt[:800]
 
-============================================================
-MULTI-TURN VERIFICATION AUDIT REVIEW
-============================================================
-Your initial proposed report was audited by a Senior Hardware Verification Engineer.
+    prompt = f"""You are revising your single-circuit Hardware Trojan assessment in light of an auditor critique.
+
+{ev_summary}
 
 ------------------------------------------------------------
 YOUR INITIAL PROPOSAL:
@@ -354,11 +404,13 @@ SENIOR HARDWARE AUDITOR CRITIQUE:
 
 ------------------------------------------------------------
 REVISION TASK:
+------------------------------------------------------------
 Carefully review the auditor's critique and factual corrections.
 If the auditor demonstrated that the flagged logic can be explained by benign datapath functionality, or if the candidate region lacks genuine stealth, revise your decision to NORMAL. Otherwise, if the structural evidence confirms a localized stealthy trigger/payload, maintain SUSPICIOUS.
 
 Conclude with the exact required format:
 DECISION: <SUSPICIOUS | NORMAL>
+TROJAN_TYPE: <COMBINATIONAL | SEQUENTIAL_COUNTER | FSM | NONE>
 CONFIDENCE: <HIGH | MEDIUM | LOW>
 REASONING: <Final audited justification incorporating the auditor's findings>
 """

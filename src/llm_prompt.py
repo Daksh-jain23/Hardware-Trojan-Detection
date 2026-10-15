@@ -36,6 +36,7 @@ DEFAULT_OUTPUT_DIR = ROOT / "results" / "llm"
 MAX_REGION_NODES = 20
 MAX_REGION_EXITS = 15
 MAX_SEQUENTIAL_GATES = 15
+MAX_SEEDS = 12
 
 
 # ============================================================
@@ -247,7 +248,14 @@ def build_prompt(evidence: dict) -> str:
 
     seed_count = len(seeds)
 
-    compact_seeds = [compact_seed(seed) for seed in seeds]
+    # Cap displayed seeds to MAX_SEEDS to prevent prompt explosion on large netlists
+    displayed_seeds = seeds[:MAX_SEEDS]
+    compact_seeds = [compact_seed(seed) for seed in displayed_seeds]
+    if len(seeds) > MAX_SEEDS:
+        compact_seeds.append({
+            "notice": f"... ({len(seeds) - MAX_SEEDS} additional suspicious seeds omitted for conciseness; all crossed GNN threshold)",
+            "total_seed_count": len(seeds),
+        })
 
     # Deterministic facts: Python calculates these before the LLM sees them.
     gnn_facts = deterministic_gnn_facts(
@@ -639,6 +647,8 @@ REQUIRED OUTPUT FORMAT
 ============================================================
 
 DECISION: <SUSPICIOUS | NORMAL | UNCERTAIN>
+
+TROJAN_TYPE: <COMBINATIONAL | SEQUENTIAL_COUNTER | FSM | NONE>
 
 CONFIDENCE: <LOW | MEDIUM | HIGH>
 

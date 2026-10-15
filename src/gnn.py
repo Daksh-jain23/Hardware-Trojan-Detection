@@ -23,20 +23,19 @@ from torch_geometric.nn import GATConv
 
 class TrojanGNN(nn.Module):
     """
-    Graph Attention Network for Hardware Trojan gate localization.
+    3-Layer Residual Graph Attention Network for Hardware Trojan gate localization.
 
     Architecture:
-
-        41 input features
-              |
-           GAT layer
-          4 attention heads
-              |
-           GAT layer
-          2 attention heads
-              |
-        Linear classifier
-              |
+        Input features (53-dim)
+              │
+           GAT layer 1 (4 heads, 256-dim) + LayerNorm
+              │
+           GAT layer 2 (4 heads, 256-dim) + Residual (h1) + LayerNorm
+              │
+           GAT layer 3 (2 heads, 128-dim) + Residual Projection + LayerNorm
+              │
+        Linear classifier (128 → 1)
+              │
         Trojan logit
     """
 
@@ -50,11 +49,7 @@ class TrojanGNN(nn.Module):
 
         self.dropout = dropout
 
-        # First GAT layer.
-        #
-        # input_dim = 41
-        # 4 attention heads × 64 features
-        # output dimension = 256
+        # First GAT layer (input_dim -> hidden_dim * 4 = 256)
         self.gat1 = GATConv(
             in_channels=input_dim,
             out_channels=hidden_dim,
@@ -62,68 +57,74 @@ class TrojanGNN(nn.Module):
             concat=True,
             dropout=dropout,
         )
+        self.norm1 = nn.LayerNorm(hidden_dim * 4)
 
-        # Second GAT layer.
-        #
-        # Input = 64 × 4 = 256
-        # 2 attention heads × 64 features
-        # output dimension = 128
+        # Second GAT layer (256 -> 256) with direct residual addition
         self.gat2 = GATConv(
+            in_channels=hidden_dim * 4,
+            out_channels=hidden_dim,
+            heads=4,
+            concat=True,
+            dropout=dropout,
+        )
+        self.norm2 = nn.LayerNorm(hidden_dim * 4)
+
+        # Third GAT layer (256 -> 128)
+        self.gat3 = GATConv(
             in_channels=hidden_dim * 4,
             out_channels=hidden_dim,
             heads=2,
             concat=True,
             dropout=dropout,
         )
+        self.norm3 = nn.LayerNorm(hidden_dim * 2)
 
-        # Final node-level classifier.
-        #
-        # Each node now has 128 learned features.
-        # Output is ONE logit:
-        #
-        # positive -> suspicious / Trojan
-        # negative -> normal
+        # Residual projection from 256-dim to 128-dim
+        self.res_proj = nn.Linear(hidden_dim * 4, hidden_dim * 2)
+
+        # Final node-level classifier
         self.classifier = nn.Linear(hidden_dim * 2, 1)
 
     def forward(self, x, edge_index):
         """
         Parameters
         ----------
-        x : Tensor
-            Shape [num_nodes, input_dim]
-
-        edge_index : Tensor
-            Shape [2, num_edges]
+        x : Tensor [num_nodes, input_dim]
+        edge_index : Tensor [2, num_edges]
 
         Returns
         -------
-        Tensor
-            Shape [num_nodes]
-
+        Tensor [num_nodes]
             One Trojan logit per node.
         """
+        # Layer 1
+        h1 = self.gat1(x, edge_index)
+        h1 = F.elu(h1)
+        h1 = self.norm1(h1)
+        h1 = F.dropout(h1, p=self.dropout, training=self.training)
 
-        # First graph-attention layer
-        x = self.gat1(x, edge_index)
-        x = F.elu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        # Layer 2 with residual addition
+        h2 = self.gat2(h1, edge_index)
+        h2 = F.elu(h2 + h1)
+        h2 = self.norm2(h2)
+        h2 = F.dropout(h2, p=self.dropout, training=self.training)
 
-        # Second graph-attention layer
-        x = self.gat2(x, edge_index)
-        x = F.elu(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        # Layer 3 with projected residual addition
+        h3 = self.gat3(h2, edge_index)
+        h3 = F.elu(h3 + self.res_proj(h2))
+        h3 = self.norm3(h3)
+        h3 = F.dropout(h3, p=self.dropout, training=self.training)
 
         # Node-level Trojan score
-        logits = self.classifier(x)
+        logits = self.classifier(h3)
 
         return logits.squeeze(-1)
 
 
-def build_model(input_dim: int = 41) -> TrojanGNN:
+def build_model(input_dim: int = 53) -> TrojanGNN:
     """
     Convenience function for creating the model.
     """
-
     return TrojanGNN(input_dim=input_dim)
 
 

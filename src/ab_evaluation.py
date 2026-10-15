@@ -53,7 +53,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from anonymizer import anonymize_evidence, assert_no_leakage
-from dataset import graph_to_pyg
+from dataset import graph_to_pyg, get_family
 from evaluation import load_model, predict_graph
 from features import compute_node_features
 from llm import run_llm, run_llm_critic
@@ -503,7 +503,7 @@ def run_controlled_ab_test(
 
     # 2. GNN Inference to obtain node probabilities
     if model is None:
-        model, _ = load_model(DEFAULT_CHECKPOINT, input_dim=41)
+        model, _ = load_model(DEFAULT_CHECKPOINT, input_dim=None)
 
     pyg_data = graph_to_pyg(graph)
     probabilities, labels = predict_graph(model, pyg_data)
@@ -864,6 +864,71 @@ def print_ab_metrics_table(cohort_results: List[Dict[str, Any]]):
     print(f"Summary comparative metrics saved to: {summary_file.resolve()}\n")
 
 
+def select_stratified_cohort(
+    all_files: List[Path],
+    max_circuits: Optional[int] = None,
+    seed: int = 42,
+) -> List[Path]:
+    """
+    Select a balanced, representative cohort of circuits across all families and clean designs.
+    Ensures negative controls (clean circuits) are represented alongside Trojan variants.
+    """
+    if not max_circuits or len(all_files) <= max_circuits:
+        return all_files
+
+    rng = random.Random(seed)
+
+    clean_files = [f for f in all_files if "original_designs" in f.parts or "original" in f.name.lower()]
+    trojan_files = [f for f in all_files if f not in clean_files]
+
+    family_to_trojans: Dict[str, List[Path]] = {}
+    for f in trojan_files:
+        fam = get_family(f)
+        family_to_trojans.setdefault(fam, []).append(f)
+
+    family_to_cleans: Dict[str, List[Path]] = {}
+    for f in clean_files:
+        fam = get_family(f)
+        family_to_cleans.setdefault(fam, []).append(f)
+
+    all_families = sorted(set(list(family_to_trojans.keys()) + list(family_to_cleans.keys())))
+
+    # Allocate clean controls: target ~15-25% clean circuits
+    num_clean_desired = max(1, min(len(clean_files), max_circuits // 5)) if clean_files else 0
+    selected: List[Path] = []
+
+    # Pick clean circuits across families
+    if clean_files and num_clean_desired > 0:
+        clean_candidates = []
+        for fam in all_families:
+            if fam in family_to_cleans:
+                clean_candidates.append(rng.choice(family_to_cleans[fam]))
+        rng.shuffle(clean_candidates)
+        selected.extend(clean_candidates[:num_clean_desired])
+
+    # Pick Trojan circuits evenly across families (round-robin)
+    remaining_budget = max_circuits - len(selected)
+    shuffled_fams = {fam: rng.sample(files, len(files)) for fam, files in family_to_trojans.items()}
+
+    while remaining_budget > 0:
+        added_in_round = 0
+        for fam in all_families:
+            if fam in shuffled_fams and shuffled_fams[fam]:
+                selected.append(shuffled_fams[fam].pop(0))
+                remaining_budget -= 1
+                added_in_round += 1
+                if remaining_budget <= 0:
+                    break
+        if added_in_round == 0:
+            break
+
+    if remaining_budget > 0:
+        remaining_pool = [f for f in all_files if f not in selected]
+        selected.extend(rng.sample(remaining_pool, min(len(remaining_pool), remaining_budget)))
+
+    return selected
+
+
 # ============================================================
 # CLI
 # ============================================================
@@ -888,8 +953,9 @@ def main():
     parser.add_argument(
         "--data-dir",
         type=Path,
+        nargs="+",
         default=None,
-        help="Directory to scan for netlists (e.g. data/TRIT-TS or data/TRIT-TC).",
+        help="Directory or directories to scan for netlists (e.g. data/TRIT-TS data/TRIT-TC).",
     )
     parser.add_argument(
         "--checkpoint",
@@ -908,6 +974,11 @@ def main():
         type=int,
         default=None,
         help="Maximum number of circuits to evaluate in batch mode.",
+    )
+    parser.add_argument(
+        "--stratified",
+        action="store_true",
+        help="Sample circuits evenly across all circuit families and clean negative controls.",
     )
     parser.add_argument(
         "--hops",
@@ -940,8 +1011,11 @@ def main():
     elif args.files:
         targets.extend(args.files)
     elif args.data_dir:
-        targets = sorted(args.data_dir.rglob("*.v"))
-        if args.max_circuits:
+        for d in args.data_dir:
+            targets.extend(sorted(Path(d).rglob("*.v")))
+        if args.stratified and args.max_circuits:
+            targets = select_stratified_cohort(targets, max_circuits=args.max_circuits)
+        elif args.max_circuits:
             targets = targets[:args.max_circuits]
     else:
         default_ref = ROOT / "data" / "TRIT-TS" / "s13207_T421" / "s13207_T421.v"
@@ -950,8 +1024,9 @@ def main():
         else:
             parser.error("Please provide --circuit, --files, or --data-dir.")
 
+    print(f"Cohort selected: {len(targets)} circuits.")
     print("Loading GNN model for candidate extraction...")
-    model, _ = load_model(args.checkpoint, input_dim=41)
+    model, _ = load_model(args.checkpoint, input_dim=None)
 
     cohort_results = []
     for idx, circuit_path in enumerate(targets, start=1):

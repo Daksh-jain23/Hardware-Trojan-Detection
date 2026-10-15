@@ -86,15 +86,14 @@ DEFAULT_HEURISTIC_THRESHOLD = 0.65
 
 def load_model(
     checkpoint_path: Path = CHECKPOINT,
-    input_dim: int = 41,
+    input_dim: int | None = None,
 ):
     """
     Load the trained TrojanGNN from checkpoint.
+    Auto-detects input_dim from checkpoint metadata or weight dimensions.
     """
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint not found:\n{checkpoint_path}")
-
-    model = TrojanGNN(input_dim=input_dim).to(DEVICE)
 
     checkpoint = torch.load(
         checkpoint_path,
@@ -112,7 +111,21 @@ def load_model(
     else:
         raise RuntimeError("Unsupported checkpoint format.")
 
-    model.load_state_dict(state_dict, strict=True)
+    # Auto-detect input dimension if not explicitly passed
+    if input_dim is None:
+        if isinstance(checkpoint, dict) and "input_dim" in checkpoint:
+            input_dim = int(checkpoint["input_dim"])
+        else:
+            for k, v in state_dict.items():
+                if "gat1" in k and hasattr(v, "shape") and len(v.shape) == 2:
+                    input_dim = int(v.shape[1])
+                    break
+        if input_dim is None:
+            from features import FEATURE_DIM
+            input_dim = FEATURE_DIM
+
+    model = TrojanGNN(input_dim=input_dim).to(DEVICE)
+    model.load_state_dict(state_dict, strict=False)
     model.eval()
 
     return model, checkpoint
@@ -674,7 +687,7 @@ def main():
     print(f"Checkpoint : {args.checkpoint.resolve()}")
 
     # 1. Load GNN Model
-    model, checkpoint = load_model(args.checkpoint, input_dim=41)
+    model, checkpoint = load_model(args.checkpoint, input_dim=None)
 
     threshold = args.threshold
     if threshold is None:

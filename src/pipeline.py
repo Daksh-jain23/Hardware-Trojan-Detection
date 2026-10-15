@@ -447,7 +447,7 @@ def main():
     # Load GNN Model once
     from evaluation import load_model
     print("Initializing TrojanGNN model...")
-    model, _ = load_model(args.checkpoint, input_dim=41)
+    model, _ = load_model(args.checkpoint, input_dim=None)
 
     # Determine files to process
     targets: List[Path] = []

@@ -26,6 +26,10 @@ GATE_TYPES = [
     "buf",
     "xor",
     "xnor",
+    "dff",
+    "latch",
+    "mux",
+    "complex",  # aoi, oai
     "PI",
     "PO",
 ]
@@ -35,14 +39,65 @@ TYPE_INDEX = {gate_type: i for i, gate_type in enumerate(GATE_TYPES)}
 N_TYPES = len(GATE_TYPES)
 
 
+def canonical_gate_type(raw_type: str) -> str:
+    """
+    Map raw cell library names to canonical functional gate types.
+    Handles standard cell libraries (SAED, TSMC, Nangate, OSU, generic).
+    Examples:
+        nor5s1 -> nor
+        nnd2s3 -> nand
+        xor2s1 -> xor
+        xnr2s1 -> xnor
+        dffs2, dffles2 -> dff
+        lat*, latch -> latch
+        mxi21s3, mux2 -> mux
+        aoi22s2, aoi23s2 -> complex
+        oai21s3, oai22s2 -> complex
+        i1s1, inv1, ib1s2 -> not
+        hi1s1, buf1 -> buf
+        PI, PO -> PI, PO
+    """
+    if not raw_type:
+        return "buf"
+    t = str(raw_type).strip().lower()
+    if t in ("pi", "po"):
+        return t.upper()
+    if t.startswith("nnd") or t.startswith("nand"):
+        return "nand"
+    if t.startswith("nor"):
+        return "nor"
+    if t.startswith("and"):
+        return "and"
+    if t.startswith("or") and not t.startswith("oai"):
+        return "or"
+    if t.startswith("xor"):
+        return "xor"
+    if t.startswith("xnr") or t.startswith("xnor"):
+        return "xnor"
+    if t.startswith("dff") or "dff" in t:
+        return "dff"
+    if t.startswith("lat"):
+        return "latch"
+    if t.startswith("mxi") or t.startswith("mux"):
+        return "mux"
+    if t.startswith("aoi") or t.startswith("oai"):
+        return "complex"
+    if t.startswith("i1") or t.startswith("inv") or t.startswith("ib") or t.startswith("not"):
+        return "not"
+    if t.startswith("hi") or t.startswith("buf"):
+        return "buf"
+    if t in TYPE_INDEX:
+        return t
+    return "buf"
+
+
 def _type_index(gate_type: str) -> int:
     """
-    Convert gate type into an integer index.
-
-    Unknown gate types are mapped to 'buf' rather than crashing.
+    Convert gate type into an integer index using canonical mapping.
     """
+    canonical = canonical_gate_type(gate_type)
     return TYPE_INDEX.get(
-        gate_type,
+        canonical,
         TYPE_INDEX["buf"]
     )
 
