@@ -93,13 +93,13 @@ def run_llm_reasoning(
         model_name = ""
 
         if provider.lower() == "gemini":
-            from llm import GEMINI_MODEL
+            from llm import GEMINI_MODEL, run_gemini
             model_name = GEMINI_MODEL
-            response = query_gemini(prompt_text, model=GEMINI_MODEL)
+            response = run_gemini(prompt_text)
         else:
-            from llm import OLLAMA_MODEL
+            from llm import OLLAMA_MODEL, run_ollama
             model_name = OLLAMA_MODEL
-            response = query_ollama(prompt_text, model=OLLAMA_MODEL)
+            response = run_ollama(prompt_text)
 
         decision = extract_decision(response)
         confidence = extract_confidence(response)

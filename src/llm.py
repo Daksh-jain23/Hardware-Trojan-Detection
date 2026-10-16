@@ -259,6 +259,11 @@ def run_llm(prompt: str) -> str:
         )
 
 
+# Backward-compatible aliases
+query_gemini = run_gemini
+query_ollama = run_ollama
+
+
 def run_llm_critic(
     prompt: str,
     evidence_a: dict,

@@ -116,6 +116,17 @@ def audit_actor_factual_claims(
                 f"but ground-truth evidence indicates exactly 0 sequential flip-flops (pure combinational logic)."
             )
 
+    # Check for invalid NEITHER claim when strong GNN seeds exist
+    if "neither" in text_lower:
+        max_seeds = max(evidence_a.get("gnn_seeds_count", 0), evidence_b.get("gnn_seeds_count", 0))
+        max_score = max(evidence_a.get("max_gnn_score", 0.0), evidence_b.get("max_gnn_score", 0.0))
+        if max_seeds >= 3 and max_score >= 0.65:
+            strong_reg = "A" if evidence_a.get("gnn_seeds_count", 0) >= evidence_b.get("gnn_seeds_count", 0) else "B"
+            warnings.append(
+                f"[FACT-CHECK]: Actor concluded NEITHER, but Region {strong_reg} contains {max_seeds} confirmed GNN suspicious seeds "
+                f"with peak score {max_score:.4f}. NEITHER is strictly forbidden when high-confidence GNN seeds are localized."
+            )
+
     return warnings
 
 
@@ -168,10 +179,18 @@ ANALYST'S PROPOSED REPORT:
 ------------------------------------------------------------
 CRITIC AUDITING DIRECTIVES:
 ------------------------------------------------------------
-1. VERIFY FACTUAL ACCURACY: Did the analyst hallucinate or misstate any numerical values (e.g., flip-flop counts, edge density)?
-2. BENIGN DESIGN CHECK: Can the flagged subnetwork be legitimately explained as standard functional logic (e.g., standard ALU datapath, carry chain, bus multiplexers, or clock domain synchronizers)?
-3. THE "NEITHER" CRITERION: If both candidate regions show typical functional dissipation (high exit ratios > 0.40, lack of tight state counters, or low internal density), challenge whether "NEITHER" is the correct verdict.
-4. SYMMETRY CHECK: Ensure the analyst is not biased simply because Region A was presented first.
+1. ASYMMETRIC RISK PRINCIPLE (PREVENT FALSE NEGATIVES):
+   In mission-critical hardware, a False Negative (missing a real Trojan) is catastrophic, permanent, and unpatchable in fabricated silicon. A False Positive merely prompts secondary inspection. If a candidate exhibits concentrated GNN seeds, tightly coupled internal gates, or an asymmetric boundary exit ratio (<= 0.35), err on the side of flagging the anomaly rather than prematurely dismissing it.
+2. DO NOT DISMISS COMBINATIONAL TROJANS:
+   Trojans do NOT necessarily require sequential flip-flops (DFFs)! Combinational comparator trees (cascaded AND/NAND/NOR/XOR gates monitoring rare bus vectors) have 0 DFFs. If sequential count is 0 but internal density is elevated, this is a classic stealthy combinational Trojan trigger.
+3. VERIFY FACTUAL ACCURACY:
+   Did the analyst hallucinate or misstate any numerical values (e.g. flip-flop counts, edge density)?
+4. STRICT "NEITHER" CRITERION (NEGATIVE CONTROLS ONLY):
+   - NEITHER is strictly PROHIBITED if EITHER region contains GNN suspicious seeds (seeds >= 1) with max GNN score >= 0.65 or avg GNN >= 0.35. In that case, you MUST select either REGION_A or REGION_B based on which has stronger anomalous indicators.
+   - NEITHER is permissible ONLY on clean negative controls where BOTH Region A and Region B have 0 GNN seeds and peak GNN score < 0.40.
+   - A moderate or high exit ratio (e.g. 0.45-0.70) does NOT justify NEITHER if strong GNN seeds are present! Trojan trigger comparators frequently tap multiple payload and bus lines.
+5. SYMMETRY CHECK:
+   Ensure the assessment is grounded in invariant physical metrics, not positional bias.
 
 REQUIRED AUDIT OUTPUT FORMAT:
 VERDICT: <ACCEPT | REJECT | REFINE>
@@ -224,7 +243,10 @@ SENIOR HARDWARE AUDITOR CRITIQUE:
 REVISION TASK:
 ------------------------------------------------------------
 Carefully review the auditor's critique and factual corrections.
-If the auditor showed that the logic can be explained by benign datapath functionality, or if both candidate regions lack genuine stealth, update your assessment to NEITHER or the appropriate region.
+- Guard against False Negatives: Remember that combinational comparator trees (AND/NAND/NOR cascades) operate with 0 DFFs.
+- Hard Constraint: If either candidate region exhibits confirmed GNN seeds (seeds >= 1) and elevated GNN score (>= 0.65), you MUST NOT select NEITHER. Select the region with the higher GNN seed concentration and anomalous internal density.
+- NEITHER is valid ONLY when BOTH candidate regions have 0 GNN seeds and low GNN scores (< 0.40).
+- Do not output UNCERTAIN. Output exactly one of: REGION_A, REGION_B, or NEITHER.
 
 Conclude with the exact required format:
 ASSESSMENT: <REGION_A | REGION_B | NEITHER>
