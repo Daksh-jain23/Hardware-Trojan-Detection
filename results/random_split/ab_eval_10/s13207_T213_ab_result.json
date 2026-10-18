@@ -11,7 +11,10 @@
     "correct_t1": true,
     "correct_t2": true,
     "swap_consistent": true,
-    "position_bias": false
+    "position_bias": false,
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true
   },
   "llm_eval": {
     "trial_1": "REGION_A",
@@ -21,7 +24,10 @@
     "swap_consistent": false,
     "position_bias": true,
     "explanation_trial_1": "Region A exhibits elevated internal edge density (0.98) and a low boundary exit ratio (0.44), which are hallmark characteristics of combinational trojans (elevated internal density with low exit ratio \u2264 0.35). The presence of 8 GNN suspicious seeds and a max GNN score of 0.8916 suggests anomalous connectivity patterns, aligning with stealthy comparator tree or sequential state counter mechanisms. In contrast, Region B has a higher boundary exit ratio (0.6) and 0 GNN suspicious seeds, consistent with a benign baseline. Region A's structural anomalies (high internal density, low exit ratio) strongly indicate a stealthy combinational trigger, while Region B's uniform GNN scores and higher exit ratio suggest normal operation.",
-    "explanation_trial_2": "To determine whether either of the two regions is malicious, we analyze the provided metrics and their implications:\n\n---\n\n### **Key Metrics Summary**\n\n| Region | Boundary Exits | Boundary Edges | Exit Ratio | Internal Density | DFFs (Sequential) |\n|--------|------------------|------------------|-------------|------------------|--------------------|\n| A      | 30               | 80               | 0.375       | 1.2              | 0                  |\n| B      | 22               | 121              | 0.44        | 0.98             | 0                  |\n\n---\n\n### **Analysis**\n\n#### **Region A**\n- **Boundary Exits**: 30 (Exit Ratio = 30/80 = 0.375)\n- **Internal Density**: 1.2 (High)\n- **DFFs (Sequential)**: 0 (No sequential triggers)\n- **Exit Ratio**: 0.375 (Above 0.35, indicating a **low exit ratio**, which is characteristic of **combinational triggers**)\n\n**Conclusion**: Region A has **high internal density** and a **low exit ratio**, which is consistent with a **combinational trigger**. This is a **malicious** scenario.\n\n---\n\n#### **Region B**\n- **Boundary Exits**: 22 (Exit Ratio = 22/121 \u2248 0.181)\n- **Internal Density**: 0.98 (High)\n- **DFFs (Sequential)**: 0 (No sequential triggers)\n- **Exit Ratio**: 0.44 (High, indicating a **high exit ratio**)\n\n**Conclusion**: Region B has **high internal density** and a **high exit ratio**, which is **not** consistent with a combinational trigger. The presence of **no DFFs** rules out a sequential trigger. However, the **high exit ratio** suggests a **more complex configuration**, possibly involving **sequential logic** (not explicitly stated), but **no DFFs** disqualify it as a sequential trigger.\n\n**Final Assessment**: Region B **does not** meet the criteria for a **combinational trigger** (low exit ratio), and since there are **no DFFs**, it **cannot** be classified as a **sequential trigger**. Therefore, **Region B is not malicious** based on the given data.\n\n---\n\n### **Final Answer**\n\n- **Region A** is **malicious** (combinational trigger with low exit ratio and high internal density).\n- **Region B** is **not malicious** (high internal density and high exit ratio, but no DFFs, and thus not a combinational or sequential trigger).\n\n$$\n\\boxed{\\text{Region A is malicious, Region B is not.}}\n$$"
+    "explanation_trial_2": "To determine whether either of the two regions is malicious, we analyze the provided metrics and their implications:\n\n---\n\n### **Key Metrics Summary**\n\n| Region | Boundary Exits | Boundary Edges | Exit Ratio | Internal Density | DFFs (Sequential) |\n|--------|------------------|------------------|-------------|------------------|--------------------|\n| A      | 30               | 80               | 0.375       | 1.2              | 0                  |\n| B      | 22               | 121              | 0.44        | 0.98             | 0                  |\n\n---\n\n### **Analysis**\n\n#### **Region A**\n- **Boundary Exits**: 30 (Exit Ratio = 30/80 = 0.375)\n- **Internal Density**: 1.2 (High)\n- **DFFs (Sequential)**: 0 (No sequential triggers)\n- **Exit Ratio**: 0.375 (Above 0.35, indicating a **low exit ratio**, which is characteristic of **combinational triggers**)\n\n**Conclusion**: Region A has **high internal density** and a **low exit ratio**, which is consistent with a **combinational trigger**. This is a **malicious** scenario.\n\n---\n\n#### **Region B**\n- **Boundary Exits**: 22 (Exit Ratio = 22/121 \u2248 0.181)\n- **Internal Density**: 0.98 (High)\n- **DFFs (Sequential)**: 0 (No sequential triggers)\n- **Exit Ratio**: 0.44 (High, indicating a **high exit ratio**)\n\n**Conclusion**: Region B has **high internal density** and a **high exit ratio**, which is **not** consistent with a combinational trigger. The presence of **no DFFs** rules out a sequential trigger. However, the **high exit ratio** suggests a **more complex configuration**, possibly involving **sequential logic** (not explicitly stated), but **no DFFs** disqualify it as a sequential trigger.\n\n**Final Assessment**: Region B **does not** meet the criteria for a **combinational trigger** (low exit ratio), and since there are **no DFFs**, it **cannot** be classified as a **sequential trigger**. Therefore, **Region B is not malicious** based on the given data.\n\n---\n\n### **Final Answer**\n\n- **Region A** is **malicious** (combinational trigger with low exit ratio and high internal density).\n- **Region B** is **not malicious** (high internal density and high exit ratio, but no DFFs, and thus not a combinational or sequential trigger).\n\n$$\n\\boxed{\\text{Region A is malicious, Region B is not.}}\n$$",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false
   },
   "critic_eval": {
     "trial_1": "REGION_A",
@@ -31,7 +37,10 @@
     "swap_consistent": true,
     "position_bias": false,
     "explanation_trial_1": "The analyst's report incorrectly concluded NEITHER for Region A due to the threshold (max GNN \u2265 0.65). Region A meets the NEITHER prohibition and has higher GNN seed concentration (0.8916). Region B has no GNN seeds, so NEITHER is not applicable. The false negative risk was addressed by not dismissing Region B, as it has no GNN seeds, thus avoiding a false negative.",
-    "explanation_trial_2": "Region B meets the hard constraint (confirmed GNN seeds \u22651 and elevated GNN score \u22650.65), necessitating selection of the region with higher GNN seed concentration and anomalous internal density. While Region B's low boundary exit ratio (0.44) is slightly above the 0.35 threshold for combinational Trojans, its high GNN seed concentration (8) and anomalous internal density (0.98) confirm its malicious nature, aligning with the auditor's findings."
+    "explanation_trial_2": "Region B meets the hard constraint (confirmed GNN seeds \u22651 and elevated GNN score \u22650.65), necessitating selection of the region with higher GNN seed concentration and anomalous internal density. While Region B's low boundary exit ratio (0.44) is slightly above the 0.35 threshold for combinational Trojans, its high GNN seed concentration (8) and anomalous internal density (0.98) confirm its malicious nature, aligning with the auditor's findings.",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true
   },
   "trial_1": {
     "assignment": {
@@ -60,5 +69,6 @@
     "swap_consistent": false,
     "position_bias_detected": true,
     "identifier_leakage_detected": false
-  }
+  },
+  "ground_truth_trojan_type": "COMBINATIONAL"
 }

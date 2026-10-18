@@ -104,6 +104,26 @@ class TestActorCritic(unittest.TestCase):
         refine_prompt = build_actor_refinement_prompt("Choose A or B", actor_text, "CRITIQUE: Good")
         self.assertTrue(assert_no_leakage(refine_prompt))
 
+    def test_fact_check_swapped_candidate_target_region(self):
+        # Swapped: Region A has 0 DFFs (clean), Region B has 5 DFFs (Trojan)
+        actor_text = (
+            "Region A contains 0 sequential flip-flops and high exit ratio.\n"
+            "Region B contains 5 sequential flip-flops, high internal density, and represents a sequential Trojan counter.\n"
+            "ASSESSMENT: REGION_B\nCONFIDENCE: HIGH\nTROJAN_TYPE: SEQUENTIAL_COUNTER"
+        )
+        # Note: self.evidence_b is 0 DFFs, self.evidence_a is 5 DFFs in setUp
+        # In swapped trial: ev_a = clean (0 DFFs), ev_b = trojan (5 DFFs)
+        ev_clean = dict(self.evidence_b)
+        ev_trojan = dict(self.evidence_a)
+        warnings = audit_actor_factual_claims(actor_text, ev_clean, ev_trojan)
+        # Should NOT complain about 0 DFFs because target is Region B which has 5 DFFs!
+        self.assertEqual(len(warnings), 0)
+
+    def test_critic_audit_prompt_specifies_malicious_designation(self):
+        prompt = build_critic_audit_prompt(self.evidence_a, self.evidence_b, "ASSESSMENT: REGION_A", [])
+        self.assertIn("MALICIOUS TARGET IDENTIFICATION", prompt)
+        self.assertIn("RECOMMENDED_ASSESSMENT: <REGION_A (Region A is Trojan)", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

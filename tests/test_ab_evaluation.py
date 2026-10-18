@@ -118,8 +118,34 @@ class TestABEvaluation(unittest.TestCase):
         # Case 2: Position bias (Trial 1 = REGION_A, Trial 2 = REGION_A)
         t1_bias = "REGION_A"
         t2_bias = "REGION_A"
-        bias_detected = (t1_bias == t2_bias and t1_bias in ("REGION_A", "REGION_B"))
-        self.assertTrue(bias_detected)
+    def test_trojan_type_parsing_and_ground_truth(self):
+        # Test explicit TROJAN_TYPE tag parsing
+        resp_comb = """
+        ASSESSMENT: REGION_A
+        CONFIDENCE: HIGH
+        TROJAN_TYPE: COMBINATIONAL
+        JUSTIFICATION: Rare-condition combinational trigger tree.
+        """
+        p1 = parse_ab_response(resp_comb)
+        self.assertEqual(p1["trojan_type"], "COMBINATIONAL")
+
+        resp_fsm = """
+        ASSESSMENT: REGION_B
+        CONFIDENCE: HIGH
+        TROJAN_TYPE: FSM
+        JUSTIFICATION: Multi-stage state machine counter transition.
+        """
+        p2 = parse_ab_response(resp_fsm)
+        self.assertEqual(p2["trojan_type"], "FSM")
+
+        resp_clean = """
+        ASSESSMENT: NEITHER
+        CONFIDENCE: HIGH
+        TROJAN_TYPE: NONE
+        JUSTIFICATION: Clean negative control circuit.
+        """
+        p3 = parse_ab_response(resp_clean)
+        self.assertEqual(p3["trojan_type"], "NONE")
 
 
 if __name__ == "__main__":

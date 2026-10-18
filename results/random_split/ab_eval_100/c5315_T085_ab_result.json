@@ -1,0 +1,88 @@
+{
+  "circuit": "c5315_T085",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 6,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.95) vs Region B (seeds=0, max=0.21). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=6, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_B",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### **Key Analysis:**\n\n1. **Internal Density and Boundary Exit Ratio:**\n   - **Region A** has a high internal edge density (1.06), indicating a complex, densely connected network of paths.\n   - Its boundary exit ratio is **0.54**, which is **above the threshold of 0.35** for combinational logic (where low exit ratios are typical of combinational triggers).\n   - This suggests **not a combinational trigger**, as the exit ratio is not low enough to qualify.\n\n2. **GNN Scores and Seeds:**\n   - Region A has **6 GNN seeds**, which indicates a **suspicious structure**.\n   - While the **peak GNN score is high**, the presence of seeds means it is **not NEITHER** (as per the rule: *if both have 0 seeds and peak < 0.45, then NEITHER*).\n\n3. **Sequential Gates:**\n   - Both **Region A and B** have **0 sequential gates**, ruling out the possibility of a **sequential counter**.\n\n4. **Conclusion:**\n   - Region A exhibits **high internal density** and **low boundary exit ratio** (0.54), which is **not combinational**.\n   - The presence of **GNN seeds** indicates a **suspicious structure**, but it is **not NEITHER** due to the seeds.\n   - Since **no clear trigger type** (combinational, sequential, or FSM) is evident, the most accurate classification is **NONE**.\n\n---\n\n### **Final Answer:**\n\n**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE",
+    "explanation_trial_2": "Region A has high internal edge density (1.46) but a boundary exit ratio of 0.44 (above 0.35), which does not meet the criteria for a combinational trigger (low exit ratio). Region B has 6 GNN suspicious seeds and higher GNN scores, but its internal edge density is lower (1.06) and boundary exit ratio is 0.54. Both regions lack sequential DFFs and no evidence of stealthy comparator trees or state counters. The absence of concentrated GNN suspicion seeds in Region A (0) and the low average GNN score (0.0661) align with benign designs. While Region B's higher GNN scores suggest potential suspicion, the presence of 6 seeds and the lack of clean design indicators (e.g., no 0-seed thresholds) prevent a definitive classification. Neither region meets the criteria for a stealthy Trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Auditor correction: Actor proposed FSM, but candidate structural gate inspection verifies COMBINATIONAL architecture (0 DFFs).",
+    "explanation_trial_2": "Auditor correction: Actor erroneously declared NEITHER despite confirmed GNN seeds (6) and max score (0.95) in Region B. Verified COMBINATIONAL Trojan architecture."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "MEDIUM",
+    "trojan_type": "FSM",
+    "explanation": "**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### **Key Analysis:**\n\n1. **Internal Density and Boundary Exit Ratio:**\n   - **Region A** has a high internal edge density (1.06), indicating a complex, densely connected network of paths.\n   - Its boundary exit ratio is **0.54**, which is **above the threshold of 0.35** for combinational logic (where low exit ratios are typical of combinational triggers).\n   - This suggests **not a combinational trigger**, as the exit ratio is not low enough to qualify.\n\n2. **GNN Scores and Seeds:**\n   - Region A has **6 GNN seeds**, which indicates a **suspicious structure**.\n   - While the **peak GNN score is high**, the presence of seeds means it is **not NEITHER** (as per the rule: *if both have 0 seeds and peak < 0.45, then NEITHER*).\n\n3. **Sequential Gates:**\n   - Both **Region A and B** have **0 sequential gates**, ruling out the possibility of a **sequential counter**.\n\n4. **Conclusion:**\n   - Region A exhibits **high internal density** and **low boundary exit ratio** (0.54), which is **not combinational**.\n   - The presence of **GNN seeds** indicates a **suspicious structure**, but it is **not NEITHER** due to the seeds.\n   - Since **no clear trigger type** (combinational, sequential, or FSM) is evident, the most accurate classification is **NONE**.\n\n---\n\n### **Final Answer:**\n\n**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "NEITHER",
+    "confidence": "HIGH",
+    "trojan_type": "NONE",
+    "explanation": "Region A has high internal edge density (1.46) but a boundary exit ratio of 0.44 (above 0.35), which does not meet the criteria for a combinational trigger (low exit ratio). Region B has 6 GNN suspicious seeds and higher GNN scores, but its internal edge density is lower (1.06) and boundary exit ratio is 0.54. Both regions lack sequential DFFs and no evidence of stealthy comparator trees or state counters. The absence of concentrated GNN suspicion seeds in Region A (0) and the low average GNN score (0.0661) align with benign designs. While Region B's higher GNN scores suggest potential suspicion, the presence of 6 seeds and the lack of clean design indicators (e.g., no 0-seed thresholds) prevent a definitive classification. Neither region meets the criteria for a stealthy Trojan.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

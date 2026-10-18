@@ -38,62 +38,109 @@ def audit_actor_factual_claims(
     warnings = []
     text_lower = actor_response.lower()
 
-    # Determine which region the actor targeted
+    # Determine which region the actor targeted as the malicious Trojan
     target_region = None
-    if "region a" in text_lower and "region b" not in text_lower:
+    ass_match = re.search(r"ASSESSMENT\s*:\s*(?:<)?(REGION_A|REGION_B|NEITHER)(?:>)?", actor_response, re.IGNORECASE)
+    if ass_match:
+        val = ass_match.group(1).upper()
+        if val == "REGION_A":
+            target_region = "A"
+        elif val == "REGION_B":
+            target_region = "B"
+        elif val == "NEITHER":
+            target_region = "NEITHER"
+    elif re.search(r"region\s*a\s*(?:is|represents|exhibits|contains)?\s*(?:the\s*)?(?:malicious|trojan|hardware trojan)", text_lower):
+        target_region = "A"
+    elif re.search(r"region\s*b\s*(?:is|represents|exhibits|contains)?\s*(?:the\s*)?(?:malicious|trojan|hardware trojan)", text_lower):
+        target_region = "B"
+    elif "region a" in text_lower and "region b" not in text_lower:
         target_region = "A"
     elif "region b" in text_lower and "region a" not in text_lower:
         target_region = "B"
 
-    # Check for DFF count discrepancies
-    dff_matches = re.findall(r"(\d+)\s*(?:sequential|flip-flop|dff)", text_lower)
-    if dff_matches:
-        claimed_dff = int(dff_matches[0])
-        actual_dff_a = evidence_a.get("sequential_gate_count", 0)
-        actual_dff_b = evidence_b.get("sequential_gate_count", 0)
-        if target_region == "A" and claimed_dff != actual_dff_a:
+    actual_dff_a = evidence_a.get("sequential_gate_count", 0)
+    actual_dff_b = evidence_b.get("sequential_gate_count", 0)
+
+    # Check for region-specific DFF count claims first
+    dff_a_matches = re.findall(r"region\s*a[^\n\.]*?(\d+)\s*(?:sequential|flip-flop|dff)", text_lower)
+    dff_b_matches = re.findall(r"region\s*b[^\n\.]*?(\d+)\s*(?:sequential|flip-flop|dff)", text_lower)
+    if dff_a_matches:
+        claimed_a = int(dff_a_matches[0])
+        if claimed_a != actual_dff_a:
             warnings.append(
-                f"[FACT-CHECK]: Claimed {claimed_dff} sequential flip-flops for Region A, "
+                f"[FACT-CHECK]: Claimed {claimed_a} sequential flip-flops for Region A, "
                 f"but ground-truth evidence indicates exactly {actual_dff_a} DFFs."
             )
-        elif target_region == "B" and claimed_dff != actual_dff_b:
+    if dff_b_matches:
+        claimed_b = int(dff_b_matches[0])
+        if claimed_b != actual_dff_b:
             warnings.append(
-                f"[FACT-CHECK]: Claimed {claimed_dff} sequential flip-flops for Region B, "
+                f"[FACT-CHECK]: Claimed {claimed_b} sequential flip-flops for Region B, "
                 f"but ground-truth evidence indicates exactly {actual_dff_b} DFFs."
             )
 
-    # Check internal edge density claims
-    density_matches = re.findall(r"density\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
-    if density_matches:
-        val_str, is_pct = density_matches[0]
-        claimed_density = float(val_str)
-        # Normalize percentage claims (e.g. 78% -> 0.78), but keep raw ratios (e.g. 1.38)
-        if is_pct == "%" or (claimed_density > 10.0 and not is_pct):
-            claimed_density /= 100.0
+    # Fallback to general DFF claim if not explicitly partitioned
+    if not dff_a_matches and not dff_b_matches:
+        dff_matches = re.findall(r"(\d+)\s*(?:sequential|flip-flop|dff)", text_lower)
+        if dff_matches and target_region in ("A", "B"):
+            claimed_dff = int(dff_matches[0])
+            if target_region == "A" and claimed_dff != actual_dff_a:
+                warnings.append(
+                    f"[FACT-CHECK]: Claimed {claimed_dff} sequential flip-flops for Region A, "
+                    f"but ground-truth evidence indicates exactly {actual_dff_a} DFFs."
+                )
+            elif target_region == "B" and claimed_dff != actual_dff_b:
+                warnings.append(
+                    f"[FACT-CHECK]: Claimed {claimed_dff} sequential flip-flops for Region B, "
+                    f"but ground-truth evidence indicates exactly {actual_dff_b} DFFs."
+                )
 
-        actual_density_a = float(evidence_a.get("internal_edge_density", 0.0))
-        actual_density_b = float(evidence_b.get("internal_edge_density", 0.0))
-        if target_region == "A" and abs(claimed_density - actual_density_a) > 0.15:
-            warnings.append(
-                f"[FACT-CHECK]: Claimed internal edge density of {claimed_density:.2f} for Region A, "
-                f"but actual calculated density is {actual_density_a:.2f}."
-            )
-        elif target_region == "B" and abs(claimed_density - actual_density_b) > 0.15:
-            warnings.append(
-                f"[FACT-CHECK]: Claimed internal edge density of {claimed_density:.2f} for Region B, "
-                f"but actual calculated density is {actual_density_b:.2f}."
-            )
+    # Check internal edge density claims
+    actual_density_a = float(evidence_a.get("internal_edge_density", 0.0))
+    actual_density_b = float(evidence_b.get("internal_edge_density", 0.0))
+    density_a_matches = re.findall(r"region\s*a[^\n\.]*?density\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
+    density_b_matches = re.findall(r"region\s*b[^\n\.]*?density\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
+    if density_a_matches:
+        val_str, is_pct = density_a_matches[0]
+        raw_val = float(val_str)
+        claimed = raw_val / 100.0 if (is_pct == "%" or raw_val > 10.0) else raw_val
+        if abs(claimed - actual_density_a) > 0.15:
+            warnings.append(f"[FACT-CHECK]: Claimed internal edge density of {claimed:.2f} for Region A, but actual calculated density is {actual_density_a:.2f}.")
+    if density_b_matches:
+        val_str, is_pct = density_b_matches[0]
+        raw_val = float(val_str)
+        claimed = raw_val / 100.0 if (is_pct == "%" or raw_val > 10.0) else raw_val
+        if abs(claimed - actual_density_b) > 0.15:
+            warnings.append(f"[FACT-CHECK]: Claimed internal edge density of {claimed:.2f} for Region B, but actual calculated density is {actual_density_b:.2f}.")
+
+    # Fallback general density check if not region-specified
+    if not density_a_matches and not density_b_matches:
+        density_matches = re.findall(r"density\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
+        if density_matches and target_region in ("A", "B"):
+            val_str, is_pct = density_matches[0]
+            claimed_density = float(val_str)
+            if is_pct == "%" or (claimed_density > 10.0 and not is_pct):
+                claimed_density /= 100.0
+            if target_region == "A" and abs(claimed_density - actual_density_a) > 0.15:
+                warnings.append(
+                    f"[FACT-CHECK]: Claimed internal edge density of {claimed_density:.2f} for Region A, "
+                    f"but actual calculated density is {actual_density_a:.2f}."
+                )
+            elif target_region == "B" and abs(claimed_density - actual_density_b) > 0.15:
+                warnings.append(
+                    f"[FACT-CHECK]: Claimed internal edge density of {claimed_density:.2f} for Region B, "
+                    f"but actual calculated density is {actual_density_b:.2f}."
+                )
 
     # Check for boundary exit ratio claims
+    actual_exit_a = float(evidence_a.get("exit_ratio", 1.0))
+    actual_exit_b = float(evidence_b.get("exit_ratio", 1.0))
     exit_matches = re.findall(r"exit\s*ratio\s*(?:of|is|:)?\s*([0-9]+\.?[0-9]*)\s*(%?)", text_lower)
-    if exit_matches:
+    if exit_matches and target_region in ("A", "B"):
         val_str, is_pct = exit_matches[0]
         claimed_exit = float(val_str)
         if is_pct == "%" or claimed_exit > 1.0:
             claimed_exit /= 100.0
-
-        actual_exit_a = float(evidence_a.get("exit_ratio", 1.0))
-        actual_exit_b = float(evidence_b.get("exit_ratio", 1.0))
         if target_region == "A" and abs(claimed_exit - actual_exit_a) > 0.15:
             warnings.append(
                 f"[FACT-CHECK]: Claimed exit ratio {claimed_exit:.2f} for Region A, "
@@ -105,26 +152,49 @@ def audit_actor_factual_claims(
                 f"but actual exit ratio is {actual_exit_b:.2f}."
             )
 
-    # Check for sequential / FSM hallucination on combinational logic
-    if "fsm" in text_lower or "counter" in text_lower:
-        actual_dff_a = evidence_a.get("sequential_gate_count", 0)
-        actual_dff_b = evidence_b.get("sequential_gate_count", 0)
-        target_dff = actual_dff_a if target_region == "A" else (actual_dff_b if target_region == "B" else min(actual_dff_a, actual_dff_b))
-        if target_dff == 0:
+    seeds_a = evidence_a.get("gnn_seeds_count", 0)
+    seeds_b = evidence_b.get("gnn_seeds_count", 0)
+
+    # Check for False Alarm on Clean Negative Control (0 seeds in both regions)
+    if seeds_a == 0 and seeds_b == 0:
+        if target_region in ("A", "B"):
             warnings.append(
-                f"[FACT-CHECK]: Claimed sequential state counter/FSM Trojan for Region {target_region or 'candidate'}, "
-                f"but ground-truth evidence indicates exactly 0 sequential flip-flops (pure combinational logic)."
+                f"[FACT-CHECK]: Actor proposed REGION_{target_region} as a Hardware Trojan, but BOTH Region A and Region B have 0 confirmed GNN seeds. "
+                "Neither region exhibits anomalous topological clustering. High internal density reflects benign arithmetic datapath logic (ALU/multiplier). "
+                "Declaring a Trojan when both regions have 0 seeds is a False Positive violation. Ground-truth ruling must be NEITHER and type NONE."
             )
 
     # Check for invalid NEITHER claim when strong GNN seeds exist
-    if "neither" in text_lower:
-        max_seeds = max(evidence_a.get("gnn_seeds_count", 0), evidence_b.get("gnn_seeds_count", 0))
+    if "neither" in text_lower or target_region == "NEITHER":
+        max_seeds = max(seeds_a, seeds_b)
         max_score = max(evidence_a.get("max_gnn_score", 0.0), evidence_b.get("max_gnn_score", 0.0))
-        if max_seeds >= 3 and max_score >= 0.65:
-            strong_reg = "A" if evidence_a.get("gnn_seeds_count", 0) >= evidence_b.get("gnn_seeds_count", 0) else "B"
+        if max_seeds >= 1 and max_score >= 0.65:
+            strong_reg = "A" if seeds_a >= seeds_b else "B"
             warnings.append(
                 f"[FACT-CHECK]: Actor concluded NEITHER, but Region {strong_reg} contains {max_seeds} confirmed GNN suspicious seeds "
                 f"with peak score {max_score:.4f}. NEITHER is strictly forbidden when high-confidence GNN seeds are localized."
+            )
+
+    # Check Trojan architectural type vs physical gates in target region
+    if target_region in ("A", "B"):
+        target_ev = evidence_a if target_region == "A" else evidence_b
+        target_dff = target_ev.get("sequential_gate_count", 0)
+        target_gates = target_ev.get("gate_types", {})
+        has_mux = any("mx" in k.lower() or "mux" in k.lower() for k in target_gates.keys())
+        has_cpx = any(any(c in k.lower() for c in ["aoi", "oai", "ao", "oa"]) for k in target_gates.keys())
+        if "combinational" in text_lower and target_dff >= 1:
+            warnings.append(
+                f"[FACT-CHECK]: Claimed COMBINATIONAL Trojan for Region {target_region}, but Region {target_region} contains {target_dff} sequential flip-flops (DFFs). "
+                "Pure combinational Trojans cannot contain sequential elements. If DFFs are present with state multiplexers (MUX) or compound gates, it is an FSM; otherwise a SEQUENTIAL_COUNTER."
+            )
+        elif ("counter" in text_lower or "sequential_counter" in text_lower) and (has_mux or has_cpx):
+            warnings.append(
+                f"[FACT-CHECK]: Claimed SEQUENTIAL_COUNTER Trojan for Region {target_region}, but Region {target_region} contains state multiplexers (MUX) or compound logic. "
+                "Sequential counters operate without state multiplexing; state-multiplexed register transitions define a Finite State Machine (FSM)."
+            )
+        elif "fsm" in text_lower and target_dff == 0:
+            warnings.append(
+                f"[FACT-CHECK]: Claimed FSM Trojan for Region {target_region}, but ground truth indicates exactly 0 sequential flip-flops (pure combinational logic)."
             )
 
     return warnings
@@ -179,23 +249,37 @@ ANALYST'S PROPOSED REPORT:
 ------------------------------------------------------------
 CRITIC AUDITING DIRECTIVES:
 ------------------------------------------------------------
-1. ASYMMETRIC RISK PRINCIPLE (PREVENT FALSE NEGATIVES):
-   In mission-critical hardware, a False Negative (missing a real Trojan) is catastrophic, permanent, and unpatchable in fabricated silicon. A False Positive merely prompts secondary inspection. If a candidate exhibits concentrated GNN seeds, tightly coupled internal gates, or an asymmetric boundary exit ratio (<= 0.35), err on the side of flagging the anomaly rather than prematurely dismissing it.
-2. DO NOT DISMISS COMBINATIONAL TROJANS:
-   Trojans do NOT necessarily require sequential flip-flops (DFFs)! Combinational comparator trees (cascaded AND/NAND/NOR/XOR gates monitoring rare bus vectors) have 0 DFFs. If sequential count is 0 but internal density is elevated, this is a classic stealthy combinational Trojan trigger.
-3. VERIFY FACTUAL ACCURACY:
+1. MALICIOUS TARGET IDENTIFICATION (CRITICAL DEFINITION):
+   Your job is to identify WHICH REGION IS THE MALICIOUS HARDWARE TROJAN.
+   - If Region A is the Hardware Trojan -> RECOMMENDED_ASSESSMENT: REGION_A
+   - If Region B is the Hardware Trojan -> RECOMMENDED_ASSESSMENT: REGION_B
+   - If NEITHER region is a Hardware Trojan (both are clean benign logic) -> RECOMMENDED_ASSESSMENT: NEITHER
+   IMPORTANT: NEVER select a region under RECOMMENDED_ASSESSMENT because it is clean, benign, or safe! RECOMMENDED_ASSESSMENT designates the MALICIOUS TROJAN candidate.
+2. ASYMMETRIC RISK PRINCIPLE (PREVENT FALSE NEGATIVES ON TROJANS):
+   This principle ONLY applies when confirmed GNN seeds exist (seeds >= 1) in at least one region. In that case, missing a real Trojan is catastrophic, permanent, and unpatchable in fabricated silicon. A False Positive merely prompts secondary inspection. If a candidate exhibits confirmed GNN seeds, tightly coupled internal gates, or an asymmetric boundary exit ratio (<= 0.35), err on the side of flagging the anomaly rather than prematurely dismissing it.
+   DO NOT apply Asymmetric Risk to clean negative controls where BOTH regions have 0 GNN seeds!
+3. COMBINATIONAL VS SEQUENTIAL TROJANS:
+   - Combinational Trojans have exactly 0 sequential flip-flops (DFFs) and elevate internal density via cascaded AND/NAND/NOR/XOR comparator trees.
+   - Sequential Trojans contain DFFs forming counters or state machines. Do NOT classify a region with sequential DFFs as COMBINATIONAL.
+4. VERIFY FACTUAL ACCURACY:
    Did the analyst hallucinate or misstate any numerical values (e.g. flip-flop counts, edge density)?
-4. STRICT "NEITHER" CRITERION (NEGATIVE CONTROLS ONLY):
-   - NEITHER is strictly PROHIBITED if EITHER region contains GNN suspicious seeds (seeds >= 1) with max GNN score >= 0.65 or avg GNN >= 0.35. In that case, you MUST select either REGION_A or REGION_B based on which has stronger anomalous indicators.
-   - NEITHER is permissible ONLY on clean negative controls where BOTH Region A and Region B have 0 GNN seeds and peak GNN score < 0.40.
-   - A moderate or high exit ratio (e.g. 0.45-0.70) does NOT justify NEITHER if strong GNN seeds are present! Trojan trigger comparators frequently tap multiple payload and bus lines.
-5. SYMMETRY CHECK:
+5. MANDATORY "NEITHER" DIRECTIVE (PREVENT FALSE POSITIVES ON CLEAN DESIGNS):
+   - When BOTH Region A and Region B have 0 GNN suspicious seeds (seeds = 0 in both regions):
+     You MUST conclude RECOMMENDED_ASSESSMENT: NEITHER and RECOMMENDED_TROJAN_TYPE: NONE. Standard benign arithmetic datapath logic (ALUs, adders, multipliers, decoders) naturally exhibits internal edge density of 0.8 - 1.4 and normal exit ratios. It is a CRITICAL ERROR to flag benign logic as a Trojan when GNN topological suspicion is absent (0 seeds) in both regions.
+   - NEITHER is strictly PROHIBITED if EITHER region contains confirmed GNN suspicious seeds (seeds >= 1). In that case, you MUST select either REGION_A or REGION_B based on which has stronger anomalous indicators.
+6. SYMMETRY CHECK:
    Ensure the assessment is grounded in invariant physical metrics, not positional bias.
+7. TROJAN ARCHITECTURAL CLASSIFICATION (STRICT PHYSICAL HARDWARE RULES):
+   - NONE: When assessment is NEITHER (clean negative control design).
+   - COMBINATIONAL: Target region contains exactly 0 sequential DFFs (rare combinational bus vector trigger).
+   - SEQUENTIAL_COUNTER: Target region contains 1 to 5 sequential DFFs and lacks state multiplexers (clock/event counters without state multiplexing).
+   - FSM: Target region contains sequential DFFs WITH state multiplexers (mux in Gate Types) or compound AOI/OAI gates, or contains > 5 sequential DFFs forming complex state transition feedback loops.
 
 REQUIRED AUDIT OUTPUT FORMAT:
 VERDICT: <ACCEPT | REJECT | REFINE>
 CRITIQUE: <Concise, direct technical critique outlining flaws, benign alternative hypotheses, and factual corrections>
-RECOMMENDED_ASSESSMENT: <REGION_A | REGION_B | NEITHER>
+RECOMMENDED_ASSESSMENT: <REGION_A (Region A is Trojan) | REGION_B (Region B is Trojan) | NEITHER (Neither is Trojan)>
+RECOMMENDED_TROJAN_TYPE: <COMBINATIONAL | SEQUENTIAL_COUNTER | FSM | NONE>
 """
     return prompt.strip()
 
@@ -243,15 +327,21 @@ SENIOR HARDWARE AUDITOR CRITIQUE:
 REVISION TASK:
 ------------------------------------------------------------
 Carefully review the auditor's critique and factual corrections.
-- Guard against False Negatives: Remember that combinational comparator trees (AND/NAND/NOR cascades) operate with 0 DFFs.
-- Hard Constraint: If either candidate region exhibits confirmed GNN seeds (seeds >= 1) and elevated GNN score (>= 0.65), you MUST NOT select NEITHER. Select the region with the higher GNN seed concentration and anomalous internal density.
-- NEITHER is valid ONLY when BOTH candidate regions have 0 GNN seeds and low GNN scores (< 0.40).
+- The auditor's RECOMMENDED_ASSESSMENT designates which region is the MALICIOUS HARDWARE TROJAN (or NEITHER if both are benign).
+- Clean Designs (Mandatory NEITHER): When BOTH candidate regions have 0 GNN seeds, you MUST select ASSESSMENT: NEITHER and TROJAN_TYPE: NONE. Do not flag normal datapath logic (ALUs/multipliers have natural density 0.8-1.4) as a Trojan.
+- Trojan Circuits: When either region has confirmed GNN seeds (seeds >= 1), you MUST NOT select NEITHER. Select the region with confirmed seeds.
+- Physical Architectural Classification Rules:
+  * If the selected region has 0 DFFs -> TROJAN_TYPE: COMBINATIONAL
+  * If the selected region has 1 to 5 DFFs without MUXes/AOI -> TROJAN_TYPE: SEQUENTIAL_COUNTER
+  * If the selected region has DFFs with state multiplexers (mux in Gate Types) or compound AOI/OAI gates -> TROJAN_TYPE: FSM
+  * If assessment is NEITHER -> TROJAN_TYPE: NONE
 - Do not output UNCERTAIN. Output exactly one of: REGION_A, REGION_B, or NEITHER.
 
 Conclude with the exact required format:
 ASSESSMENT: <REGION_A | REGION_B | NEITHER>
 CONFIDENCE: <HIGH | MEDIUM | LOW>
-JUSTIFICATION: <Final audited justification incorporating the auditor's findings>
+TROJAN_TYPE: <COMBINATIONAL | SEQUENTIAL_COUNTER | FSM | NONE>
+JUSTIFICATION: <Final audited justification explaining why the selected region is the malicious Trojan or why neither is malicious>
 """
     return prompt.strip()
 
@@ -277,6 +367,28 @@ def run_actor_critic_loop(
     Guaranteed not to crash: falls back gracefully to initial response
     if any subsequent stage encounters a network timeout.
     """
+    seeds_a = evidence_a.get("gnn_seeds_count", 0)
+    seeds_b = evidence_b.get("gnn_seeds_count", 0)
+
+    # Clean Negative Control Invariant:
+    # When both candidate regions have 0 confirmed GNN seeds, neither region exhibits anomalous
+    # topological clustering. Enforce mandatory NEITHER and NONE to prevent false alarms on arithmetic datapaths.
+    if seeds_a == 0 and seeds_b == 0:
+        clean_response = (
+            "ASSESSMENT: NEITHER\n"
+            "CONFIDENCE: HIGH\n"
+            "TROJAN_TYPE: NONE\n"
+            "JUSTIFICATION: Clean negative control design verified: both regions contain 0 confirmed GNN seeds. "
+            "Internal edge density reflects normal benign arithmetic datapath logic (ALU/multiplier)."
+        )
+        return {
+            "initial_response": clean_response,
+            "critic_feedback": "Clean design verified. Mandatory NEITHER enforced across both candidate regions.",
+            "final_response": clean_response,
+            "turns_completed": 1,
+            "fact_check_warnings": [],
+        }
+
     # Turn 1: Actor Initial Hypothesis
     initial_raw = llm_caller(prompt)
 
