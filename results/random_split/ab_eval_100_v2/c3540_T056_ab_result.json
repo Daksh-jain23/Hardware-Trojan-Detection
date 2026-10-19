@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T056",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 8,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=8, max=0.93) vs Region B (seeds=0, max=0.20). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.20) vs Region B (seeds=8, max=0.93). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** STEALTHY_TRIGGER  \n\n---\n\n### **Key Analysis:**\n\n1. **Boundary Exit Ratio:**  \n   - **Region A:** 0.46 (boundary exits / internal edges)  \n   - **Region B:** 0.81 (boundary exits / internal edges)  \n   - A **high boundary exit ratio** (e.g., 0.46) suggests a **non-combinational** design, as combinational trojans typically have **low boundary exit ratios** (\u2264 0.35).  \n\n2. **Internal Edge Density:**  \n   - **Region A:** 0.98 (high internal edge density)  \n   - **Region B:** 1.06 (also high)  \n   - High internal edge density is a **key indicator** of stealthy triggers or complex logic, often associated with **datapath payload injection** or **sequential state counters**.  \n\n3. **GNN Scores:**  \n   - **Region A:** High GNN scores (0.9274)  \n   - **Region B:** Low GNN scores (0.0631)  \n   - **High GNN scores** in Region A suggest **suspicious structural characteristics**, even with a **non-combinational** design.  \n\n4. **Sequential Gates:**  \n   - Both regions have **0 sequential gates**, ruling out **sequential state counters**.  \n\n5. **Principle Check:**  \n   - **NEITHER** applies **only if both** regions have **0 GNN seeds** and **low GNN scores**.  \n   - Region A has **8 GNN seeds**, so it is **not NEITHER**.  \n\n---\n\n### **Conclusion:**  \nRegion A exhibits **high internal edge density**, **high GNN scores**, and a **non-combinational** design with a **high boundary exit ratio**. These characteristics align with **stealthy trigger** or **datapath payload injection** patterns. While Region B has **low GNN scores**, its **high internal density** and **non-combinational** nature still make it **suspect**.  \n\n**Final Answer:**  \n**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** STEALTHY_TRIGGER",
+    "explanation_trial_2": "**ASSESSMENT:**  \n**REGION_A**  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE (Benign design with high internal density and high boundary exit ratio, typical of normal systems)\n\n**Explanation:**  \n- **Region A** has **0 GNN seeds** and **low GNN scores**, which aligns with the criteria for a **benign design**.  \n- Its **high internal density (1.06)** and **high boundary exit ratio (0.86)** are typical of **normal systems** and **benign designs**, not malicious activity.  \n- **Region B** has **high GNN scores** and **low boundary exit ratio (0.46)**, which may indicate **malicious activity**. However, the presence of **8 GNN seeds** and the **low boundary exit ratio** make it **not NEITHER** under the given criteria.  \n\n**Final Answer:**  \n**ASSESSMENT:** NEITHER  \n**CONFIDENCE:** MEDIUM  \n**TROJAN_TYPE:** NONE (Region A is benign, Region B is not NEITHER but may be malicious).  \n\n**Note:** The final answer is **NEITHER** because Region A meets the criteria for a benign design (0 seeds, low GNN scores), while Region B has high GNN scores and low boundary exit ratio, which may indicate malicious activity. However, the instruction to choose between A, B, or NEITHER leads to **NEITHER** as the final conclusion."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "The auditor's critique correctly identifies Region A as the malicious hardware trojan due to its confirmed GNN seeds (8) and high internal density (0.98) with a boundary exit ratio of 0.46 (not extremely low), fulfilling combinational trigger criteria. Region B has 0 GNN seeds and low scores, aligning with a benign design. The asymmetric risk principle mandates flagging Region A, and its 0 DFFs confirm a combinational trojan.",
+    "explanation_trial_2": "Region B has confirmed GNN seeds (8) and a boundary exit ratio of 0.46 (violating the asymmetric risk threshold of \u2264 0.35), indicating a combinational trojan. The analyst's dismissal of Region B as non-malicious ignored the critical exit ratio metric and asymmetric risk criteria. Region A's high internal edge density (1.06) and low exit ratio (0.86) are benign, but Region B's asymmetric exit ratio and high GNN scores (0.9274) strongly align with combinational trojan characteristics. The rules mandate selecting the region with confirmed seeds (Region B) and applying the COMBINATIONAL type due to 0 DFFs."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "MEDIUM",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** STEALTHY_TRIGGER  \n\n---\n\n### **Key Analysis:**\n\n1. **Boundary Exit Ratio:**  \n   - **Region A:** 0.46 (boundary exits / internal edges)  \n   - **Region B:** 0.81 (boundary exits / internal edges)  \n   - A **high boundary exit ratio** (e.g., 0.46) suggests a **non-combinational** design, as combinational trojans typically have **low boundary exit ratios** (\u2264 0.35).  \n\n2. **Internal Edge Density:**  \n   - **Region A:** 0.98 (high internal edge density)  \n   - **Region B:** 1.06 (also high)  \n   - High internal edge density is a **key indicator** of stealthy triggers or complex logic, often associated with **datapath payload injection** or **sequential state counters**.  \n\n3. **GNN Scores:**  \n   - **Region A:** High GNN scores (0.9274)  \n   - **Region B:** Low GNN scores (0.0631)  \n   - **High GNN scores** in Region A suggest **suspicious structural characteristics**, even with a **non-combinational** design.  \n\n4. **Sequential Gates:**  \n   - Both regions have **0 sequential gates**, ruling out **sequential state counters**.  \n\n5. **Principle Check:**  \n   - **NEITHER** applies **only if both** regions have **0 GNN seeds** and **low GNN scores**.  \n   - Region A has **8 GNN seeds**, so it is **not NEITHER**.  \n\n---\n\n### **Conclusion:**  \nRegion A exhibits **high internal edge density**, **high GNN scores**, and a **non-combinational** design with a **high boundary exit ratio**. These characteristics align with **stealthy trigger** or **datapath payload injection** patterns. While Region B has **low GNN scores**, its **high internal density** and **non-combinational** nature still make it **suspect**.  \n\n**Final Answer:**  \n**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** STEALTHY_TRIGGER",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "NEITHER",
+    "confidence": "MEDIUM",
+    "trojan_type": "NONE",
+    "explanation": "**ASSESSMENT:**  \n**REGION_A**  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE (Benign design with high internal density and high boundary exit ratio, typical of normal systems)\n\n**Explanation:**  \n- **Region A** has **0 GNN seeds** and **low GNN scores**, which aligns with the criteria for a **benign design**.  \n- Its **high internal density (1.06)** and **high boundary exit ratio (0.86)** are typical of **normal systems** and **benign designs**, not malicious activity.  \n- **Region B** has **high GNN scores** and **low boundary exit ratio (0.46)**, which may indicate **malicious activity**. However, the presence of **8 GNN seeds** and the **low boundary exit ratio** make it **not NEITHER** under the given criteria.  \n\n**Final Answer:**  \n**ASSESSMENT:** NEITHER  \n**CONFIDENCE:** MEDIUM  \n**TROJAN_TYPE:** NONE (Region A is benign, Region B is not NEITHER but may be malicious).  \n\n**Note:** The final answer is **NEITHER** because Region A meets the criteria for a benign design (0 seeds, low GNN scores), while Region B has high GNN scores and low boundary exit ratio, which may indicate malicious activity. However, the instruction to choose between A, B, or NEITHER leads to **NEITHER** as the final conclusion.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

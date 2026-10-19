@@ -1,0 +1,88 @@
+{
+  "circuit": "s13207_T618",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 36,
+  "clean_region_size": 36,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.98) vs Region B (seeds=0, max=0.10). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.10) vs Region B (seeds=15, max=0.98). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "**  \nRegion A exhibits **high internal edge density (1.7778)** and **low boundary exit ratio (0.0556)**, which are hallmark characteristics of combinational trojans (e.g., stealthy comparators or wide AND/NAND/NOR gates). Its **4 sequential DFFs** and **15 GNN suspicious seeds** further amplify the anomaly, aligning with the \"elevated internal density with low exit ratio\" profile. Region B, in contrast, has **lower internal density (1.0833)**, **higher boundary exit ratio (0.75)**, and **no sequential DFFs**, which are typical of benign datapath logic. Region A\u2019s high GNN scores and low exit ratio strongly suggest a stealthy combinational trigger, while Region B\u2019s normal metrics indicate no malicious activity.",
+    "explanation_trial_2": "Region B exhibits high internal edge density (1.7778) and a very low boundary exit ratio (0.0556), which are hallmark characteristics of a combinational trojan. The presence of 4 sequential DFFs (indicating state counters) and elevated GNN scores (peak 0.978) further support this. Region A, in contrast, has low internal density (1.0833), a higher boundary exit ratio (0.75), and no sequential DFFs, aligning more with a benign datapath. Region B\u2019s low boundary exit ratio and high internal density, despite DFFs, suggest a stealthy combinational trigger, while Region A\u2019s structural features (low GNN suspicion, no DFFs) indicate a clean, benign design."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 4 DFFs with state multiplexers (MUXes) and compound AOI/OAI gates, which align with the physical architectural classification rules for FSM. The presence of GNN seeds (15) and the asymmetric boundary exit ratio (0.0556) suggest anomalous topological patterns, but the analyst's conclusion of a Sequential Counter Trojan was flawed due to incomplete analysis of MUXes and compound logic. The NEITHER assessment was incorrectly applied because Region A has confirmed GNN seeds, and the physical architecture classification identifies it as an FSM with DFFs and MUXes.",
+    "explanation_trial_2": "Both REGION_A and REGION_B have 0 GNN seeds, satisfying the NEITHER condition (no confirmed malicious GNN seeds). The analyst's classification of REGION_B as a sequential counter is a false positive due to incomplete architectural analysis. The presence of 4 DFFs in REGION_B does not inherently imply a sequential counter; they could be part of an FSM with state multiplexers or compound gates. The absence of state multiplexers (e.g., \"dffles2\") and the low boundary exit ratio (0.0556) align with a combinational Trojan, but the analyst incorrectly attributed it to a sequential counter. Since neither region has confirmed GNN seeds, the assessment is NEITHER."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "**  \nRegion A exhibits **high internal edge density (1.7778)** and **low boundary exit ratio (0.0556)**, which are hallmark characteristics of combinational trojans (e.g., stealthy comparators or wide AND/NAND/NOR gates). Its **4 sequential DFFs** and **15 GNN suspicious seeds** further amplify the anomaly, aligning with the \"elevated internal density with low exit ratio\" profile. Region B, in contrast, has **lower internal density (1.0833)**, **higher boundary exit ratio (0.75)**, and **no sequential DFFs**, which are typical of benign datapath logic. Region A\u2019s high GNN scores and low exit ratio strongly suggest a stealthy combinational trigger, while Region B\u2019s normal metrics indicate no malicious activity.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits high internal edge density (1.7778) and a very low boundary exit ratio (0.0556), which are hallmark characteristics of a combinational trojan. The presence of 4 sequential DFFs (indicating state counters) and elevated GNN scores (peak 0.978) further support this. Region A, in contrast, has low internal density (1.0833), a higher boundary exit ratio (0.75), and no sequential DFFs, aligning more with a benign datapath. Region B\u2019s low boundary exit ratio and high internal density, despite DFFs, suggest a stealthy combinational trigger, while Region A\u2019s structural features (low GNN suspicion, no DFFs) indicate a clean, benign design.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

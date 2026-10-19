@@ -1,0 +1,88 @@
+{
+  "circuit": "c5315_T085",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 6,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.95) vs Region B (seeds=0, max=0.21). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=6, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_B",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "",
+    "explanation_trial_2": "**  \nRegion A and Region B both have high internal edge density (1.46 vs. 1.06) but elevated boundary exit ratios (0.44 vs. 0.54), which deviate from typical benign arithmetic logic (ALU/decoder behavior). Region A\u2019s low GNN suspicious seeds (0) and low peak GNN score (0.0661) align with clean design principles, while Region B\u2019s high GNN scores (0.1798\u20130.9465) suggest potential suspicious connectivity. However, Region B\u2019s GNN seeds (6) and higher boundary exit ratio (0.54) prevent application of the clean design rule (which requires both regions to have 0 seeds and peak scores <0.45). Both regions exhibit high internal density but lack sequential DFFs, which are critical for combinational trojans. The absence of sequential DFFs and low boundary exit ratios (Region A: 0.44; Region B: 0.54) do not meet the criteria for combinational trojans (low exit ratios \u2264 0.35). Thus, neither region is malicious based on structural and GNN metrics."
+  },
+  "critic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": true,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "Both REGION_A and REGION_B have 0 GNN seeds, and their metrics (internal edge density, exit ratios, sequential DFFs) are consistent with benign arithmetic logic. The auditor's critique correctly identified that Region A's metrics (1.06 internal edge density, 0 sequential DFFs, 0.54 exit ratio) are within normal ranges for benign logic. Since neither region exhibits confirmed GNN seeds (seeds \u2265 1), the assessment concludes NEITHER, as required by the Physical Architectural Classification Rules. The analyst's misapplication of risk principles and lack of evidence further supports this conclusion.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (\u22651) and a boundary exit ratio of 0.54 (>0.35), meeting the asymmetric risk criteria for a hardware Trojan. The presence of GNN seeds disqualifies it from being classified as \"NEITHER.\" Since Region B has 0 DFFs, it is classified as COMBINATIONAL based on the physical architectural classification rules."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "MEDIUM",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "NEITHER",
+    "confidence": "HIGH",
+    "trojan_type": "NONE",
+    "explanation": "**  \nRegion A and Region B both have high internal edge density (1.46 vs. 1.06) but elevated boundary exit ratios (0.44 vs. 0.54), which deviate from typical benign arithmetic logic (ALU/decoder behavior). Region A\u2019s low GNN suspicious seeds (0) and low peak GNN score (0.0661) align with clean design principles, while Region B\u2019s high GNN scores (0.1798\u20130.9465) suggest potential suspicious connectivity. However, Region B\u2019s GNN seeds (6) and higher boundary exit ratio (0.54) prevent application of the clean design rule (which requires both regions to have 0 seeds and peak scores <0.45). Both regions exhibit high internal density but lack sequential DFFs, which are critical for combinational trojans. The absence of sequential DFFs and low boundary exit ratios (Region A: 0.44; Region B: 0.54) do not meet the criteria for combinational trojans (low exit ratios \u2264 0.35). Thus, neither region is malicious based on structural and GNN metrics.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}
