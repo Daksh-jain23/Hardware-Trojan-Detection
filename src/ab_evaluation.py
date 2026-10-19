@@ -42,9 +42,14 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import concurrent.futures
+import threading
+
 import networkx as nx
 import numpy as np
 import torch
+
+_gnn_lock = threading.Lock()
 
 # Ensure src on sys.path
 SRC_DIR = Path(__file__).resolve().parent
@@ -858,7 +863,8 @@ def run_controlled_ab_test(
         model, _ = load_model(DEFAULT_CHECKPOINT, input_dim=None)
 
     pyg_data = graph_to_pyg(graph)
-    probabilities, labels = predict_graph(model, pyg_data)
+    with _gnn_lock:
+        probabilities, labels = predict_graph(model, pyg_data)
 
     _, node_order = compute_node_features(graph)
     gnn_probs = {
@@ -1704,6 +1710,12 @@ def main():
         action="store_true",
         help="Summarize existing cached *_ab_result.json files in output-dir without re-evaluating.",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of concurrent workers for parallel circuit evaluation (default: 1 for sequential).",
+    )
 
     args = parser.parse_args()
 
@@ -1749,38 +1761,73 @@ def main():
     model, _ = load_model(args.checkpoint, input_dim=None)
 
     cohort_results = []
-    try:
-        for idx, circuit_path in enumerate(targets, start=1):
-            cached_result_file = args.output_dir / f"{circuit_path.stem}_ab_result.json"
-            if not args.force_rerun and cached_result_file.exists():
-                try:
-                    with cached_result_file.open("r", encoding="utf-8") as f:
-                        res = json.load(f)
-                    if "heuristic_eval" in res or "evaluation_metrics" in res:
-                        print(f"[{idx}/{len(targets)}] {circuit_path.name} already evaluated. Loaded cached result.")
-                        cohort_results.append(res)
-                        continue
-                except Exception as exc:
-                    print(f"[WARNING] Corrupted cache for {circuit_path.name} ({exc}). Re-running...")
+    total_targets = len(targets)
+    results_lock = threading.Lock()
 
-            print(f"\n[{idx}/{len(targets)}] Running A/B test on {circuit_path.name}...")
+    def _process_single_circuit(item: Tuple[int, Path]) -> Optional[Dict[str, Any]]:
+        idx, circuit_path = item
+        cached_result_file = args.output_dir / f"{circuit_path.stem}_ab_result.json"
+        if not args.force_rerun and cached_result_file.exists():
             try:
-                res = run_controlled_ab_test(
-                    netlist_path=circuit_path,
-                    model=model,
-                    gnn_threshold=args.gnn_threshold,
-                    hops=args.hops,
-                    output_dir=args.output_dir,
-                    skip_llm=args.skip_llm,
-                    enable_critic=args.enable_critic,
-                )
-                cohort_results.append(res)
+                with cached_result_file.open("r", encoding="utf-8") as f:
+                    res = json.load(f)
+                if "heuristic_eval" in res or "evaluation_metrics" in res:
+                    print(f"[{idx}/{total_targets}] {circuit_path.name} already evaluated. Loaded cached result.")
+                    return res
             except Exception as exc:
-                print(f"[WARNING] Skipping {circuit_path}: {exc}")
-    except KeyboardInterrupt:
-        print("\n\n[INFO] Execution interrupted by user. Generating metrics summary for evaluated cohort...")
+                print(f"[WARNING] Corrupted cache for {circuit_path.name} ({exc}). Re-running...")
+
+        print(f"\n[{idx}/{total_targets}] Running A/B test on {circuit_path.name}...")
+        try:
+            return run_controlled_ab_test(
+                netlist_path=circuit_path,
+                model=model,
+                gnn_threshold=args.gnn_threshold,
+                hops=args.hops,
+                output_dir=args.output_dir,
+                skip_llm=args.skip_llm,
+                enable_critic=args.enable_critic,
+            )
+        except Exception as exc:
+            print(f"[WARNING] Skipping {circuit_path}: {exc}")
+            return None
+
+    if args.workers <= 1:
+        # Standard sequential execution (single worker)
+        try:
+            for item in enumerate(targets, start=1):
+                res = _process_single_circuit(item)
+                if res is not None:
+                    cohort_results.append(res)
+        except KeyboardInterrupt:
+            print("\n\n[INFO] Execution interrupted by user. Generating checkpoint metrics summary...")
+    else:
+        # High-throughput parallel execution across worker threads
+        print(f"[INFO] Initializing parallel evaluation with {args.workers} concurrent workers...")
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.workers)
+        future_to_circuit = {
+            executor.submit(_process_single_circuit, item): item[1]
+            for item in enumerate(targets, start=1)
+        }
+        try:
+            for future in concurrent.futures.as_completed(future_to_circuit):
+                circuit_path = future_to_circuit[future]
+                try:
+                    res = future.result()
+                    if res is not None:
+                        with results_lock:
+                            cohort_results.append(res)
+                except Exception as exc:
+                    print(f"[WARNING] Worker error on {circuit_path.name}: {exc}")
+        except KeyboardInterrupt:
+            print("\n\n[INFO] Execution interrupted by user. Cancelling pending parallel tasks...")
+            executor.shutdown(wait=False, cancel_futures=True)
+            print("[INFO] Generating checkpoint metrics summary for completed circuits...")
+        finally:
+            executor.shutdown(wait=False)
 
     if cohort_results and not args.skip_llm:
+        print(f"\n[INFO] Evaluated {len(cohort_results)}/{total_targets} circuits. Generating metrics summary...")
         print_ab_metrics_table(cohort_results, output_dir=args.output_dir)
 
 

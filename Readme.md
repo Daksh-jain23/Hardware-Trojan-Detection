@@ -1309,6 +1309,8 @@ python src/pipeline.py \
 | `--skip-llm` | `flag` | `False` | Skips LLM inference; evaluates deterministic heuristic baseline only. |
 | `--enable-critic` | `flag` | `False` | Enables 3-turn multi-agent Actor-Critic verification loop. |
 | `--force-rerun` | `flag` | `False` | Ignores cached `<circuit>_ab_result.json` files and forces fresh re-execution. |
+| `--summarize-cached` | `flag` | `False` | Summarizes existing cached `*_ab_result.json` files without re-evaluating. |
+| `--workers` | `int` | `1` | Number of parallel worker threads for concurrent evaluation on high-VRAM GPUs. |
 
 ---
 
