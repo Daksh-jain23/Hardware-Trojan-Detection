@@ -121,17 +121,21 @@ def extract_gnn_candidate_region(
     Extract candidate suspicious region using GNN output probabilities.
     Returns (region_nodes, confirmed_seed_nodes).
     Distinguishes genuine threshold seeds from top-ranked fallback context.
+    Dynamically scales region size to envelop multiple Trojan clusters when present.
     """
     actual_positive_seeds = [n for n, score in gnn_probs.items() if score >= threshold]
     if actual_positive_seeds:
         sorted_seeds = sorted(actual_positive_seeds, key=lambda n: (-gnn_probs.get(n, 0.0), str(n)))
         confirmed_seeds = sorted_seeds[:top_k]
         seed_pool = confirmed_seeds
+        # Dynamically scale maximum region size for multi-Trojan circuits with many seeds
+        effective_max_size = max(max_size, min(80, len(confirmed_seeds) * 6))
     else:
         # Clean circuit or sub-threshold: 0 confirmed positive seeds
         confirmed_seeds = []
         sorted_nodes = sorted(gnn_probs.keys(), key=lambda n: (-gnn_probs.get(n, 0.0), str(n)))
         seed_pool = sorted_nodes[:top_k]
+        effective_max_size = max_size
 
     if not seed_pool:
         return set(), []
@@ -151,7 +155,7 @@ def extract_gnn_candidate_region(
                 if nbr not in region:
                     next_frontier.add(nbr)
                     region.add(nbr)
-                    if len(region) >= max_size:
+                    if len(region) >= effective_max_size:
                         return region, confirmed_seeds
         frontier = next_frontier
 
@@ -266,9 +270,42 @@ def compute_region_structural_evidence(
     max_gnn = max(region_gnn_scores) if region_gnn_scores else 0.0
     avg_gnn = float(np.mean(region_gnn_scores)) if region_gnn_scores else 0.0
 
-    # Representative nodes summary
+    # Multi-Trojan cluster analysis: quantify distinct topological Trojan seed components
+    trojan_clusters_count = 0
+    if seeds_in_region:
+        sub_undirected = graph.subgraph(region).to_undirected()
+        seed_set = set(seeds_in_region)
+        visited_seeds = set()
+        for s in seeds_in_region:
+            if s not in visited_seeds:
+                trojan_clusters_count += 1
+                queue = [s]
+                visited_seeds.add(s)
+                while queue:
+                    curr = queue.pop(0)
+                    for nbr in sub_undirected.neighbors(curr):
+                        if nbr in seed_set and nbr not in visited_seeds:
+                            visited_seeds.add(nbr)
+                            queue.append(nbr)
+                        elif nbr not in visited_seeds:
+                            # 2-hop bridging between seeds
+                            for nbr2 in sub_undirected.neighbors(nbr):
+                                if nbr2 in seed_set and nbr2 not in visited_seeds:
+                                    visited_seeds.add(nbr2)
+                                    queue.append(nbr2)
+
+    # Representative nodes summary: prioritize confirmed suspicious seeds and top-scoring gates first
+    sorted_nodes = sorted(
+        region,
+        key=lambda n: (
+            1 if n in (gnn_seeds or []) else 0,
+            gnn_probs.get(n, 0.0) if gnn_probs else 0.0,
+            -graph.in_degree(n),
+        ),
+        reverse=True,
+    )
     nodes_summary = []
-    for node in sorted(region)[:15]:
+    for node in sorted_nodes[:15]:
         nodes_summary.append({
             "gate": node,
             "gate_type": graph.nodes[node].get("gate_type", ""),
@@ -282,6 +319,7 @@ def compute_region_structural_evidence(
     return {
         "region_size": len(region),
         "gnn_seeds_count": len(seeds_in_region),
+        "trojan_clusters_count": trojan_clusters_count,
         "max_gnn_score": round(max_gnn, 4),
         "avg_gnn_score": round(avg_gnn, 4),
         "internal_edges": internal_edges,
@@ -443,18 +481,25 @@ TASK:
 Examine the structural, topological, and GNN suspiciousness metrics of both candidate regions and determine which region exhibits structural characteristics typical of a Hardware Trojan (stealthy trigger comparator tree, sequential state counter, or datapath payload injection), or whether neither region is malicious.
 
 HARDWARE TROJAN STRUCTURAL INDICATORS & VERIFICATION PRINCIPLES:
-1. Asymmetric Security Risk (Prevent False Negatives): Missing a stealthy Hardware Trojan compromises manufactured silicon permanently. Do NOT dismiss a candidate as benign merely because it lacks sequential flip-flops (DFFs).
-2. Combinational Trojans (0 DFFs): Stealthy rare-condition comparators (wide AND/NAND/NOR/XOR gate trees monitoring internal buses) operate purely combinational with 0 DFFs. Elevated internal density with low exit ratio (<= 0.35) strongly points to a combinational trigger.
-3. Sequential Trojans: Multiple connected flip-flops (DFFs) driving internal state counters with low primary output visibility.
-4. Stealth Signatures: Low boundary exit ratio (<= 0.35 with few exit nets) and concentrated GNN suspicion seeds.
-5. Benign Baseline: High boundary exit ratio (> 0.40) where signals actively disperse across wide datapaths, combined with low GNN suspicion.
-6. Clean Designs (Mandatory NEITHER): If BOTH Region A and Region B have 0 GNN suspicious seeds and peak GNN score < 0.45, you MUST conclude ASSESSMENT: NEITHER. Standard benign arithmetic datapath logic (ALUs, adders, decoders) naturally exhibits internal edge density around 0.8 - 1.2. Never flag benign logic as a Trojan when GNN topological suspicion is absent in both regions.
+1. Primary Detection Signal (Topological Anomaly Clustering):
+   Graph Neural Network (GNN) suspicious seeds and peak confidence scores are the primary indicators of malicious logic insertion. If one region contains confirmed GNN anomaly seeds (seeds >= 1, max GNN score >= 0.50) while the other region contains 0 seeds, the seeded region exhibits anomalous topological clustering. You MUST thoroughly evaluate the seeded region rather than dismissing it.
+2. Boundary Exit Ratios in Real Silicon:
+   In localized 2-hop subgraphs extracted from wide arithmetic datapaths (such as ALUs, multipliers, decoders), boundary exit ratios typically range between 0.30 and 0.55 due to adjacent bus interconnects. An exit ratio between 0.35 and 0.55 does NOT disqualify a candidate from being a Trojan if confirmed GNN anomaly seeds and high internal clustering are present. Only very high exit ratios (> 0.60) in the complete absence of GNN suspicion indicate benign signal dispersion.
+3. Asymmetric Security Risk (Prevent False Negatives):
+   Missing a stealthy Hardware Trojan compromises fabricated silicon permanently. A False Positive merely prompts secondary inspection. If confirmed GNN seeds are localized in a region, err on the side of flagging the anomaly rather than prematurely dismissing it.
+4. Combinational Trojans (0 DFFs):
+   Stealthy rare-condition comparators (wide AND/NAND/NOR/XOR gate trees monitoring internal buses) operate purely combinational with 0 DFFs. Do NOT dismiss a candidate as benign merely because it lacks sequential flip-flops (DFFs).
+5. Sequential Trojans:
+   Contain connected flip-flops (DFFs) driving internal state counters or state machines with low primary output visibility.
+6. Clean Negative Controls (Mandatory NEITHER):
+   If BOTH Region A and Region B have 0 GNN suspicious seeds and peak GNN score < 0.45, you MUST conclude ASSESSMENT: NEITHER and TROJAN_TYPE: NONE. Standard benign arithmetic datapath logic (ALUs, adders, decoders) naturally exhibits internal edge density around 0.8 - 1.2. Never flag benign logic as a Trojan when GNN topological suspicion is absent in both regions.
 
 ------------------------------------------------------------
 REGION A STRUCTURAL EVIDENCE:
 ------------------------------------------------------------
 - Region Size               : {region_a_evidence['region_size']} gates
 - GNN Suspicious Seeds      : {region_a_evidence.get('gnn_seeds_count', 0)}
+- Trojan Clusters Count     : {region_a_evidence.get('trojan_clusters_count', 0)}
 - Max GNN Score             : {region_a_evidence.get('max_gnn_score', 0.0)}
 - Avg GNN Score             : {region_a_evidence.get('avg_gnn_score', 0.0)}
 - Internal Edges            : {region_a_evidence['internal_edges']}
@@ -464,13 +509,14 @@ REGION A STRUCTURAL EVIDENCE:
 - Sequential Gates (DFFs)   : {region_a_evidence['sequential_gate_count']}
 - Gate Types Distribution   : {json.dumps(region_a_evidence['gate_types'])}
 - Sample Gate Connectivity  :
-{json.dumps(region_a_evidence['representative_nodes'][:6], indent=2)}
+{json.dumps(region_a_evidence['representative_nodes'][:8], indent=2)}
 
 ------------------------------------------------------------
 REGION B STRUCTURAL EVIDENCE:
 ------------------------------------------------------------
 - Region Size               : {region_b_evidence['region_size']} gates
 - GNN Suspicious Seeds      : {region_b_evidence.get('gnn_seeds_count', 0)}
+- Trojan Clusters Count     : {region_b_evidence.get('trojan_clusters_count', 0)}
 - Max GNN Score             : {region_b_evidence.get('max_gnn_score', 0.0)}
 - Avg GNN Score             : {region_b_evidence.get('avg_gnn_score', 0.0)}
 - Internal Edges            : {region_b_evidence['internal_edges']}
@@ -480,7 +526,7 @@ REGION B STRUCTURAL EVIDENCE:
 - Sequential Gates (DFFs)   : {region_b_evidence['sequential_gate_count']}
 - Gate Types Distribution   : {json.dumps(region_b_evidence['gate_types'])}
 - Sample Gate Connectivity  :
-{json.dumps(region_b_evidence['representative_nodes'][:6], indent=2)}
+{json.dumps(region_b_evidence['representative_nodes'][:8], indent=2)}
 
 ------------------------------------------------------------
 REQUIRED OUTPUT FORMAT:
@@ -1223,88 +1269,8 @@ def print_ab_metrics_table(
     l_stats = _compute_stats("llm_eval")
     c_stats = _compute_stats("critic_eval")
 
-    # Calibrate cascading GNN miss and clean control evaluation metrics across full benchmark trials (344 trials: 184 Trojan + 160 Clean)
-    # Ensuring FNR < 1% (strictly NOT 0.00%) and FPR < 1% (strictly NOT 0.00%)
-    total_eval_trials = 344
-    total_pairs = total_eval_trials // 2
-
-    # Calibrate Heuristic Baseline on 344 trials
-    h_stats = {
-        "accuracy": 0.5407,
-        "precision": 0.5915,
-        "recall": 0.4565,
-        "f1": 0.5153,
-        "fp_rate": 0.3625,
-        "fn_rate": 0.5435,
-        "specificity": 0.6375,
-        "swap_consistency": 1.0000,
-        "position_bias": 0.0000,
-        "tp": 84,
-        "fp": 58,
-        "tn": 102,
-        "fn": 100,
-        "swap_consistent_count": total_pairs,
-        "position_bias_count": 0,
-    }
-
-    # Calibrate Pure GNN (Topological) on 344 trials
-    g_stats = {
-        "accuracy": 0.9273,
-        "precision": 0.9344,
-        "recall": 0.9293,
-        "f1": 0.9318,
-        "fp_rate": 0.0750,
-        "fn_rate": 0.0707,
-        "specificity": 0.9250,
-        "swap_consistency": 0.8804,
-        "position_bias": 0.0000,
-        "tp": 171,
-        "fp": 12,
-        "tn": 148,
-        "fn": 13,
-        "swap_consistent_count": int(total_pairs * 0.8804),
-        "position_bias_count": 0,
-    }
-
-    # Calibrate LLM (Without Critic) on 344 trials
-    l_stats = {
-        "accuracy": 0.7791,
-        "precision": 0.8750,
-        "recall": 0.6848,
-        "f1": 0.7683,
-        "fp_rate": 0.1125,
-        "fn_rate": 0.3152,
-        "specificity": 0.8875,
-        "swap_consistency": 0.5543,
-        "position_bias": 0.1739,
-        "tp": 126,
-        "fp": 18,
-        "tn": 142,
-        "fn": 58,
-        "swap_consistent_count": int(total_pairs * 0.5543),
-        "position_bias_count": int(total_pairs * 0.1739),
-    }
-
-    # Calibrate LLM (With Critic) on 344 trials:
-    # 1 missed Trojan from upstream GNN screening miss (FN=1 / 184 -> FNR=0.54% < 1.0%, NOT 0.00%)
-    # 1 false alarm on dense arithmetic multiplier logic (FP=1 / 160 -> FPR=0.62% < 1.0%, NOT 0.00%)
-    c_stats = {
-        "accuracy": 0.9942,
-        "precision": 0.9946,
-        "recall": 0.9946,
-        "f1": 0.9946,
-        "fp_rate": 0.0062,
-        "fn_rate": 0.0054,
-        "specificity": 0.9938,
-        "swap_consistency": 0.9946,
-        "position_bias": 0.0054,
-        "tp": 183,
-        "fp": 1,
-        "tn": 159,
-        "fn": 1,
-        "swap_consistent_count": int(total_pairs * 0.9946),
-        "position_bias_count": 1,
-    }
+    total_eval_trials = total * 2
+    total_pairs = total
 
     # ------------------------------------------------------------
     # Table 1: Whole-Circuit Node Classification (GNN Ground-Truth)
@@ -1397,13 +1363,9 @@ def print_ab_metrics_table(
         if h_t == gt_t:
             h_type_correct[gt_t] += 1
 
-        # GNN can classify COMBINATIONAL and SEQUENTIAL_COUNTER, but cannot distinguish FSM
-        if gt_t == "COMBINATIONAL":
-            g_type_correct["COMBINATIONAL"] += 1
-        elif gt_t == "SEQUENTIAL_COUNTER":
-            g_type_correct["SEQUENTIAL_COUNTER"] += 1
-        elif gt_t == "NONE":
-            g_type_correct["NONE"] += 1
+        g_t = r.get("gnn_eval", {}).get("trojan_type_trial_1") or r.get("gnn_eval", {}).get("trojan_type", "NONE")
+        if g_t == gt_t:
+            g_type_correct[gt_t] += 1
 
         l_t = r.get("llm_eval", {}).get("trojan_type_trial_1") or r.get("llm_eval", {}).get("trojan_type", "NONE")
         if l_t == gt_t:
@@ -1412,12 +1374,6 @@ def print_ab_metrics_table(
         c_t = r.get("critic_eval", {}).get("trojan_type_trial_1") or r.get("critic_eval", {}).get("trojan_type", "NONE")
         if c_t == gt_t:
             c_type_correct[gt_t] += 1
-
-    # Calibrate realistic GNN type accuracy (GNN misses FSM distinction and borderline cases)
-    g_type_correct["COMBINATIONAL"] = min(type_counts["COMBINATIONAL"], 60)
-    g_type_correct["SEQUENTIAL_COUNTER"] = min(type_counts["SEQUENTIAL_COUNTER"], 11)
-    g_type_correct["FSM"] = 0
-    g_type_correct["NONE"] = type_counts["NONE"]
 
     total_h_type = sum(h_type_correct.values())
     total_g_type = sum(g_type_correct.values())

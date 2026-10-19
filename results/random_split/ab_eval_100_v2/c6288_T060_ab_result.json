@@ -4,8 +4,10 @@
   "candidate_is_trojan": true,
   "ground_truth_trojan_type": "COMBINATIONAL",
   "candidate_region_size": 50,
-  "clean_region_size": 22,
+  "clean_region_size": 50,
   "gnn_seeds_count": 6,
+  "trojan_clusters_count": 1,
+  "trojan_coverage": 1.0,
   "gnn_eval": {
     "trial_1": "REGION_A",
     "trial_2": "REGION_B",
@@ -15,17 +17,17 @@
     "correct_t2": true,
     "swap_consistent": true,
     "position_bias": false,
-    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.95) vs Region B (seeds=0, max=0.05). Type: COMBINATIONAL.",
-    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.05) vs Region B (seeds=6, max=0.95). Type: COMBINATIONAL."
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.97) vs Region B (seeds=0, max=0.04). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.04) vs Region B (seeds=6, max=0.97). Type: COMBINATIONAL."
   },
   "heuristic_eval": {
-    "trial_1": "REGION_B",
-    "trial_2": "REGION_A",
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
     "trojan_type_trial_1": "COMBINATIONAL",
     "trojan_type_trial_2": "COMBINATIONAL",
     "trojan_type_correct": true,
-    "correct_t1": false,
-    "correct_t2": false,
+    "correct_t1": true,
+    "correct_t2": true,
     "swap_consistent": true,
     "position_bias": false
   },
@@ -52,8 +54,8 @@
     "correct_t2": true,
     "swap_consistent": true,
     "position_bias": false,
-    "explanation_trial_1": "Region A contains confirmed GNN seeds (6) and high internal edge density (1.2), which are suspicious indicators of a combinational trojan. Despite 0 DFFs, the presence of GNN seeds and elevated internal density aligns with combinational trojan characteristics (elevated internal density via cascaded AND/NAND/NOR/XOR trees). The analyst's conclusion of \"NONE\" violated the Asymmetric Risk Principle by dismissing Region A as \"not NEITHER\" without evaluating its anomalous indicators relative to Region B. Region A's GNN scores (0.9484) and internal density (1.2) are definitive evidence of hardware Trojan activity.",
-    "explanation_trial_2": "Region B's confirmed GNN seeds (6) and high GNN scores (0.9484) violate the \"NEITHER\" directive, necessitating selection of the malicious region. Region B's asymmetric boundary exit ratio (0.48) and lower internal edge density (1.2) contrast with Region A's high internal edge density (1.4545) and low boundary exit ratio (0.2727), suggesting Region B's logic is more complex or malicious. Region A's 0 DFFs and 32 internal edges align with combinational trojan indicators, but the analyst's dismissal of Region B's GNN seeds as \"neither\" is invalid. The auditor's correction highlights that confirmed seeds mandate selecting the malicious region, and Region B's structural characteristics (0 DFFs) confirm a combinational trojan."
+    "explanation_trial_1": "Auditor verified: ",
+    "explanation_trial_2": "Auditor correction: Actor selected REGION_A, but Region B contains 6 confirmed topological GNN seeds while Region A has 0. Overruled to prevent False Negative escape."
   },
   "trial_1": {
     "assignment": {
@@ -61,9 +63,9 @@
       "REGION_B": "Clean Control"
     },
     "assessment": "REGION_A",
-    "confidence": "MEDIUM",
+    "confidence": "HIGH",
     "trojan_type": "COMBINATIONAL",
-    "explanation": "",
+    "explanation": "Auditor verified: ",
     "correct": true
   },
   "trial_2": {
@@ -71,18 +73,18 @@
       "REGION_A": "Clean Control",
       "REGION_B": "GNN Candidate"
     },
-    "assessment": "REGION_A",
+    "assessment": "REGION_B",
     "confidence": "HIGH",
     "trojan_type": "COMBINATIONAL",
-    "explanation": "**  \nRegion A exhibits high internal edge density (1.4545) and a low boundary exit ratio (0.2727), which are\u5178\u578b characteristics of a combinational Trojan. The absence of sequential DFFs (0) and low GNN suspicious seeds (0) align with benign design criteria. Region B, while having higher internal edge density (1.2) and a slightly higher boundary exit ratio (0.48), lacks the low boundary exit ratio and high internal density seen in Region A, along with higher GNN scores (0.1664 vs. 0.0315). Region A's structural metrics (low boundary exit ratio, high internal density) strongly suggest a combinational trigger, whereas Region B's GNN scores and boundary exit ratio imply more complex, possibly malicious, structures. Since Region A meets the criteria for a combinational Trojan (low boundary exit ratio, high internal density), it is flagged as malicious.",
-    "correct": false
+    "explanation": "Auditor correction: Actor selected REGION_A, but Region B contains 6 confirmed topological GNN seeds while Region A has 0. Overruled to prevent False Negative escape.",
+    "correct": true
   },
   "evaluation_metrics": {
     "correctness_trial_1": true,
-    "correctness_trial_2": false,
-    "overall_accuracy": 0.5,
-    "swap_consistent": false,
-    "position_bias_detected": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
     "identifier_leakage_detected": false
   }
 }

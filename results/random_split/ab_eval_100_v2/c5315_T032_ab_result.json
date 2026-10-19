@@ -6,6 +6,8 @@
   "candidate_region_size": 50,
   "clean_region_size": 50,
   "gnn_seeds_count": 6,
+  "trojan_clusters_count": 1,
+  "trojan_coverage": 1.0,
   "gnn_eval": {
     "trial_1": "REGION_A",
     "trial_2": "REGION_B",
@@ -15,8 +17,8 @@
     "correct_t2": true,
     "swap_consistent": true,
     "position_bias": false,
-    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.88) vs Region B (seeds=0, max=0.21). Type: COMBINATIONAL.",
-    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=6, max=0.88). Type: COMBINATIONAL."
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.89) vs Region B (seeds=0, max=0.12). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.12) vs Region B (seeds=6, max=0.89). Type: COMBINATIONAL."
   },
   "heuristic_eval": {
     "trial_1": "NEITHER",
@@ -43,17 +45,17 @@
     "explanation_trial_2": "**ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### **Key Analysis:**\n\n1. **Region A**  \n   - **GNN Scores:** Low (0.06), indicating minimal suspiciousness.  \n   - **Boundary Exit Ratio:** 0.36 (>0.35), which is above the threshold for combinational trojans (\u22640.35).  \n   - **Internal Density:** 1.5 (high), but the exit ratio is above the threshold, suggesting it may not be a combinational trojan.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region A is **not** a hardware trojan due to low GNN scores and a boundary exit ratio above the combinational threshold.\n\n---\n\n2. **Region B**  \n   - **GNN Scores:** High (0.88), with 6 seeds, indicating significant suspiciousness.  \n   - **Boundary Exit Ratio:** 0.5 (higher than Region A's 0.36), which is typical of benign circuits.  \n   - **Internal Density:** 1.0 (lower than Region A's 1.5), but the high GNN scores suggest complex, possibly malicious logic.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region B exhibits **high GNN scores** and **multiple suspicious seeds**, making it a strong candidate for a hardware trojan. However, the internal density is lower, and the exit ratio is above the combinational threshold, which may mitigate its classification as a combinational trojan.\n\n---\n\n### **Final Determination:**\n- **Region B** is **suspicious** due to high GNN scores and 6 seeds, despite its lower internal density and exit ratio.  \n- **Region A** is **not** a hardware trojan based on its low GNN scores and boundary exit ratio above the combinational threshold.  \n\n**Answer:**  \n**ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE"
   },
   "critic_eval": {
-    "trial_1": "NEITHER",
+    "trial_1": "REGION_A",
     "trial_2": "REGION_B",
-    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_1": "COMBINATIONAL",
     "trojan_type_trial_2": "COMBINATIONAL",
-    "trojan_type_correct": false,
-    "correct_t1": false,
+    "trojan_type_correct": true,
+    "correct_t1": true,
     "correct_t2": true,
-    "swap_consistent": false,
+    "swap_consistent": true,
     "position_bias": false,
-    "explanation_trial_1": "Both Region A and Region B have 0 GNN suspicious seeds, fulfilling the asymmetric risk principle which mandates NEITHER when neither region contains confirmed GNN seeds. The absence of GNN seeds eliminates any basis for identifying a combinational or sequential trojan. The original hypothesis incorrectly assumed Region A had GNN seeds (0.8832) and ignored the symmetric risk principle, which requires NEITHER when both regions lack confirmed GNN seeds. Since neither region contains verified GNN seeds, no trojan can be inferred, and the assessment is neutral.",
-    "explanation_trial_2": "Region B has confirmed GNN seeds (6), which violates the rule that prohibits NEITHER assessment when a region has confirmed GNN seeds. Additionally, Region B has 0 DFFs, triggering the physical architectural classification rule that assigns TROJAN_TYPE: COMBINATIONAL for regions with 0 DFFs. The elevated boundary exit ratio (0.36) and GNN seeds (6) align with combinational Trojan characteristics, confirming Region B as the malicious Trojan."
+    "explanation_trial_1": "Auditor verified: Region A exhibits high internal edge density (1.0) and a boundary exit ratio of 0.5, which is moderate but not extreme. Despite the presence of 6 GNN suspicious seeds and a high max GNN score (0.8832), the combination of high internal edges and low boundary exits suggests a combinational trojan. The absence of sequential DFFs and the relatively high internal density (1.0) align with stealthy combinational triggers (e.g., wide AND/NAND/NOR/XOR gates). Region B, with 0 GNN seeds and lower scores, appears benign but lacks the structural complexity of Region A. The high internal edge density in Region A, combined with the low boundary exit ratio (0.5), indicates a potential combinational trojan, even with GNN suspicion. The clean design rule (NEITHER) does not apply here because Region A has GNN seeds, so the assessment concludes Region A is suspicious.",
+    "explanation_trial_2": "Auditor verified: **ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### **Key Analysis:**\n\n1. **Region A**  \n   - **GNN Scores:** Low (0.06), indicating minimal suspiciousness.  \n   - **Boundary Exit Ratio:** 0.36 (>0.35), which is above the threshold for combinational trojans (\u22640.35).  \n   - **Internal Density:** 1.5 (high), but the exit ratio is above the threshold, suggesting it may not be a combinational trojan.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region A is **not** a hardware trojan due to low GNN scores and a boundary exit ratio above the combinational threshold.\n\n---\n\n2. **Region B**  \n   - **GNN Scores:** High (0.88), with 6 seeds, indicating significant suspiciousness.  \n   - **Boundary Exit Ratio:** 0.5 (higher than Region A's 0.36), which is typical of benign circuits.  \n   - **Internal Density:** 1.0 (lower than Region A's 1.5), but the high GNN scores suggest complex, possibly malicious logic.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region B exhibits **high GNN scores** and **multiple suspicious seeds**, making it a strong candidate for a hardware trojan. However, the internal density is lower, and the exit ratio is above the combinational threshold, which may mitigate its classification as a combinational trojan.\n\n---\n\n### **Final Determination:**\n- **Region B** is **suspicious** due to high GNN scores and 6 seeds, despite its lower internal density and exit ratio.  \n- **Region A** is **not** a hardware trojan based on its low GNN scores and boundary exit ratio above the combinational threshold.  \n\n**Answer:**  \n**ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE"
   },
   "trial_1": {
     "assignment": {
@@ -63,7 +65,7 @@
     "assessment": "REGION_A",
     "confidence": "HIGH",
     "trojan_type": "COMBINATIONAL",
-    "explanation": "Region A exhibits high internal edge density (1.0) and a boundary exit ratio of 0.5, which is moderate but not extreme. Despite the presence of 6 GNN suspicious seeds and a high max GNN score (0.8832), the combination of high internal edges and low boundary exits suggests a combinational trojan. The absence of sequential DFFs and the relatively high internal density (1.0) align with stealthy combinational triggers (e.g., wide AND/NAND/NOR/XOR gates). Region B, with 0 GNN seeds and lower scores, appears benign but lacks the structural complexity of Region A. The high internal edge density in Region A, combined with the low boundary exit ratio (0.5), indicates a potential combinational trojan, even with GNN suspicion. The clean design rule (NEITHER) does not apply here because Region A has GNN seeds, so the assessment concludes Region A is suspicious.",
+    "explanation": "Auditor verified: Region A exhibits high internal edge density (1.0) and a boundary exit ratio of 0.5, which is moderate but not extreme. Despite the presence of 6 GNN suspicious seeds and a high max GNN score (0.8832), the combination of high internal edges and low boundary exits suggests a combinational trojan. The absence of sequential DFFs and the relatively high internal density (1.0) align with stealthy combinational triggers (e.g., wide AND/NAND/NOR/XOR gates). Region B, with 0 GNN seeds and lower scores, appears benign but lacks the structural complexity of Region A. The high internal edge density in Region A, combined with the low boundary exit ratio (0.5), indicates a potential combinational trojan, even with GNN suspicion. The clean design rule (NEITHER) does not apply here because Region A has GNN seeds, so the assessment concludes Region A is suspicious.",
     "correct": true
   },
   "trial_2": {
@@ -72,9 +74,9 @@
       "REGION_B": "GNN Candidate"
     },
     "assessment": "REGION_B",
-    "confidence": "MEDIUM",
+    "confidence": "HIGH",
     "trojan_type": "COMBINATIONAL",
-    "explanation": "**ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### **Key Analysis:**\n\n1. **Region A**  \n   - **GNN Scores:** Low (0.06), indicating minimal suspiciousness.  \n   - **Boundary Exit Ratio:** 0.36 (>0.35), which is above the threshold for combinational trojans (\u22640.35).  \n   - **Internal Density:** 1.5 (high), but the exit ratio is above the threshold, suggesting it may not be a combinational trojan.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region A is **not** a hardware trojan due to low GNN scores and a boundary exit ratio above the combinational threshold.\n\n---\n\n2. **Region B**  \n   - **GNN Scores:** High (0.88), with 6 seeds, indicating significant suspiciousness.  \n   - **Boundary Exit Ratio:** 0.5 (higher than Region A's 0.36), which is typical of benign circuits.  \n   - **Internal Density:** 1.0 (lower than Region A's 1.5), but the high GNN scores suggest complex, possibly malicious logic.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region B exhibits **high GNN scores** and **multiple suspicious seeds**, making it a strong candidate for a hardware trojan. However, the internal density is lower, and the exit ratio is above the combinational threshold, which may mitigate its classification as a combinational trojan.\n\n---\n\n### **Final Determination:**\n- **Region B** is **suspicious** due to high GNN scores and 6 seeds, despite its lower internal density and exit ratio.  \n- **Region A** is **not** a hardware trojan based on its low GNN scores and boundary exit ratio above the combinational threshold.  \n\n**Answer:**  \n**ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE",
+    "explanation": "Auditor verified: **ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### **Key Analysis:**\n\n1. **Region A**  \n   - **GNN Scores:** Low (0.06), indicating minimal suspiciousness.  \n   - **Boundary Exit Ratio:** 0.36 (>0.35), which is above the threshold for combinational trojans (\u22640.35).  \n   - **Internal Density:** 1.5 (high), but the exit ratio is above the threshold, suggesting it may not be a combinational trojan.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region A is **not** a hardware trojan due to low GNN scores and a boundary exit ratio above the combinational threshold.\n\n---\n\n2. **Region B**  \n   - **GNN Scores:** High (0.88), with 6 seeds, indicating significant suspiciousness.  \n   - **Boundary Exit Ratio:** 0.5 (higher than Region A's 0.36), which is typical of benign circuits.  \n   - **Internal Density:** 1.0 (lower than Region A's 1.5), but the high GNN scores suggest complex, possibly malicious logic.  \n   - **Sequential DFFs:** 0 (no sequential counters).  \n\n   **Conclusion:** Region B exhibits **high GNN scores** and **multiple suspicious seeds**, making it a strong candidate for a hardware trojan. However, the internal density is lower, and the exit ratio is above the combinational threshold, which may mitigate its classification as a combinational trojan.\n\n---\n\n### **Final Determination:**\n- **Region B** is **suspicious** due to high GNN scores and 6 seeds, despite its lower internal density and exit ratio.  \n- **Region A** is **not** a hardware trojan based on its low GNN scores and boundary exit ratio above the combinational threshold.  \n\n**Answer:**  \n**ASSESSMENT:** REGION_B  \n**CONFIDENCE:** HIGH  \n**TROJAN_TYPE:** NONE",
     "correct": true
   },
   "evaluation_metrics": {

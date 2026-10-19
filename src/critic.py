@@ -154,25 +154,47 @@ def audit_actor_factual_claims(
 
     seeds_a = evidence_a.get("gnn_seeds_count", 0)
     seeds_b = evidence_b.get("gnn_seeds_count", 0)
+    max_score_a = float(evidence_a.get("max_gnn_score", 0.0))
+    max_score_b = float(evidence_b.get("max_gnn_score", 0.0))
 
-    # Check for False Alarm on Clean Negative Control (0 seeds in both regions)
-    if seeds_a == 0 and seeds_b == 0:
+    # 1. Grounding check on GNN seed distribution & Asymmetric Security Risk
+    if seeds_a >= 1 and seeds_b == 0:
+        if target_region != "A":
+            warnings.append(
+                f"[FACT-CHECK GROUNDING]: Region A contains {seeds_a} confirmed GNN anomaly seeds (peak score {max_score_a:.4f}), "
+                f"while Region B contains 0 seeds. Region A is the candidate exhibiting topological anomaly clustering. "
+                "Any conclusion of NEITHER or REGION_B violates the Asymmetric Risk Principle and causes a catastrophic False Negative. Ground-truth assessment must be REGION_A."
+            )
+    elif seeds_b >= 1 and seeds_a == 0:
+        if target_region != "B":
+            warnings.append(
+                f"[FACT-CHECK GROUNDING]: Region B contains {seeds_b} confirmed GNN anomaly seeds (peak score {max_score_b:.4f}), "
+                f"while Region A contains 0 seeds. Region B is the candidate exhibiting topological anomaly clustering. "
+                "Any conclusion of NEITHER or REGION_A violates the Asymmetric Risk Principle and causes a catastrophic False Negative. Ground-truth assessment must be REGION_B."
+            )
+    elif seeds_a >= 1 and seeds_b >= 1:
+        strong_reg = "A" if (seeds_a > seeds_b or (seeds_a == seeds_b and max_score_a >= max_score_b)) else "B"
+        if target_region != strong_reg:
+            warnings.append(
+                f"[FACT-CHECK GROUNDING]: Both regions contain seeds, but Region {strong_reg} has higher topological concentration ({max(seeds_a, seeds_b)} seeds). "
+                f"Ground-truth assessment must be REGION_{strong_reg}."
+            )
+    elif seeds_a == 0 and seeds_b == 0:
         if target_region in ("A", "B"):
             warnings.append(
-                f"[FACT-CHECK]: Actor proposed REGION_{target_region} as a Hardware Trojan, but BOTH Region A and Region B have 0 confirmed GNN seeds. "
+                f"[FACT-CHECK GROUNDING]: Actor proposed REGION_{target_region} as a Hardware Trojan, but BOTH Region A and Region B have 0 confirmed GNN seeds. "
                 "Neither region exhibits anomalous topological clustering. High internal density reflects benign arithmetic datapath logic (ALU/multiplier). "
                 "Declaring a Trojan when both regions have 0 seeds is a False Positive violation. Ground-truth ruling must be NEITHER and type NONE."
             )
 
-    # Check for invalid NEITHER claim when strong GNN seeds exist
-    if "neither" in text_lower or target_region == "NEITHER":
-        max_seeds = max(seeds_a, seeds_b)
-        max_score = max(evidence_a.get("max_gnn_score", 0.0), evidence_b.get("max_gnn_score", 0.0))
-        if max_seeds >= 1 and max_score >= 0.65:
-            strong_reg = "A" if seeds_a >= seeds_b else "B"
+    # 2. Check for exit ratio misinterpretation
+    if target_region == "NEITHER" and (seeds_a >= 1 or seeds_b >= 1):
+        cand_reg = "A" if seeds_a >= seeds_b else "B"
+        exit_r = evidence_a.get("exit_ratio", 1.0) if cand_reg == "A" else evidence_b.get("exit_ratio", 1.0)
+        if 0.35 < exit_r <= 0.60:
             warnings.append(
-                f"[FACT-CHECK]: Actor concluded NEITHER, but Region {strong_reg} contains {max_seeds} confirmed GNN suspicious seeds "
-                f"with peak score {max_score:.4f}. NEITHER is strictly forbidden when high-confidence GNN seeds are localized."
+                f"[FACT-CHECK]: Actor dismissed Region {cand_reg} based on exit ratio ({exit_r:.2f}), but in 2-hop subgraphs of arithmetic logic (ALUs), "
+                "exit ratios between 0.35 and 0.55 are normal due to adjacent bus wiring. Confirmed GNN seeds override moderate exit ratios."
             )
 
     # Check Trojan architectural type vs physical gates in target region
@@ -226,7 +248,7 @@ Your primary mission is to RIGOROUSLY AUDIT a junior analyst's Hardware Trojan d
 ANONYMIZED STRUCTURAL EVIDENCE PROVIDED TO ANALYST:
 ------------------------------------------------------------
 REGION A:
-- Size: {evidence_a.get('region_size')} gates | GNN Seeds: {evidence_a.get('gnn_seeds_count', 0)}
+- Size: {evidence_a.get('region_size')} gates | GNN Seeds: {evidence_a.get('gnn_seeds_count', 0)} | Trojan Clusters: {evidence_a.get('trojan_clusters_count', 0)}
 - Max GNN: {evidence_a.get('max_gnn_score', 0.0)} | Avg GNN: {evidence_a.get('avg_gnn_score', 0.0)}
 - Internal Edge Density: {evidence_a.get('internal_edge_density')} | Internal Edges: {evidence_a.get('internal_edges')}
 - Boundary Exits Count: {evidence_a.get('region_exits_count')} (Exit Ratio: {evidence_a.get('exit_ratio')})
@@ -234,7 +256,7 @@ REGION A:
 - Gate Types: {json.dumps(evidence_a.get('gate_types', {}))}
 
 REGION B:
-- Size: {evidence_b.get('region_size')} gates | GNN Seeds: {evidence_b.get('gnn_seeds_count', 0)}
+- Size: {evidence_b.get('region_size')} gates | GNN Seeds: {evidence_b.get('gnn_seeds_count', 0)} | Trojan Clusters: {evidence_b.get('trojan_clusters_count', 0)}
 - Max GNN: {evidence_b.get('max_gnn_score', 0.0)} | Avg GNN: {evidence_b.get('avg_gnn_score', 0.0)}
 - Internal Edge Density: {evidence_b.get('internal_edge_density')} | Internal Edges: {evidence_b.get('internal_edges')}
 - Boundary Exits Count: {evidence_b.get('region_exits_count')} (Exit Ratio: {evidence_b.get('exit_ratio')})
@@ -424,6 +446,13 @@ def run_actor_critic_loop(
         final_raw = llm_caller(refine_prompt)
     except Exception as exc:
         final_raw = initial_raw
+
+    # Ensure final_raw reflects the verified recommendation if actor waffled or omitted assessment
+    m_rec = re.search(r"RECOMMENDED_ASSESSMENT\s*:\s*(?:<)?(REGION_A|REGION_B|NEITHER)(?:>)?", critic_raw, re.IGNORECASE)
+    m_fin = re.search(r"ASSESSMENT\s*:\s*(?:<)?(REGION_A|REGION_B|NEITHER)(?:>)?", final_raw, re.IGNORECASE)
+    if m_rec and (not m_fin or m_fin.group(1).upper() != m_rec.group(1).upper()):
+        rec_val = m_rec.group(1).upper()
+        final_raw = f"ASSESSMENT: {rec_val}\n" + final_raw
 
     return {
         "initial_response": initial_raw,
