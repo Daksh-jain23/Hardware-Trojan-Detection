@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T435",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 45,
+  "clean_region_size": 45,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.56). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.56) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9495 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.11) is exceptionally high, and boundary exit ratio is extremely low (0.0222), suggesting isolation from surrounding logic\u2014a hallmark of stealthy comparators or payload injectors. While it contains 5 DFFs, the absence of sequential state machine connectivity (e.g., no visible state transitions in gate types) and the presence of complex gates (e.g., aoi33s2, nor5s1) align more with combinational logic. Region B has no GNN seeds, low internal density (1.62), and a normal exit ratio (0.4444), consistent with benign arithmetic datapath logic.",
+    "explanation_trial_2": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9495 (far exceeding Region A's 0.5575) and an average score of 0.8707, indicating strong topological clustering. Its boundary exit ratio (0.0222) is exceptionally low (<0.30), deviating from typical datapath behavior, while its internal edge density (2.11) and 5 sequential gates (DFFs) suggest a state counter or FSM. Region A has 0 GNN seeds, no sequential elements, and a boundary exit ratio (0.44) within normal ranges, aligning with benign logic."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN seeds (confirmed suspiciousness), high internal edge density (2.11), and a low boundary exit ratio (0.0222), consistent with FSM topological clustering. The presence of state multiplexers (mxi21s3, mx21s3) and compound AOI/OAI gates (aoi33s2, oai211s2) in the gate types list, as highlighted by the auditor, definitively classifies this region as an FSM rather than a sequential counter. While Region A contains 5 DFFs (within the 1-5 range for sequential counters), the presence of MUXes and compound gates overrides this metric, mandating FSM classification per the Hardware Security Auditor's rules. Region B has no GNN seeds and benign metrics, ruling it out as a Trojan.",
+    "explanation_trial_2": "Region B contains 15 confirmed GNN seeds (exceeding the 0.5 threshold), 5 sequential DFFs, and structural evidence of state multiplexers (mxi21s3, mx21s3) and compound AOI/OAI gates (aoi33s2, oai211s2), which are incompatible with sequential counters but align with FSMs. The high GNN scores (0.9495), internal edge density (2.11), and low boundary exit ratio (0.0222) indicate stealthy, isolated FSM Trojan behavior. Region A is benign (0 GNN seeds, no DFFs, no suspicious gates)."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9495 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.11) is exceptionally high, and boundary exit ratio is extremely low (0.0222), suggesting isolation from surrounding logic\u2014a hallmark of stealthy comparators or payload injectors. While it contains 5 DFFs, the absence of sequential state machine connectivity (e.g., no visible state transitions in gate types) and the presence of complex gates (e.g., aoi33s2, nor5s1) align more with combinational logic. Region B has no GNN seeds, low internal density (1.62), and a normal exit ratio (0.4444), consistent with benign arithmetic datapath logic.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9495 (far exceeding Region A's 0.5575) and an average score of 0.8707, indicating strong topological clustering. Its boundary exit ratio (0.0222) is exceptionally low (<0.30), deviating from typical datapath behavior, while its internal edge density (2.11) and 5 sequential gates (DFFs) suggest a state counter or FSM. Region A has 0 GNN seeds, no sequential elements, and a boundary exit ratio (0.44) within normal ranges, aligning with benign logic.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "s1423_T400",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 48,
+  "clean_region_size": 48,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.72). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.72) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9493 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.02) is extremely high, and boundary exit ratio is abnormally low (0.0208), suggesting isolated, dense logic\u2014consistent with a stealthy sequential Trojan. The presence of 5 DFFs aligns with sequential state counters. In contrast, Region B has 0 GNN seeds, low average scores (0.0636), and a high exit ratio (0.75), which aligns with benign signal dispersion in standard datapaths. Region A\u2019s metrics definitively flag it as anomalous.",
+    "explanation_trial_2": "Region B exhibits 15 confirmed GNN suspicious seeds (max score 0.9493), extreme internal edge density (2.02), and a minimal boundary exit ratio (0.02), indicating high internal clustering and low external connectivity typical of stealthy sequential logic. The presence of 5 sequential gates (DFFs) aligns with sequential state counters or FSMs. In contrast, Region A has 0 GNN seeds (despite a high max GNN score of 0.72) and a high exit ratio (0.75), which, without confirmed seeds, suggests benign signal dispersion rather than malicious logic."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 15 GNN suspicious seeds (exceeding the 0.5 threshold) and exhibits structural anomalies: high internal edge density (2.02), low boundary exit ratio (0.02), and 5 sequential DFFs. However, the presence of **state multiplexers (mxi21s3)** and **compound AOI/OAI gates (oai13s2)** in its gate types definitively classifies it as **FSM** (not sequential counter), as these are defining FSM characteristics. Region B has 0 GNN seeds, no DFFs, and low internal density (1.10), consistent with benign combinational logic. The auditor\u2019s correction aligns with the classification rules: DFFs with state multiplexers/compound gates necessitate FSM classification. Region A\u2019s structural containment and GNN scores confirm malicious FSM logic.",
+    "explanation_trial_2": "Region B contains 15 GNN suspicious seeds (max score 0.9493), extreme internal edge density (2.02), and 5 DFFs. Its Gate Types include state multiplexers (\"mxi21s3\", \"mxi41s2\") and compound AOI/OAI gates (\"oai13s2\", \"oai22s2\"), which are definitive FSM characteristics. The low boundary exit ratio (0.02) and high internal connectivity align with isolated malicious logic, confirming FSM classification over sequential counter. Region A is benign with 0 GNN seeds and standard datapath metrics."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9493 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.02) is extremely high, and boundary exit ratio is abnormally low (0.0208), suggesting isolated, dense logic\u2014consistent with a stealthy sequential Trojan. The presence of 5 DFFs aligns with sequential state counters. In contrast, Region B has 0 GNN seeds, low average scores (0.0636), and a high exit ratio (0.75), which aligns with benign signal dispersion in standard datapaths. Region A\u2019s metrics definitively flag it as anomalous.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits 15 confirmed GNN suspicious seeds (max score 0.9493), extreme internal edge density (2.02), and a minimal boundary exit ratio (0.02), indicating high internal clustering and low external connectivity typical of stealthy sequential logic. The presence of 5 sequential gates (DFFs) aligns with sequential state counters or FSMs. In contrast, Region A has 0 GNN seeds (despite a high max GNN score of 0.72) and a high exit ratio (0.75), which, without confirmed seeds, suggests benign signal dispersion rather than malicious logic.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

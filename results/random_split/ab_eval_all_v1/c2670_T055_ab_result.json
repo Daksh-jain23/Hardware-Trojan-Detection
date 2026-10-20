@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T055",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 40,
+  "clean_region_size": 40,
+  "gnn_seeds_count": 5,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=5, max=0.92) vs Region B (seeds=0, max=0.07). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.07) vs Region B (seeds=5, max=0.92). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 5 GNN suspicious seeds with a max score of 0.9196 (>0.50), indicating topological clustering anomalies. Its internal edge density (1.075) aligns with benign logic, but the high GNN scores and presence of NOR/XOR gates with extreme fanin/fanout (e.g., NOR4S1 with 4 inputs) suggest a stealthy comparator tree. Region B has 0 GNN seeds, low scores (<0.07), and standard NAND gate dominance, consistent with benign arithmetic logic. Region A\u2019s lack of sequential elements (0 DFFs) further supports a combinational Trojan (trigger comparator), while Region B\u2019s metrics fall within normal ranges for non-malicious circuits.",
+    "explanation_trial_2": "Region B exhibits confirmed GNN suspicious seeds (5 seeds, max score 0.9196 \u2265 0.50) and a Trojan cluster, indicating topological anomalies absent in Region A (0 seeds, max score 0.0695). Despite both regions having boundary exit ratios within normal ranges (0.4\u20130.475), Region B\u2019s extreme GNN scores and cluster suggest stealthy combinational logic (e.g., trigger comparator trees). Region A\u2019s high internal edge density (0.975) and lack of GNN suspicion align with benign arithmetic datapath behavior. Sequential gates are absent in both, but Region B\u2019s high GNN scores override this, pointing to a potential combinational trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 5 GNN suspicious seeds with a max score of 0.9196 (>0.55), exceeding the threshold for combinational Trojan detection. Its absence of DFFs aligns with the classification rule for COMBINATIONAL Trojans (0 DFFs). Region B has 0 GNN seeds and a max score of 0.0695 (<0.45), confirming it is benign. The auditor's critique validates that Region A's metrics (GNN seeds, density, and exit ratio) are consistent with stealthy combinational Trojans (e.g., trigger comparator trees), while Region B's metrics are within normal arithmetic logic ranges. No conflicting evidence or misstatements are present.",
+    "explanation_trial_2": "Region B contains 5 GNN suspicious seeds with a max score of 0.9196 (>0.50), exceeding the threshold for combinational Trojan detection. Its internal edge density (1.075) is **28% above the benign logic range (0.8\u20131.4)**, and the boundary exit ratio (0.4) aligns with the **lower edge of the combinational Trojan range (0.30\u20130.55)**, both consistent with stealthy trigger logic (e.g., comparator trees). Region A has 0 seeds and metrics (density 0.975, exits 19) within normal ranges for benign arithmetic logic. The **asymmetric risk** (Region B\u2019s 5 seeds vs. Region A\u2019s 0, with a GNN score differential of 0.85) confirms Region B as the malicious Trojan. Region B\u2019s 0 DFFs further classify it as **COMBINATIONAL**."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 5 GNN suspicious seeds with a max score of 0.9196 (>0.50), indicating topological clustering anomalies. Its internal edge density (1.075) aligns with benign logic, but the high GNN scores and presence of NOR/XOR gates with extreme fanin/fanout (e.g., NOR4S1 with 4 inputs) suggest a stealthy comparator tree. Region B has 0 GNN seeds, low scores (<0.07), and standard NAND gate dominance, consistent with benign arithmetic logic. Region A\u2019s lack of sequential elements (0 DFFs) further supports a combinational Trojan (trigger comparator), while Region B\u2019s metrics fall within normal ranges for non-malicious circuits.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits confirmed GNN suspicious seeds (5 seeds, max score 0.9196 \u2265 0.50) and a Trojan cluster, indicating topological anomalies absent in Region A (0 seeds, max score 0.0695). Despite both regions having boundary exit ratios within normal ranges (0.4\u20130.475), Region B\u2019s extreme GNN scores and cluster suggest stealthy combinational logic (e.g., trigger comparator trees). Region A\u2019s high internal edge density (0.975) and lack of GNN suspicion align with benign arithmetic datapath behavior. Sequential gates are absent in both, but Region B\u2019s high GNN scores override this, pointing to a potential combinational trojan.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

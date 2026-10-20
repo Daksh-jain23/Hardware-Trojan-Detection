@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T616",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "SEQUENTIAL_COUNTER",
+  "candidate_region_size": 23,
+  "clean_region_size": 23,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.21). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9467 (far exceeding the 0.50 threshold), indicating strong topological clustering. Its internal edge density (1.6087) is extremely high, and boundary exit ratio is 0.0 (no external connections), suggesting isolation typical of malicious logic. The presence of 5 sequential gates (DFFs) aligns with sequential Trojan indicators (e.g., state counters). In contrast, Region B has 0 GNN seeds, low internal edge density (1.26), and a normal boundary exit ratio (0.3043), consistent with benign logic. Region A\u2019s structural anomalies and GNN scores strongly implicate a sequential Trojan.",
+    "explanation_trial_2": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9467 (far exceeding the 0.50 threshold), while Region A has 0 seeds and a max score of 0.2143. Region B's internal edge density (1.6087) is significantly higher than Region A's (1.2609), and its boundary exit ratio is 0.0 (vs. Region A's 0.3043), indicating anomalous internal clustering. Region B contains 5 sequential gates (DFFs), aligning with sequential Trojan indicators like state counters, whereas Region A has no sequential elements. The extreme GNN scores and low boundary exits in Region B strongly suggest a malicious sequential structure."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A meets all criteria for a sequential counter Trojan: 15 GNN seeds (\u22651), max GNN score 0.9467 (\u22650.55 with a differential of 0.7324 over Region B's 0.2143), zero boundary exits (isolated), and 5 DFFs (within 1\u20135 range for sequential counters) without state multiplexers or compound gates. Region B has no GNN seeds, low scores (<0.45), and normal exit ratio (0.30), confirming it is benign. The auditor's validation confirms Region A's metrics align with the Asymmetric Risk Principle and sequential counter classification rules.",
+    "explanation_trial_2": "Region B's 15 GNN suspicious seeds (exceeding the 0.50 threshold), max GNN score of 0.9467, zero boundary exits (deviating from normal datapath exit ratios), and 5 sequential DFFs (without state multiplexers or compound AOI/OAI gates) strongly indicate a malicious sequential counter. Region A's absence of GNN seeds, low scores (<0.45), and normal exit ratios confirm it is benign. The auditor's alignment with the Sequential Counter classification and absence of conflicting metrics validate this assessment."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9467 (far exceeding the 0.50 threshold), indicating strong topological clustering. Its internal edge density (1.6087) is extremely high, and boundary exit ratio is 0.0 (no external connections), suggesting isolation typical of malicious logic. The presence of 5 sequential gates (DFFs) aligns with sequential Trojan indicators (e.g., state counters). In contrast, Region B has 0 GNN seeds, low internal edge density (1.26), and a normal boundary exit ratio (0.3043), consistent with benign logic. Region A\u2019s structural anomalies and GNN scores strongly implicate a sequential Trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9467 (far exceeding the 0.50 threshold), while Region A has 0 seeds and a max score of 0.2143. Region B's internal edge density (1.6087) is significantly higher than Region A's (1.2609), and its boundary exit ratio is 0.0 (vs. Region A's 0.3043), indicating anomalous internal clustering. Region B contains 5 sequential gates (DFFs), aligning with sequential Trojan indicators like state counters, whereas Region A has no sequential elements. The extreme GNN scores and low boundary exits in Region B strongly suggest a malicious sequential structure.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

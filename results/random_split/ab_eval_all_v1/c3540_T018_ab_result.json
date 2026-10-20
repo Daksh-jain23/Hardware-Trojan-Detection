@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T018",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 5,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=5, max=0.95) vs Region B (seeds=0, max=0.20). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.20) vs Region B (seeds=5, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 5 confirmed GNN suspicious seeds with a max score of 0.9454 (>0.50), indicating topological clustering anomalies. Its internal edge density (1.0) is within normal bounds, but the boundary exit ratio (0.56) slightly exceeds the benign upper limit (0.55). However, this is tolerated due to the presence of GNN anomalies. The absence of sequential gates (DFFs) and prevalence of NAND/NOR/XOR gates align with combinational trojan patterns (e.g., stealthy trigger comparators). Region B has 0 GNN seeds, a low max score (0.1963), and a high exit ratio (0.72), but lacks topological suspicion, consistent with benign logic.",
+    "explanation_trial_2": "Region B contains 5 confirmed GNN suspicious seeds with a max score of 0.9454 (exceeding the 0.50 threshold), indicating topological clustering anomalies. Its boundary exit ratio (0.56) falls within the typical range for benign logic (0.35\u20130.55) but does not disqualify it due to the presence of GNN anomalies. Region B lacks sequential gates (DFFs), aligning with combinational Trojans like stealthy trigger comparators. In contrast, Region A has 0 GNN seeds, a max score of 0.1963 (<0.50), and a high exit ratio (0.72) without GNN suspicion, which is consistent with benign signal dispersion. The high GNN scores and clustered anomalies in Region B strongly suggest a malicious combinational structure."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 5 confirmed GNN suspicious seeds (exceeding the 0.50 threshold) with a max GNN score of 0.9454 (well above the 0.55 anomaly threshold), indicating topological clustering anomalies. Its exit ratio (0.56) aligns with combinational Trojan characteristics (0.30\u20130.55 range), and the absence of DFFs confirms a combinational Trojan type (e.g., stealthy trigger comparators with XOR2, OR5, NAND/NOR gate trees). Region B has no GNN seeds and a low max GNN score (0.1963), confirming it as benign. The audit validates the initial assessment without requiring changes.",
+    "explanation_trial_2": "Region B has confirmed GNN seeds (5 seeds, max score 0.9454 \u2265 0.55) and a peak GNN score exceeding the 0.45 threshold, mandating immediate flagging per the \"NEITHER\" directive. Its boundary exit ratio (0.56) exceeds the typical range for combinational Trojans (0.30\u20130.55), indicating anomalous signal dispersion, but this does not negate the GNN-based evidence. Region A has 0 seeds and a peak GNN score of 0.1963 (<0.45), aligning with the \"NEITHER\" directive for clean logic. Region B\u2019s 0 DFFs and presence of complex gates (e.g., OR5, NAND4) classify it as a combinational Trojan, consistent with stealthy trigger comparator architectures. The initial misclassification of Region A\u2019s exit ratio and lack of empirical correlation for Region B\u2019s gate types have been corrected."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A contains 5 confirmed GNN suspicious seeds with a max score of 0.9454 (>0.50), indicating topological clustering anomalies. Its internal edge density (1.0) is within normal bounds, but the boundary exit ratio (0.56) slightly exceeds the benign upper limit (0.55). However, this is tolerated due to the presence of GNN anomalies. The absence of sequential gates (DFFs) and prevalence of NAND/NOR/XOR gates align with combinational trojan patterns (e.g., stealthy trigger comparators). Region B has 0 GNN seeds, a low max score (0.1963), and a high exit ratio (0.72), but lacks topological suspicion, consistent with benign logic.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B contains 5 confirmed GNN suspicious seeds with a max score of 0.9454 (exceeding the 0.50 threshold), indicating topological clustering anomalies. Its boundary exit ratio (0.56) falls within the typical range for benign logic (0.35\u20130.55) but does not disqualify it due to the presence of GNN anomalies. Region B lacks sequential gates (DFFs), aligning with combinational Trojans like stealthy trigger comparators. In contrast, Region A has 0 GNN seeds, a max score of 0.1963 (<0.50), and a high exit ratio (0.72) without GNN suspicion, which is consistent with benign signal dispersion. The high GNN scores and clustered anomalies in Region B strongly suggest a malicious combinational structure.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

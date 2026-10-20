@@ -1,0 +1,88 @@
+{
+  "circuit": "s1423_T201",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 80,
+  "clean_region_size": 34,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.92) vs Region B (seeds=0, max=0.21). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=15, max=0.92). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9227 (exceeding the 0.50 threshold), indicating topological clustering anomalies. Its internal edge density (1.2375) and boundary exit ratio (0.4375) align with benign logic ranges, but the high GNN scores and dense connectivity of XOR/NOR gates (e.g., NODE_0014 with 0.9227) suggest a stealthy combinational trigger comparator. Region B has 0 GNN seeds, low scores (<0.21), and standard gate types (AND/NOR/OR), consistent with benign arithmetic logic. The absence of sequential gates in Region A further supports a combinational Trojan (e.g., rare-condition comparator tree), while Region B shows no suspicious features.",
+    "explanation_trial_2": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9227 (exceeding the 0.5 threshold), indicating anomalous topological clustering. Its internal edge density (1.2375) and boundary exit ratio (0.4375) fall within normal ranges for benign logic, but the extreme GNN scores and high seed count suggest stealthy malicious logic. Region A has 0 seeds, low GNN scores (<0.21), and no topological anomalies, aligning with standard arithmetic datapath characteristics. The absence of sequential gates in both regions does not disqualify Region B from being a combinational Trojan (e.g., trigger comparator tree or payload injection)."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 15 confirmed GNN suspicious seeds (>=1) with a max score of 0.9227 (>0.50 threshold), triggering mandatory Trojan suspicion. Its 0 DFFs confirm a combinational Trojan type. Region B has 0 GNN seeds and scores (<0.21), aligning with benign arithmetic datapath logic. The auditor's critique validates the initial assessment, confirming Region A as the malicious hardware Trojan.",
+    "explanation_trial_2": "Region B contains 15 confirmed GNN suspicious seeds with a max score of 0.9227 (exceeding the 0.5 threshold), coupled with an internal edge density of 1.2375 and 5-input gates (e.g., or5s3, nor5s1), which strongly indicate a stealthy trigger comparator tree typical of combinational Trojans. Region A has 0 GNN seeds and scores below 0.21, consistent with benign arithmetic logic. Region B\u2019s lack of DFFs confirms the combinational classification. The audit validates the initial assessment without requiring changes."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9227 (exceeding the 0.50 threshold), indicating topological clustering anomalies. Its internal edge density (1.2375) and boundary exit ratio (0.4375) align with benign logic ranges, but the high GNN scores and dense connectivity of XOR/NOR gates (e.g., NODE_0014 with 0.9227) suggest a stealthy combinational trigger comparator. Region B has 0 GNN seeds, low scores (<0.21), and standard gate types (AND/NOR/OR), consistent with benign arithmetic logic. The absence of sequential gates in Region A further supports a combinational Trojan (e.g., rare-condition comparator tree), while Region B shows no suspicious features.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9227 (exceeding the 0.5 threshold), indicating anomalous topological clustering. Its internal edge density (1.2375) and boundary exit ratio (0.4375) fall within normal ranges for benign logic, but the extreme GNN scores and high seed count suggest stealthy malicious logic. Region A has 0 seeds, low GNN scores (<0.21), and no topological anomalies, aligning with standard arithmetic datapath characteristics. The absence of sequential gates in both regions does not disqualify Region B from being a combinational Trojan (e.g., trigger comparator tree or payload injection).",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

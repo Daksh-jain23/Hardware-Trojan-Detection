@@ -1,0 +1,88 @@
+{
+  "circuit": "c5315_T050",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 60,
+  "clean_region_size": 60,
+  "gnn_seeds_count": 10,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=10, max=0.92) vs Region B (seeds=0, max=0.12). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.12) vs Region B (seeds=10, max=0.92). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_B",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 10 GNN suspicious seeds with a max score of 0.9193 (exceeding the 0.50 threshold), indicating topological clustering anomalies. Its internal edge density (1.05) and boundary exit ratio (0.3667) align with standard datapath ranges, but the high GNN scores and dense NAND/NOR/XOR gate clusters (e.g., NOR5 with 0.9193) suggest stealthy comparator logic. Region B has 0 GNN seeds, low scores (<0.12), and a higher internal edge density (1.55), but lacks topological suspicion. The absence of DFFs in both regions is consistent with combinational Trojans, but only Region A's GNN metrics warrant flagging.",
+    "explanation_trial_2": "Region B exhibits 10 GNN suspicious seeds with a max score of 0.9193 (exceeding the 0.50 threshold), a confirmed Trojan cluster, and high internal edge density (1.05) consistent with complex logic structures. Its boundary exit ratio (0.3667) falls within normal ranges, but the GNN anomalies and lack of sequential gates (DFFs) strongly suggest a combinational Trojan (e.g., a stealthy trigger comparator tree). Region A has no GNN seeds, low scores (<0.12), and no clusters, aligning with benign arithmetic logic despite its higher internal edge density (1.55), which may reflect normal complexity in a datapath."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 10 GNN seeds (not explicitly labeled as \"suspicious\" per evidence) and a max GNN score of 0.9193, which exceeds the 0.55 threshold for anomaly detection. The score differential (0.9193 vs. 0.1239 in Region B) triggers the Asymmetric Risk Principle, indicating a significant risk in Region A. Region A\u2019s internal edge density (1.05) aligns with benign logic (0.8\u20131.4), but its high GNN score and absence of DFFs confirm a combinational Trojan (e.g., a trigger comparator). Region B\u2019s low GNN score (0.1239) and standard gate types (e.g., AND3s1) are consistent with benign arithmetic logic. The auditor\u2019s correction clarifies terminology, but the conclusion remains valid: Region A is the malicious Trojan.",
+    "explanation_trial_2": "Region B has 10 confirmed GNN suspicious seeds with a max score of 0.9193 (exceeding the 0.5 threshold), while Region A has 0 seeds and a max score of 0.1239. Despite Region B's internal edge density (1.05) and boundary exit ratio (0.3667) falling within normal ranges for benign logic, the **asymmetric risk principle** and **elevated GNN scores with clustered suspicious gates** (e.g., NOR5s1, NAND/XOR) are critical indicators of a combinational Trojan. Region A's slightly elevated edge density (1.55) is offset by its absence of GNN anomalies and the **differential GNN score (0.7954)**, which justifies prioritizing Region B. Both regions lack DFFs, aligning with the **COMBINATIONAL** Trojan classification."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 10 GNN suspicious seeds with a max score of 0.9193 (exceeding the 0.50 threshold), indicating topological clustering anomalies. Its internal edge density (1.05) and boundary exit ratio (0.3667) align with standard datapath ranges, but the high GNN scores and dense NAND/NOR/XOR gate clusters (e.g., NOR5 with 0.9193) suggest stealthy comparator logic. Region B has 0 GNN seeds, low scores (<0.12), and a higher internal edge density (1.55), but lacks topological suspicion. The absence of DFFs in both regions is consistent with combinational Trojans, but only Region A's GNN metrics warrant flagging.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 10 GNN suspicious seeds with a max score of 0.9193 (exceeding the 0.50 threshold), a confirmed Trojan cluster, and high internal edge density (1.05) consistent with complex logic structures. Its boundary exit ratio (0.3667) falls within normal ranges, but the GNN anomalies and lack of sequential gates (DFFs) strongly suggest a combinational Trojan (e.g., a stealthy trigger comparator tree). Region A has no GNN seeds, low scores (<0.12), and no clusters, aligning with benign arithmetic logic despite its higher internal edge density (1.55), which may reflect normal complexity in a datapath.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

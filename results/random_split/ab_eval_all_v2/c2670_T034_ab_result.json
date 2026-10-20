@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T034",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 6,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.95) vs Region B (seeds=0, max=0.14). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.14) vs Region B (seeds=6, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_B",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 6 GNN suspicious seeds with a max score of 0.9468 (far exceeding the 0.50 threshold), while Region B has 0 seeds and a max score of 0.1392. Region A's internal edge density (1.02) and boundary exit ratio (0.4) fall within normal ranges for arithmetic datapaths, but the extreme GNN scores and clustering of high-score gates (AND3, OR3, NAND3, XOR2) suggest a stealthy combinational trigger comparator tree. Region B's lack of GNN suspicion and standard gate distribution (NOR, NAND) align with benign logic. Sequential gates are absent in both, but Region A's high GNN scores override this, indicating a combinational Trojan.",
+    "explanation_trial_2": "Region B exhibits 6 GNN suspicious seeds with a max score of 0.9468 (exceeding the 0.50 threshold), indicating topological clustering anomalies. While its internal edge density (1.02) and boundary exit ratio (0.4) fall within normal ranges for benign logic, the high GNN scores and localized clustering strongly suggest stealthy combinational logic (e.g., trigger comparator trees). Region A has 0 GNN seeds, low scores (<0.14), and metrics consistent with standard arithmetic datapath logic, ruling out malicious intent. The absence of sequential gates in both regions does not disqualify Region B, as combinational Trojans operate without DFFs."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 6 confirmed GNN seeds (\u22651), which must be flagged per the Asymmetric Risk Principle, regardless of other metrics. While Region B has 0 seeds and normal gate types (nand2s1, nor2s1), Region A's GNN seeds alone constitute definitive evidence of a potential Trojan. The absence of DFFs in Region A confirms the Trojan is combinational. Gate types, exit ratios, and density in Region A are benign but do not override the mandatory flagging of confirmed GNN seeds. Region B's gate types are standard in arithmetic logic and not suspicious.",
+    "explanation_trial_2": "Region B contains 6 confirmed GNN suspicious seeds with a max score of 0.9468 (exceeding the 0.5 threshold), indicating anomalous topological clustering consistent with a stealthy combinational Trojan. Its internal edge density (1.02) and boundary exit ratio (0.4) fall within normal ranges for combinational logic, but the high GNN scores and localized clustering strongly suggest malicious intent. Region A has 0 GNN seeds and metrics consistent with standard arithmetic datapath logic, ruling out malicious intent. Region B\u2019s absence of DFFs confirms the combinational Trojan classification."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 6 GNN suspicious seeds with a max score of 0.9468 (far exceeding the 0.50 threshold), while Region B has 0 seeds and a max score of 0.1392. Region A's internal edge density (1.02) and boundary exit ratio (0.4) fall within normal ranges for arithmetic datapaths, but the extreme GNN scores and clustering of high-score gates (AND3, OR3, NAND3, XOR2) suggest a stealthy combinational trigger comparator tree. Region B's lack of GNN suspicion and standard gate distribution (NOR, NAND) align with benign logic. Sequential gates are absent in both, but Region A's high GNN scores override this, indicating a combinational Trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 6 GNN suspicious seeds with a max score of 0.9468 (exceeding the 0.50 threshold), indicating topological clustering anomalies. While its internal edge density (1.02) and boundary exit ratio (0.4) fall within normal ranges for benign logic, the high GNN scores and localized clustering strongly suggest stealthy combinational logic (e.g., trigger comparator trees). Region A has 0 GNN seeds, low scores (<0.14), and metrics consistent with standard arithmetic datapath logic, ruling out malicious intent. The absence of sequential gates in both regions does not disqualify Region B, as combinational Trojans operate without DFFs.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T004",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 60,
+  "clean_region_size": 51,
+  "gnn_seeds_count": 10,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=10, max=0.95) vs Region B (seeds=0, max=0.19). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.19) vs Region B (seeds=10, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 10 GNN suspicious seeds with a max score of 0.9469 (exceeding the 0.50 threshold), indicating topological clustering. Its internal edge density (0.9833) is extremely high, and boundary exit ratio (0.4667) falls within normal ranges for silicon, but the presence of multiple high-GNN-score gates (e.g., AND3, NOR5, XOR2) with fanin/fanout patterns suggests a stealthy comparator tree. Region B has 0 GNN seeds, low max score (0.1881), and standard NAND gate dominance, consistent with benign logic. Region A\u2019s lack of DFFs and dense NOR/NAND gate clusters align with combinational Trojan indicators.",
+    "explanation_trial_2": "Region B exhibits 10 GNN suspicious seeds with a max score of 0.9469 (far exceeding the 0.50 threshold), while Region A has 0 seeds and a max score of 0.1881. Region B's internal edge density (0.9833) is slightly below benign logic norms but remains within plausible ranges, whereas its boundary exit ratio (0.4667) is typical for datapaths. The presence of high-GNN-score gates like nor5s1, and3s1, and xor2s1 suggests complex logic patterns consistent with stealthy comparators or payload injection. Region A's metrics (internal density 1.1569, exit ratio 0.3529) align with standard arithmetic datapath behavior, and its absence of GNN anomalies strongly indicates benignity."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A meets the Asymmetric Risk Principle criteria with 10 GNN seeds, a peak GNN score of 0.9469 (\u22650.55), and a differential of 0.7588 (\u22650.15) compared to Region B. Despite its internal edge density (0.9833) and boundary exit ratio (0.4667) being within normal ranges for benign logic, the high GNN scores and clustered seeds indicate anomalous topological clustering. The absence of DFFs and presence of complex gate types (e.g., nor5s1, and3s1) suggest a combinational stealthy trigger comparator tree. Region B's lower peak GNN score (0.1881) and lack of seeds confirm it as benign logic, with metrics more consistent with normal behavior than Region A.",
+    "explanation_trial_2": "Region B meets the criteria for a malicious Trojan due to its 10 confirmed GNN seeds (\u22651) and a max GNN score of 0.9469 (\u22650.55 with a differential of 0.7588 over Region A), triggering the Asymmetric Risk Principle. Its 0 DFFs align with the COMBINATIONAL classification rule. Region A is benign, as its 0 seeds and 0.1881 max GNN score (<0.45) fall within standard arithmetic datapath behavior (density 1.1569 within 0.8\u20131.4). The auditor's validation confirms Region B's classification as a combinational Trojan, with no false positives flagged for Region A."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 10 GNN suspicious seeds with a max score of 0.9469 (exceeding the 0.50 threshold), indicating topological clustering. Its internal edge density (0.9833) is extremely high, and boundary exit ratio (0.4667) falls within normal ranges for silicon, but the presence of multiple high-GNN-score gates (e.g., AND3, NOR5, XOR2) with fanin/fanout patterns suggests a stealthy comparator tree. Region B has 0 GNN seeds, low max score (0.1881), and standard NAND gate dominance, consistent with benign logic. Region A\u2019s lack of DFFs and dense NOR/NAND gate clusters align with combinational Trojan indicators.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 10 GNN suspicious seeds with a max score of 0.9469 (far exceeding the 0.50 threshold), while Region A has 0 seeds and a max score of 0.1881. Region B's internal edge density (0.9833) is slightly below benign logic norms but remains within plausible ranges, whereas its boundary exit ratio (0.4667) is typical for datapaths. The presence of high-GNN-score gates like nor5s1, and3s1, and xor2s1 suggests complex logic patterns consistent with stealthy comparators or payload injection. Region A's metrics (internal density 1.1569, exit ratio 0.3529) align with standard arithmetic datapath behavior, and its absence of GNN anomalies strongly indicates benignity.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

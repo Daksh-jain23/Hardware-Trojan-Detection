@@ -1,0 +1,88 @@
+{
+  "circuit": "s13207_T461",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 24,
+  "clean_region_size": 24,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.94) vs Region B (seeds=0, max=0.17). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.17) vs Region B (seeds=15, max=0.94). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9443 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (1.875) is extremely high, and boundary exits are 0 (exit ratio 0.0), suggesting isolated, tightly coupled logic\u2014consistent with a sequential state counter or FSM (4 DFFs present). Region B has 0 GNN seeds, normal exit ratio (0.4167), and benign internal density (0.958), aligning with standard datapath logic. Region A\u2019s GNN anomalies and sequential elements strongly indicate a stealthy sequential Trojan.",
+    "explanation_trial_2": "Region B exhibits extreme GNN suspiciousness (15 seeds, max score 0.9443) and high internal edge density (1.875), combined with 4 sequential gates (DFFs) and zero boundary exits\u2014hallmarks of a tightly contained sequential state machine or counter. Region A has no GNN seeds, low scores (<0.2), and normal exit ratios (0.4167), consistent with benign arithmetic logic. The absence of sequential gates in Region A further supports its benign nature, while Region B's anomalous topological clustering and sequential elements strongly indicate a stealthy sequential Trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 15 confirmed GNN seeds with a max score of 0.9443 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (1.875) is extremely high, and boundary exits are 0 (exit ratio 0.0), triggering the Asymmetric Risk Principle. The presence of **compound AOI/OAI gates** (e.g., `oai32s1`, `aoai122s2`) in the Gate Types, as highlighted by the auditor, **automatically classifies it as an FSM** (Finite State Machine) per the architectural rules, even though it has only 4 DFFs. Region B has 0 GNN seeds and benign characteristics (low GNN scores, normal exit ratio), ruling it out as a Trojan. Region A\u2019s GNN anomalies, compound logic, and low exit ratio strongly indicate a malicious FSM.",
+    "explanation_trial_2": "Region B contains 15 confirmed GNN seeds, compound AOI/OAI gates (e.g., \"oai32s1\", \"aoai122s2\"), and 4 DFFs, which together satisfy the architectural classification rules for FSM (DFFs with compound logic). Region A is clean (0 GNN seeds, normal metrics), while Region B\u2019s confirmed seeds and anomalous topology (1.875 edge density, zero boundary exits) confirm it as the malicious Trojan. The initial misclassification as \"SEQUENTIAL_COUNTER\" was corrected to FSM per the auditor\u2019s rules."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9443 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (1.875) is extremely high, and boundary exits are 0 (exit ratio 0.0), suggesting isolated, tightly coupled logic\u2014consistent with a sequential state counter or FSM (4 DFFs present). Region B has 0 GNN seeds, normal exit ratio (0.4167), and benign internal density (0.958), aligning with standard datapath logic. Region A\u2019s GNN anomalies and sequential elements strongly indicate a stealthy sequential Trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits extreme GNN suspiciousness (15 seeds, max score 0.9443) and high internal edge density (1.875), combined with 4 sequential gates (DFFs) and zero boundary exits\u2014hallmarks of a tightly contained sequential state machine or counter. Region A has no GNN seeds, low scores (<0.2), and normal exit ratios (0.4167), consistent with benign arithmetic logic. The absence of sequential gates in Region A further supports its benign nature, while Region B's anomalous topological clustering and sequential elements strongly indicate a stealthy sequential Trojan.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

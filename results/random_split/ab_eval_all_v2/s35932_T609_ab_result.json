@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T609",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 36,
+  "clean_region_size": 24,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.04). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.04) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9487 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.11) is extremely high, and boundary exit ratio is exceptionally low (0.0556), suggesting internal signal containment typical of stealthy comparators or logic trees. The presence of 5 DFFs could hint at sequential logic, but the absence of state machine connectivity (no FSM-like structure) and the dominance of combinational gate types (AND, NAND, XOR) align with a **combinational** Trojan (e.g., a rare-condition comparator tree). Region B has 0 GNN seeds, low internal density (0.958), and a high exit ratio (0.6667), consistent with benign datapath logic.",
+    "explanation_trial_2": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9487 (far exceeding the 0.50 threshold), indicating strong topological clustering. Its internal edge density (2.11) and sequential gates (5 DFFs) align with sequential state counters. The extremely low boundary exit ratio (0.0556) suggests internal signal containment typical of malicious logic. In contrast, Region A has 0 GNN seeds, a low max score (0.0365), and a high exit ratio (0.6667) consistent with benign arithmetic datapath dispersion."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 15 confirmed GNN seeds (exceeding the 0.5 threshold) and exhibits compound AOI/OAI gates (e.g., \"oai13s2\", \"oai222s1\"), which are invariant markers of finite state machines (FSMs). The presence of 5 DFFs combined with these gates aligns with FSM architecture, not sequential counters (which lack such gates). The low boundary exit ratio (0.0556) and high internal edge density (2.11) further support stealthy FSM behavior. Region B has 0 GNN seeds and benign datapath characteristics, confirming it is not malicious.",
+    "explanation_trial_2": "Region B contains 15 confirmed GNN seeds (max score 0.9487), extreme internal edge density (2.11), and compound AOI/OAI gates (\"oai13s2\", \"oai222s1\"), which are hallmarks of FSM-like topological clustering. While it has 5 DFFs, the absence of state multiplexers and presence of compound logic gates (per audit evidence) align with FSM classification, not sequential counters. Region A has no GNN seeds and benign characteristics, ruling it out. The audit correction confirms FSM as the correct type, not sequential counter."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9487 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.11) is extremely high, and boundary exit ratio is exceptionally low (0.0556), suggesting internal signal containment typical of stealthy comparators or logic trees. The presence of 5 DFFs could hint at sequential logic, but the absence of state machine connectivity (no FSM-like structure) and the dominance of combinational gate types (AND, NAND, XOR) align with a **combinational** Trojan (e.g., a rare-condition comparator tree). Region B has 0 GNN seeds, low internal density (0.958), and a high exit ratio (0.6667), consistent with benign datapath logic.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9487 (far exceeding the 0.50 threshold), indicating strong topological clustering. Its internal edge density (2.11) and sequential gates (5 DFFs) align with sequential state counters. The extremely low boundary exit ratio (0.0556) suggests internal signal containment typical of malicious logic. In contrast, Region A has 0 GNN seeds, a low max score (0.0365), and a high exit ratio (0.6667) consistent with benign arithmetic datapath dispersion.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

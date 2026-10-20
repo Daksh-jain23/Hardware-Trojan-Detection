@@ -1,0 +1,88 @@
+{
+  "circuit": "s1423_T430",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 38,
+  "clean_region_size": 38,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.11). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.11) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9478 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.3684) is extremely high, and boundary exit ratio is abnormally low (0.0263), suggesting isolated, dense logic\u2014hallmarks of a stealthy Trojan. The presence of 5 sequential gates (DFFs) aligns with a sequential state counter or FSM. In contrast, Region B has 0 GNN seeds, a low max score (0.1145), and a high exit ratio (0.7105), consistent with benign signal dispersion in standard datapath logic. Region A\u2019s metrics definitively flag it as anomalous.",
+    "explanation_trial_2": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9478 (far exceeding the 0.50 threshold), indicating strong topological clustering. Its internal edge density (2.3684) is significantly higher than Region A's (1.1316), and its boundary exit ratio (0.0263) is extremely low, suggesting minimal external connectivity\u2014a hallmark of stealthy Trojans. Region B contains 5 sequential gates (DFFs), aligning with sequential Trojan characteristics (e.g., state counters). In contrast, Region A has no GNN seeds, a benign exit ratio (0.7105), and no sequential elements, consistent with standard arithmetic logic. The high GNN scores and low exit ratio in Region B strongly indicate a malicious sequential structure."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9478 (exceeding the 0.55 threshold), high internal edge density (2.3684), and a low boundary exit ratio (0.0263), consistent with stealthy Trojan behavior. The presence of **state multiplexers (mxi21s3, mxi41s1)** and **compound AOI/OAI gates (oai211s2, oai13s2)** in its gate types confirms it is an **FSM**, not a sequential counter (as per auditor correction). The 5 DFFs combined with multiplexers and compound gates align with FSM architecture rules. Region B is benign due to 0 GNN seeds and a low max score (0.1145). Region A\u2019s structural anomalies and FSM classification confirm it as the malicious Trojan.",
+    "explanation_trial_2": "Region B has 15 GNN suspicious seeds (max score 0.9478) and elevated internal edge density (2.37), with a minimal exit ratio (0.0263), aligning with Trojan characteristics. The presence of state multiplexers (mxi21s3, mxi41s1) and compound AOI/OAI gates (oai211s2, oai13s2) in Region B\u2019s gate types, combined with 5 DFFs, confirms the Trojan type as **FSM** (per auditor\u2019s correction), not Sequential Counter. Region A is benign due to 0 GNN seeds and low anomaly scores."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9478 (far exceeding the 0.5 threshold), indicating strong topological clustering. Its internal edge density (2.3684) is extremely high, and boundary exit ratio is abnormally low (0.0263), suggesting isolated, dense logic\u2014hallmarks of a stealthy Trojan. The presence of 5 sequential gates (DFFs) aligns with a sequential state counter or FSM. In contrast, Region B has 0 GNN seeds, a low max score (0.1145), and a high exit ratio (0.7105), consistent with benign signal dispersion in standard datapath logic. Region A\u2019s metrics definitively flag it as anomalous.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9478 (far exceeding the 0.50 threshold), indicating strong topological clustering. Its internal edge density (2.3684) is significantly higher than Region A's (1.1316), and its boundary exit ratio (0.0263) is extremely low, suggesting minimal external connectivity\u2014a hallmark of stealthy Trojans. Region B contains 5 sequential gates (DFFs), aligning with sequential Trojan characteristics (e.g., state counters). In contrast, Region A has no GNN seeds, a benign exit ratio (0.7105), and no sequential elements, consistent with standard arithmetic logic. The high GNN scores and low exit ratio in Region B strongly indicate a malicious sequential structure.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

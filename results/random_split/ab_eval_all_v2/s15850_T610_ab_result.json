@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T610",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 80,
+  "clean_region_size": 80,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.39). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.39) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9457 (exceeding the 0.5 threshold), indicating anomalous topological clustering. Its internal edge density (0.9875) is extremely high, typical of compact logic, while the boundary exit ratio (0.3875) falls within normal ranges for real silicon. The presence of 2 DFFs suggests potential sequential elements, but the dominance of NAND/NOR/XOR gates (e.g., 29 nnd2s3, 3 nor5s1) and high GNN scores align with stealthy combinational triggers (e.g., wide comparator trees). Region B has 0 GNN seeds, low scores (<0.45), and a gate distribution consistent with standard arithmetic logic, lacking suspicious topological clustering.",
+    "explanation_trial_2": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9457 (exceeding the 0.50 threshold), while Region A has 0 seeds and a max score of 0.3851. Region B\u2019s internal edge density (0.9875) is within normal ranges, but its high GNN scores and 3 Trojan clusters indicate anomalous topological clustering. The presence of 2 sequential gates (DFFs) and complex gate types (e.g., nor5s1 with 5-input fanin) suggests a sequential state counter or FSM. Region A\u2019s metrics (e.g., internal edge density 1.25, exit ratio 0.4625) align with benign arithmetic logic, and its lack of GNN suspicion rules out malicious intent."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 15 confirmed GNN suspicious seeds (\u22651, triggering the Asymmetric Risk Principle) and exhibits extreme internal edge density (0.9875), aligning with malicious structural anomalies. While it contains 2 DFFs (1\u20135 DFFs without MUXes/AOI), this necessitates classification as SEQUENTIAL_COUNTER per the Physical Architectural Rules, not COMBINATIONAL. Region B has 0 GNN seeds and no topological anomalies, confirming it is benign. The initial error in Trojan type classification has been corrected to align with the auditor\u2019s factual rule: DFFs mandate sequential classification.",
+    "explanation_trial_2": "Region B contains 15 confirmed GNN suspicious seeds (exceeding the 0.50 threshold) and 2 sequential elements (DFFs), which align with the criteria for a SEQUENTIAL_COUNTER (1\u20135 DFFs without state multiplexers or compound AOI/OAI gates). The internal edge density (0.9875) falls within standard arithmetic datapath ranges (0.8\u20131.4), and the auditor\u2019s critique confirms this metric is not anomalous. The absence of explicit state multiplexers in Region B (as required by the auditor\u2019s recommended classification) supports the SEQUENTIAL_COUNTER designation. Region A has no GNN seeds or sequential elements, confirming it as benign logic."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds with a max score of 0.9457 (exceeding the 0.5 threshold), indicating anomalous topological clustering. Its internal edge density (0.9875) is extremely high, typical of compact logic, while the boundary exit ratio (0.3875) falls within normal ranges for real silicon. The presence of 2 DFFs suggests potential sequential elements, but the dominance of NAND/NOR/XOR gates (e.g., 29 nnd2s3, 3 nor5s1) and high GNN scores align with stealthy combinational triggers (e.g., wide comparator trees). Region B has 0 GNN seeds, low scores (<0.45), and a gate distribution consistent with standard arithmetic logic, lacking suspicious topological clustering.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region B exhibits 15 GNN suspicious seeds with a max score of 0.9457 (exceeding the 0.50 threshold), while Region A has 0 seeds and a max score of 0.3851. Region B\u2019s internal edge density (0.9875) is within normal ranges, but its high GNN scores and 3 Trojan clusters indicate anomalous topological clustering. The presence of 2 sequential gates (DFFs) and complex gate types (e.g., nor5s1 with 5-input fanin) suggests a sequential state counter or FSM. Region A\u2019s metrics (e.g., internal edge density 1.25, exit ratio 0.4625) align with benign arithmetic logic, and its lack of GNN suspicion rules out malicious intent.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}
