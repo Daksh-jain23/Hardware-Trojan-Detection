@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T090",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.94) vs Region B (seeds=0, max=0.26). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.26) vs Region B (seeds=7, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": true,
+    "explanation_trial_1": "**  \nRegion A has 7 GNN suspicious seeds with high scores (0.94), indicating significant topological anomalies. Its internal edge density (1.02) and boundary exit ratio (0.48) align with typical patterns for combinational circuits (e.g., ALUs, decoders), where high density and controlled boundary exits are expected. Region B has no GNN seeds but exhibits a high internal edge density (1.14) and boundary exit ratio (0.66), which, in the absence of GNN suspicion, might suggest benign behavior. However, Region A\u2019s GNN seeds directly indicate malicious activity, while Region B\u2019s high exit ratio and lack of seeds make it less suspicious. The high internal density in both regions supports combinational logic, reinforcing the conclusion that Region A is malicious.",
+    "explanation_trial_2": "**  \nRegion A has a high boundary exit ratio (0.66) and no GNN seeds, which, according to guidelines, would be considered benign if no GNN suspicion exists. Its internal edge density (1.14) is higher than Region B's (1.02), but the high exit ratio and absence of GNN seeds eliminate concerns of malicious activity. Region B, while having GNN seeds, does not meet the criteria for a malicious region (no GNN seeds in the other region). Thus, Region A is deemed benign."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A is flagged as the malicious hardware Trojan due to confirmed GNN seeds (7) and high internal edge density (1.02), which align with the asymmetric risk principle. Region B has no GNN seeds and a high boundary exit ratio (0.66), typical of normal arithmetic logic. The auditor's assessment confirms Region A's suspicion, while Region B remains benign. The correction rules are satisfied since Region A has GNN seeds (7 > 0), and the physical architectural classification rules apply (0 DFFs \u2192 COMBINATIONAL). No false positives introduced.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (7) and high internal edge density (1.02), strongly indicating a combinational trojan. The boundary exit ratio of 0.48 is below typical thresholds but does not negate the GNN anomaly. The analyst's false negative was due to insufficient consideration of the GNN seed evidence. Region B's lack of sequential DFFs and high GNN scores align with combinational trojan characteristics, despite the boundary exit ratio. Physical architectural rules confirm TROJAN_TYPE: COMBINATIONAL since Region B has 0 DFFs."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**  \nRegion A has 7 GNN suspicious seeds with high scores (0.94), indicating significant topological anomalies. Its internal edge density (1.02) and boundary exit ratio (0.48) align with typical patterns for combinational circuits (e.g., ALUs, decoders), where high density and controlled boundary exits are expected. Region B has no GNN seeds but exhibits a high internal edge density (1.14) and boundary exit ratio (0.66), which, in the absence of GNN suspicion, might suggest benign behavior. However, Region A\u2019s GNN seeds directly indicate malicious activity, while Region B\u2019s high exit ratio and lack of seeds make it less suspicious. The high internal density in both regions supports combinational logic, reinforcing the conclusion that Region A is malicious.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**  \nRegion A has a high boundary exit ratio (0.66) and no GNN seeds, which, according to guidelines, would be considered benign if no GNN suspicion exists. Its internal edge density (1.14) is higher than Region B's (1.02), but the high exit ratio and absence of GNN seeds eliminate concerns of malicious activity. Region B, while having GNN seeds, does not meet the criteria for a malicious region (no GNN seeds in the other region). Thus, Region A is deemed benign.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": true,
+    "identifier_leakage_detected": false
+  }
+}

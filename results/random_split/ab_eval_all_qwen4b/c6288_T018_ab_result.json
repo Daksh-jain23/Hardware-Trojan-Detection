@@ -1,0 +1,88 @@
+{
+  "circuit": "c6288_T018",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.94) vs Region B (seeds=0, max=0.05). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.05) vs Region B (seeds=7, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits confirmed GNN suspicious seeds (7) and peak GNN score (0.9405) indicating topological clustering. Its boundary exit ratio (0.44) falls within typical arithmetic datapath ranges (0.30\u20130.55), while the gate distribution (39 nor2s1, 5 and2s1, 1 xor2s1) is characteristic of a stealthy comparator tree. Region B shows no GNN suspicion (0 seeds, max score 0.0494) and a high boundary exit ratio (0.7), confirming benignity per absence of anomalies.",
+    "explanation_trial_2": "Region B exhibits 7 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9405 (>=0.50), meeting the primary detection signal for malicious insertion. Region A shows no GNN suspicion (0 seeds, max score 0.0494). Both regions are combinational (0 DFFs), but Region B's high GNN scores, cluster count (1), and gate distribution (dominant NOR gates with high GNN scores) align with a stealthy comparator tree payload injection. The boundary exit ratio (0.44) falls within typical benign ranges and does not override the confirmed GNN anomalies."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 7 confirmed GNN seeds (seeds \u22651), 0 DFFs, and gate types (and2s1, nor2s1, and3s1, and4s1, xor2s1) consistent with a stealthy comparator tree. The Asymmetric Risk Principle explicitly states that confirmed GNN seeds (\u22651) never disqualify a candidate, and the boundary exit ratio (0.44) falls within the typical benign range (0.30\u20130.55) for arithmetic datapaths but is irrelevant to the anomaly per the auditor's critique. Region B has 0 confirmed seeds and is benign, confirming Region A as the malicious combinational trojan.",
+    "explanation_trial_2": "Region B has confirmed GNN seeds (7) \u2265 1, satisfying the mandatory Trojan Circuits rule that requires selecting the region with confirmed seeds (\u22651) when either region meets this threshold. Region A has 0 seeds and is benign, so NEITHER is prohibited. Both regions have 0 DFFs, confirming combinational trojan classification per the Physical Architectural Rules. The boundary exit ratio (0.44) falls within the expected 0.30\u20130.55 range for arithmetic datapaths and does not disqualify Region B under the Asymmetric Risk Principle. The gate composition (39 NOR2S1, 3 AND3S1, 1 XOR2S1) aligns with a comparator circuit\u2014common in combinational trojans for trigger comparison\u2014and the high internal edge density (1.24) supports this payload. The auditor's correction regarding the max GNN score (0.9405 being a region-wide global metric, not per-gate) does not invalidate the candidate identification but clarifies the metric's scope."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits confirmed GNN suspicious seeds (7) and peak GNN score (0.9405) indicating topological clustering. Its boundary exit ratio (0.44) falls within typical arithmetic datapath ranges (0.30\u20130.55), while the gate distribution (39 nor2s1, 5 and2s1, 1 xor2s1) is characteristic of a stealthy comparator tree. Region B shows no GNN suspicion (0 seeds, max score 0.0494) and a high boundary exit ratio (0.7), confirming benignity per absence of anomalies.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 7 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9405 (>=0.50), meeting the primary detection signal for malicious insertion. Region A shows no GNN suspicion (0 seeds, max score 0.0494). Both regions are combinational (0 DFFs), but Region B's high GNN scores, cluster count (1), and gate distribution (dominant NOR gates with high GNN scores) align with a stealthy comparator tree payload injection. The boundary exit ratio (0.44) falls within typical benign ranges and does not override the confirmed GNN anomalies.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

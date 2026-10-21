@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T614",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "SEQUENTIAL_COUNTER",
+  "candidate_region_size": 25,
+  "clean_region_size": 25,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.21). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds and a max GNN score of 0.9469 (well above the 0.50 threshold), confirming strong topological anomalies. Its internal edge density (1.56) exceeds typical benign arithmetic paths (0.8\u20131.2), while the absence of boundary exits (0.0) aligns with stealthy sequential structures. Region B shows no GNN suspicion (0 seeds) and a boundary exit ratio of 0.28 (within benign ranges), confirming it is non-malicious. The presence of 5 DFFs in Region A indicates a sequential state counter Trojan, consistent with the observed high GNN scores on sequential gates.",
+    "explanation_trial_2": "Region B shows 15 GNN suspicious seeds and a max GNN score of 0.9469 (exceeding the 0.50 threshold), indicating strong topological anomaly clustering. It also contains 5 sequential flip-flops (DFFs), consistent with a sequential state counter. Region A has no GNN seeds (max score 0.2117) and is combinational (0 DFFs), with internal density 1.28 (within typical 0.8\u20131.2) and boundary exits 0.28 (low but benign without GNN anomalies)."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 confirmed GNN seeds (peak confidence 0.9469) with 5 DFFs and no state multiplexers (per gate types `dffles2`/`dffs2`), meeting the strict criteria for a stealthy sequential state counter Trojan. Region B has 0 GNN seeds and 0 DFFs, confirming benign combinational logic. Per the auditor's critique, Region A is the only candidate with confirmed anomalies (\u22651 GNN seeds), and the asymmetric boundary exit ratio (0.0 \u2264 0.45) validates no false negatives. The mandatory \"NEITHER\" rule does not apply due to Region A's \u22651 seeds, and physical architecture rules confirm sequential counter classification without multiplexers or compound AOI/OAI gates.",
+    "explanation_trial_2": "Region B exhibits 15 confirmed GNN seeds (\u22651) and a peak GNN score of 0.9469 (\u22650.50), meeting the topological anomaly threshold for malicious activity. It contains exactly 5 sequential flip-flops (DFFs) with no state multiplexers (verified by the absence of gate types starting with \"mux\" or indicating multiplexers), satisfying the sequential counter definition (1\u20135 DFFs without multiplexers). Region A has 0 GNN seeds and 0 DFFs, confirming benign behavior. The boundary exit ratio of 0.0 does not disqualify Region B per the directive for candidates with confirmed GNN seeds (\u22651), and no false positives exist in the evidence. This aligns with the auditor's verification that Region B is a stealthy sequential state counter."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds and a max GNN score of 0.9469 (well above the 0.50 threshold), confirming strong topological anomalies. Its internal edge density (1.56) exceeds typical benign arithmetic paths (0.8\u20131.2), while the absence of boundary exits (0.0) aligns with stealthy sequential structures. Region B shows no GNN suspicion (0 seeds) and a boundary exit ratio of 0.28 (within benign ranges), confirming it is non-malicious. The presence of 5 DFFs in Region A indicates a sequential state counter Trojan, consistent with the observed high GNN scores on sequential gates.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region B shows 15 GNN suspicious seeds and a max GNN score of 0.9469 (exceeding the 0.50 threshold), indicating strong topological anomaly clustering. It also contains 5 sequential flip-flops (DFFs), consistent with a sequential state counter. Region A has no GNN seeds (max score 0.2117) and is combinational (0 DFFs), with internal density 1.28 (within typical 0.8\u20131.2) and boundary exits 0.28 (low but benign without GNN anomalies).",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

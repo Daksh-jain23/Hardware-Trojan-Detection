@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T006",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.95) vs Region B (seeds=0, max=0.25). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.25) vs Region B (seeds=7, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 7 confirmed GNN suspicious seeds with a peak confidence of 0.9476 (exceeding the 0.50 threshold), indicating topological anomaly clustering typical of stealthy comparators. Its boundary exit ratio (0.56) falls within the 0.35\u20130.55 range for combinational trojans in arithmetic datapaths, while Region B shows no GNN suspicion (0 seeds, max score 0.2544) and a higher exit ratio (0.68) consistent with benign logic. Both regions lack sequential gates (0 DFFs), but Region A's structural anomalies confirm a combinational Hardware Trojan (stealthy trigger comparator tree).",
+    "explanation_trial_2": "Region B exhibits 7 confirmed GNN suspicious seeds (>=1) and a max GNN score of 0.9476 (>=0.50), meeting the primary detection signal threshold for topological anomaly clustering. The boundary exit ratio (0.56) falls within the typical benign range (0.35-0.55) for arithmetic datapaths, but the presence of high-confidence GNN anomalies overrides this metric. Region A shows no GNN suspicious seeds and max score <0.45, confirming benignity. Both regions lack DFFs (0 sequential gates), but Region B's high GNN scores and cluster count (1) indicate a stealthy comparator tree payload (combinational Trojan), consistent with rare-condition monitoring logic. Region A's boundary exit ratio (0.68) is elevated but irrelevant due to absence of GNN suspicion."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A is the only candidate with confirmed GNN seeds (7 seeds \u2265 1) and a peak GNN score of 0.9476 (\u22650.50), meeting the primary detection signal for a topological anomaly cluster. Its boundary exit ratio (0.56) does not disqualify it due to the asymmetric risk principle (exit ratios >0.55 are irrelevant when confirmed GNN seeds exist). Region B has 0 GNN seeds and a peak score below 0.50, confirming benign behavior. Both regions have 0 DFFs, and Region A's gate types (19 NAND2, 1 XOR2, 10 HI1, 16 NOR2, 1 NAND3, 1 OR5, 1 AND3, 1 I1) form a stealthy comparator circuit\u2014consistent with known combinational trojan patterns for data exfiltration or security bypass.",
+    "explanation_trial_2": "Region B exhibits 7 confirmed GNN seeds (>=1) and peak GNN score 0.9476 (>=0.50), meeting the primary detection signal for a combinational Trojan. The boundary exit ratio (0.56) exceeds the typical safe threshold (0.55) but this does not invalidate the threat due to the presence of confirmed seeds (per Asymmetric Risk Principle). Region A shows no GNN suspicion (0 seeds, max score 0.2544 <0.50) and is benign. Region B has 0 DFFs, confirming a combinational comparator payload consistent with stealthy trigger injection."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 7 confirmed GNN suspicious seeds with a peak confidence of 0.9476 (exceeding the 0.50 threshold), indicating topological anomaly clustering typical of stealthy comparators. Its boundary exit ratio (0.56) falls within the 0.35\u20130.55 range for combinational trojans in arithmetic datapaths, while Region B shows no GNN suspicion (0 seeds, max score 0.2544) and a higher exit ratio (0.68) consistent with benign logic. Both regions lack sequential gates (0 DFFs), but Region A's structural anomalies confirm a combinational Hardware Trojan (stealthy trigger comparator tree).",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 7 confirmed GNN suspicious seeds (>=1) and a max GNN score of 0.9476 (>=0.50), meeting the primary detection signal threshold for topological anomaly clustering. The boundary exit ratio (0.56) falls within the typical benign range (0.35-0.55) for arithmetic datapaths, but the presence of high-confidence GNN anomalies overrides this metric. Region A shows no GNN suspicious seeds and max score <0.45, confirming benignity. Both regions lack DFFs (0 sequential gates), but Region B's high GNN scores and cluster count (1) indicate a stealthy comparator tree payload (combinational Trojan), consistent with rare-condition monitoring logic. Region A's boundary exit ratio (0.68) is elevated but irrelevant due to absence of GNN suspicion.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T206",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 23,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.83) vs Region B (seeds=0, max=0.04). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.04) vs Region B (seeds=7, max=0.83). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 7 confirmed GNN suspicious seeds (>=1) with a max GNN score of 0.8258 (>=0.50), indicating strong topological anomaly clustering. Its boundary exit ratio (0.52) falls within the expected 0.35-0.55 range for wide arithmetic datapaths, but the presence of high GNN scores and 2 Trojan clusters overrides this metric. Region B shows 0 GNN suspicious seeds and max GNN score 0.0375 (<0.50), with a high boundary exit ratio (0.6522) that is benign due to absence of GNN anomalies. Both regions lack DFFs (combinational), but Region A's confirmed GNN anomalies align with stealthy trigger comparator trees (e.g., wide XOR/NOR gate trees monitoring internal buses). Region B is standard benign arithmetic logic with no malicious indicators.",
+    "explanation_trial_2": "Region B exhibits confirmed GNN suspicious seeds (7) and a peak GNN score of 0.8258 (\u22650.50), indicating strong topological anomaly clustering. Its boundary exit ratio (0.52) falls within the typical 0.30\u20130.55 range for arithmetic datapaths, but the presence of GNN anomalies and absence of sequential flip-flops (DFFs) align with a stealthy combinational Hardware Trojan (e.g., trigger comparator tree). Region A shows no GNN suspicion (0 seeds, max score 0.0375) and a high boundary exit ratio (0.6522), consistent with benign logic."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 7 confirmed GNN seeds (\u22651), meeting the critical threshold for topological anomaly clustering. The absence of sequential DFFs (0) confirms combinational behavior. Region B has 0 seeds and is benign, making its boundary exit ratio (0.6522) irrelevant. The exit ratio (0.52) falls within typical arithmetic datapath ranges (0.30\u20130.55) but does not override the seed evidence\u2014consistent with the asymmetric risk principle that confirmed seeds (\u22651) are decisive for trojan classification. This aligns with known stealthy trigger comparator trees (combinational trojans).",
+    "explanation_trial_2": "Region B has 7 confirmed GNN seeds (exceeding the threshold of 1) and a peak GNN score of 0.8258 (\u2265 0.50), indicating anomalous topological clustering. The boundary exit ratio (0.52) falls within the typical range of 0.30\u20130.55 for arithmetic datapaths and does not disqualify it. Both regions have 0 sequential DFFs, consistent with combinational logic. Per the Asymmetric Risk Principle, Region B is the only candidate with confirmed GNN seeds (\u22651) and must be flagged as the malicious hardware trojan. Region A lacks confirmed GNN seeds (0 seeds) and thus does not meet the criteria for a trojan."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 7 confirmed GNN suspicious seeds (>=1) with a max GNN score of 0.8258 (>=0.50), indicating strong topological anomaly clustering. Its boundary exit ratio (0.52) falls within the expected 0.35-0.55 range for wide arithmetic datapaths, but the presence of high GNN scores and 2 Trojan clusters overrides this metric. Region B shows 0 GNN suspicious seeds and max GNN score 0.0375 (<0.50), with a high boundary exit ratio (0.6522) that is benign due to absence of GNN anomalies. Both regions lack DFFs (combinational), but Region A's confirmed GNN anomalies align with stealthy trigger comparator trees (e.g., wide XOR/NOR gate trees monitoring internal buses). Region B is standard benign arithmetic logic with no malicious indicators.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits confirmed GNN suspicious seeds (7) and a peak GNN score of 0.8258 (\u22650.50), indicating strong topological anomaly clustering. Its boundary exit ratio (0.52) falls within the typical 0.30\u20130.55 range for arithmetic datapaths, but the presence of GNN anomalies and absence of sequential flip-flops (DFFs) align with a stealthy combinational Hardware Trojan (e.g., trigger comparator tree). Region A shows no GNN suspicion (0 seeds, max score 0.0375) and a high boundary exit ratio (0.6522), consistent with benign logic.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

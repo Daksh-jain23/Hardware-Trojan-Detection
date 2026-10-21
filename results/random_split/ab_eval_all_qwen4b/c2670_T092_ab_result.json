@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T092",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 6,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.94) vs Region B (seeds=0, max=0.07). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.07) vs Region B (seeds=6, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 6 GNN suspicious seeds and max GNN score 0.9436 (exceeding 0.50 threshold), confirming topological anomaly clustering. Its internal edge density (0.98) and boundary exit ratio (0.38) align with stealthy combinational comparator characteristics (0 DFFs), while Region B shows no GNN suspicion (0 seeds, max score 0.0695) and is benign.",
+    "explanation_trial_2": "Region B exhibits 6 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9436 (>=0.50), indicating a stealthy combinational comparator or payload injection. The boundary exit ratio (0.38) falls within the typical 0.35\u20130.55 range for arithmetic datapaths and does not disqualify it given the strong GNN suspicion. Region A has 0 GNN suspicious seeds and a peak score of 0.0695 (<0.45), confirming benign structure with no malicious indicators. Both regions lack sequential DFFs, but Region B's GNN anomalies definitively indicate a combinational trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 6 confirmed GNN seeds (exceeding the 0.5 threshold) and 0 DFFs, which are strong indicators of a comparator Trojan. The internal edge density (0.98) aligns with dense combinational logic, and the boundary exit ratio (0.38) falls within the typical arithmetic datapath range (0.30\u20130.55). Region B has 0 confirmed GNN seeds and is benign, as confirmed by the auditor's critique. The auditor explicitly validated Region A as the malicious candidate with no data hallucination, satisfying all physical architectural rules (0 DFFs \u2192 COMBINATIONAL).",
+    "explanation_trial_2": "Region B contains 6 confirmed GNN seeds (>=1) and a peak GNN score of 0.9436 (>=0.50), meeting the primary detection signal for topological anomaly clustering. The boundary exit ratio (0.38) falls within the typical 0.30-0.55 range for arithmetic datapaths and does not override the strong GNN anomaly signal per the Asymmetric Risk Principle. Region A is benign with 0 GNN seeds and max GNN score (0.0695 < 0.45). Both regions have 0 DFFs, but Region B's high GNN scores and cluster count (1) indicate a stealthy combinational comparator tree (e.g., internal bus monitoring via OR3S1/NND4S1 gates), consistent with a payload injection trojan. The assessment adheres to all security guidelines without false positives or false negatives."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 6 GNN suspicious seeds and max GNN score 0.9436 (exceeding 0.50 threshold), confirming topological anomaly clustering. Its internal edge density (0.98) and boundary exit ratio (0.38) align with stealthy combinational comparator characteristics (0 DFFs), while Region B shows no GNN suspicion (0 seeds, max score 0.0695) and is benign.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 6 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9436 (>=0.50), indicating a stealthy combinational comparator or payload injection. The boundary exit ratio (0.38) falls within the typical 0.35\u20130.55 range for arithmetic datapaths and does not disqualify it given the strong GNN suspicion. Region A has 0 GNN suspicious seeds and a peak score of 0.0695 (<0.45), confirming benign structure with no malicious indicators. Both regions lack sequential DFFs, but Region B's GNN anomalies definitively indicate a combinational trojan.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

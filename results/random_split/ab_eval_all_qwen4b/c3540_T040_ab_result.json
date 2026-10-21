@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T040",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.95) vs Region B (seeds=0, max=0.14). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.14) vs Region B (seeds=7, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 7 confirmed GNN suspicious seeds (>=1) with a max GNN score of 0.9474 (>=0.50), meeting the primary detection signal for malicious insertion. Its boundary exit ratio (0.44) falls within the acceptable 0.35-0.55 range for a Trojan candidate given the strong GNN suspicion. The gate distribution (e.g., high XOR/NAND/AND counts) and sample connectivity show combinational structure with 0 DFFs, consistent with a stealthy rare-condition comparator trojan. Region B has 0 GNN seeds and max score 0.1429 (<0.45), confirming benign behavior despite its higher boundary exit ratio (0.7). Both regions lack sequential gates, ruling out sequential counter/FSM types.",
+    "explanation_trial_2": "Region B exhibits 7 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9474 (>=0.50), meeting the primary detection signal for malicious insertion. Its boundary exit ratio (0.44) falls within the typical benign range (0.30-0.55) for arithmetic datapaths, while internal edge density (1.06) aligns with clean logic. Crucially, Region B contains no sequential flip-flops (DFFs) but shows structural indicators of a stealthy comparator tree (e.g., high fanin gates like `nnd4s1` and `and3s1` with elevated GNN scores). Region A has 0 GNN seeds and peak score (0.1429) below 0.50, confirming benign combinatorial logic with no malicious signatures. Per asymmetric security principles, Region B must be flagged to avoid catastrophic false negatives."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 7 confirmed GNN seeds with peak confidence 0.947 (>0.50 threshold), indicating a topological anomaly. Its 0 DFFs and gate distribution (e.g., `and3s1`, `nor2s1`, `nnd2s1`, `hi1s1`, `xor2s1`) are characteristic of a combinational comparator circuit. Region B has 0 GNN seeds and is benign. This meets the asymmetric security principle requiring false negative prevention, as confirmed by the auditor's analysis of hardware security best practices.",
+    "explanation_trial_2": "Region B is confirmed as the malicious Trojan region due to 7 GNN seeds (\u22651), which overrides contextual metrics (e.g., boundary exit ratio of 0.44) per the Asymmetric Risk Principle. Region B has 0 DFFs, confirming combinatorial behavior. The gate composition (8 half-adders, 2 AND gates, 24 NAND gates) aligns with a stealthy comparator tree for side-channel attacks. Region A (0 seeds, peak GNN \u22640.1429) is benign, providing a clear baseline with no conflicting evidence. This assessment meets all hardware security best practices and requires immediate investigation to mitigate potential side-channel risks."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 7 confirmed GNN suspicious seeds (>=1) with a max GNN score of 0.9474 (>=0.50), meeting the primary detection signal for malicious insertion. Its boundary exit ratio (0.44) falls within the acceptable 0.35-0.55 range for a Trojan candidate given the strong GNN suspicion. The gate distribution (e.g., high XOR/NAND/AND counts) and sample connectivity show combinational structure with 0 DFFs, consistent with a stealthy rare-condition comparator trojan. Region B has 0 GNN seeds and max score 0.1429 (<0.45), confirming benign behavior despite its higher boundary exit ratio (0.7). Both regions lack sequential gates, ruling out sequential counter/FSM types.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 7 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9474 (>=0.50), meeting the primary detection signal for malicious insertion. Its boundary exit ratio (0.44) falls within the typical benign range (0.30-0.55) for arithmetic datapaths, while internal edge density (1.06) aligns with clean logic. Crucially, Region B contains no sequential flip-flops (DFFs) but shows structural indicators of a stealthy comparator tree (e.g., high fanin gates like `nnd4s1` and `and3s1` with elevated GNN scores). Region A has 0 GNN seeds and peak score (0.1429) below 0.50, confirming benign combinatorial logic with no malicious signatures. Per asymmetric security principles, Region B must be flagged to avoid catastrophic false negatives.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

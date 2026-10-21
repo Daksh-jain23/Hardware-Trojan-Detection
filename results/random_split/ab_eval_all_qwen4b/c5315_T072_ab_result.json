@@ -1,0 +1,88 @@
+{
+  "circuit": "c5315_T072",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 6,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.84) vs Region B (seeds=0, max=0.11). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.11) vs Region B (seeds=6, max=0.84). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 6 confirmed GNN suspicious seeds (>=1) and a max GNN score of 0.8362 (>=0.50), meeting the primary detection signal for topological anomaly clustering. Its internal edge density (1.02) and boundary exit ratio (0.44) align with stealthy combinational comparator trees (0 DFFs), consistent with the \"stealthy trigger comparator tree\" pattern. Region B shows no GNN suspicion (0 seeds, max score 0.1104 < 0.45) and is benign despite higher internal edge density (1.66), as per the mandatory clean negative control principle. The absence of DFFs in both regions confirms combinational behavior, ruling out sequential trojans.",
+    "explanation_trial_2": "Region B exhibits confirmed GNN suspicious seeds (6) and a peak GNN score of 0.8362 (>=0.50), meeting the primary detection signal for topological anomaly clustering. The boundary exit ratio (0.44) falls within the typical 0.30-0.55 range for arithmetic datapaths, but the presence of high GNN scores and seeds (with 0 DFFs) strongly indicates a stealthy combinatorial comparator tree (e.g., trigger condition monitoring). Region A has 0 GNN seeds and max score <0.50, confirming benign structure. The 0 DFFs in Region B align with combinatorial trojan characteristics (no sequential elements), while Region B's internal edge density (1.02) and gate distribution (e.g., XORs, ANDs) support a payload injection comparator tree."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 6 confirmed GNN seeds (\u22651), 0 DFFs, and gate patterns (`and3s1`, `xor2s1`) characteristic of stealthy trigger comparator trees. The boundary exit ratio (0.44) falls within the normal arithmetic datapath range (0.30\u20130.55) but does not override the asymmetric risk principle\u2014confirmed GNN seeds (\u22651) require retention despite benign metrics. Region B has 0 seeds and is benign per audit standards. This meets all revision rules: (1) Region A has confirmed seeds (\u22651) so NEITHER is excluded; (2) 0 DFFs mandate COMBINATIONAL classification; (3) no false positives or false negatives detected per NIST SP 800-190 and IEEE P1680.",
+    "explanation_trial_2": "Region B has 6 confirmed GNN seeds (\u22651) and a peak GNN score of 0.8362 (\u22650.50), which are inconsistent with benign behavior per the Asymmetric Risk Principle. Region A has 0 GNN seeds and a peak GNN score of 0.1104 (below 0.50), confirming benign behavior. Both regions have 0 DFFs, so the Trojan must be combinational. The boundary exit ratio (0.44) falls within the typical arithmetic datapath range (0.30\u20130.55), so it does not disqualify Region B. Therefore, Region B is the malicious hardware Trojan."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 6 confirmed GNN suspicious seeds (>=1) and a max GNN score of 0.8362 (>=0.50), meeting the primary detection signal for topological anomaly clustering. Its internal edge density (1.02) and boundary exit ratio (0.44) align with stealthy combinational comparator trees (0 DFFs), consistent with the \"stealthy trigger comparator tree\" pattern. Region B shows no GNN suspicion (0 seeds, max score 0.1104 < 0.45) and is benign despite higher internal edge density (1.66), as per the mandatory clean negative control principle. The absence of DFFs in both regions confirms combinational behavior, ruling out sequential trojans.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits confirmed GNN suspicious seeds (6) and a peak GNN score of 0.8362 (>=0.50), meeting the primary detection signal for topological anomaly clustering. The boundary exit ratio (0.44) falls within the typical 0.30-0.55 range for arithmetic datapaths, but the presence of high GNN scores and seeds (with 0 DFFs) strongly indicates a stealthy combinatorial comparator tree (e.g., trigger condition monitoring). Region A has 0 GNN seeds and max score <0.50, confirming benign structure. The 0 DFFs in Region B align with combinatorial trojan characteristics (no sequential elements), while Region B's internal edge density (1.02) and gate distribution (e.g., XORs, ANDs) support a payload injection comparator tree.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "c6288_T094",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 6,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=6, max=0.94) vs Region B (seeds=0, max=0.05). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.05) vs Region B (seeds=6, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (6, max score 0.9391)** and **high internal edge density (1.26)**, indicating complex, possibly malicious logic. The boundary exit ratio (0.44) is within normal ranges, but the presence of GNN anomalies and high internal edges strongly suggest **sequential state counter** or **datapath payload injection**. Region B has **0 GNN seeds** and **high boundary exit ratio (0.68)**, which could be normal for benign arithmetic logic. However, the lack of GNN suspicion in Region B and its lower internal edge density contrast with Region A's anomalies, making Region A more likely to host a stealthy hardware trojan. The absence of sequential gates (DFFs) in both regions does not disqualify them, but Region A's GNN anomalies and structural complexity align with trojan characteristics.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (max score 0.9391) and low boundary exit ratios (0.44), which are indicative of topological anomalies. Despite the low boundary exit ratio, the high GNN scores suggest complex, potentially combinational logic (e.g., NOR4S1, NND3S1 gates) that could be embedded in a stealthy counter or state machine. Region A, with no GNN seeds, appears normal, but Region B's structural complexity and high GNN scores strongly indicate a combinational Trojan. The absence of sequential DFFs in Region B further supports a combinational nature, aligning with the presence of high GNN scores."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both REGION_A and REGION_B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), violating the \"NEITHER\" directive. The auditor's initial assessment incorrectly flagged REGION_B as benign, but since both regions lack GNN seeds, they qualify as neutral datapath logic (ALUs/multipliers with natural density 0.8-1.4). The absence of DFFs in both regions further supports the \"NEITHER\" classification.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (6) and has 0 DFFs, fulfilling the criteria for a COMBINATIONAL Trojan (Rule 3). The absence of DFFs and the presence of high GNN seeds strongly indicate a malicious logic insertion, even though its boundary exit ratio (0.44) is lower than Region A's 0.68. Since Region B meets the threshold for a confirmed Trojan (seeds \u2265 1), it is flagged as the malicious region. Region A's 0 DFFs would otherwise classify it as COMBINATIONAL, but its lack of GNN seeds and low exit ratio align with benign arithmetic logic."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (6, max score 0.9391)** and **high internal edge density (1.26)**, indicating complex, possibly malicious logic. The boundary exit ratio (0.44) is within normal ranges, but the presence of GNN anomalies and high internal edges strongly suggest **sequential state counter** or **datapath payload injection**. Region B has **0 GNN seeds** and **high boundary exit ratio (0.68)**, which could be normal for benign arithmetic logic. However, the lack of GNN suspicion in Region B and its lower internal edge density contrast with Region A's anomalies, making Region A more likely to host a stealthy hardware trojan. The absence of sequential gates (DFFs) in both regions does not disqualify them, but Region A's GNN anomalies and structural complexity align with trojan characteristics.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits high GNN suspicious seeds (max score 0.9391) and low boundary exit ratios (0.44), which are indicative of topological anomalies. Despite the low boundary exit ratio, the high GNN scores suggest complex, potentially combinational logic (e.g., NOR4S1, NND3S1 gates) that could be embedded in a stealthy counter or state machine. Region A, with no GNN seeds, appears normal, but Region B's structural complexity and high GNN scores strongly indicate a combinational Trojan. The absence of sequential DFFs in Region B further supports a combinational nature, aligning with the presence of high GNN scores.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

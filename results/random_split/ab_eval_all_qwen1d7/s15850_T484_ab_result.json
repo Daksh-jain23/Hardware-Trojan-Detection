@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T484",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "SEQUENTIAL_COUNTER",
+  "candidate_region_size": 28,
+  "clean_region_size": 28,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.21). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9462)** and **high internal edge density (1.5357)**, indicating potential malicious logic insertion. While it contains **5 sequential DFFs**, the presence of GNN seeds and high internal clustering suggests a **combinatorial trojan** (e.g., stealthy comparator trees or payload injection). Region B has **0 GNN seeds** and **low internal density (1.2857)**, but its **boundary exits (7, exit ratio 0.25)** and **no DFFs** align with benign signal dispersion. Region A\u2019s structural anomalies (high GNN scores, low boundary exits) contrast with Region B\u2019s lack of suspicious seeds, making Region A a stronger candidate for a hardware trojan. The mandatory NEITHER rule does not apply here since Region A has confirmed GNN seeds.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (15) and a high internal edge density (1.5357), with 5 sequential DFFs (dffs2). The low boundary exit ratio (0.0714) and the presence of complex gate types (e.g., dffs2, nor2s1) suggest a structured, sequential state counter. The high GNN scores and DFFs contradict the expectation of purely combinational logic, indicating a stealthy sequential trojan. Region A's lack of GNN seeds and low internal density contrast sharply with Region B's complexity, reinforcing Region B's suspicious characteristics."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both REGION_A and REGION_B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), satisfying the clean design requirement. The auditor's critique correctly identified factual errors (e.g., exit ratio, DFF classification) and rejected Region A as a malicious Trojan due to its DFFs violating combinational Trojan rules. Since neither region contains confirmed GNN seeds, the asymmetric risk principle applies, and neither can be classified as a malicious Trojan. The presence of DFFs in Region A does not meet the criteria for a combinational Trojan, further supporting the NEITHER conclusion.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and a boundary exit ratio of 0.2857 (below 0.45), violating the Asymmetric Risk Principle. Despite the boundary exit ratio, the presence of GNN seeds disqualifies Region B as \"benign\" arithmetic/datapath logic. The analyst's dismissal of Region B as non-malicious was incomplete, as the Asymmetric Risk Principle mandates flagging confirmed GNN seeds. Region B's 5 DFFs and lack of MUXes/AOI gates align with the SEQUENTIAL_COUNTER classification."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9462)** and **high internal edge density (1.5357)**, indicating potential malicious logic insertion. While it contains **5 sequential DFFs**, the presence of GNN seeds and high internal clustering suggests a **combinatorial trojan** (e.g., stealthy comparator trees or payload injection). Region B has **0 GNN seeds** and **low internal density (1.2857)**, but its **boundary exits (7, exit ratio 0.25)** and **no DFFs** align with benign signal dispersion. Region A\u2019s structural anomalies (high GNN scores, low boundary exits) contrast with Region B\u2019s lack of suspicious seeds, making Region A a stronger candidate for a hardware trojan. The mandatory NEITHER rule does not apply here since Region A has confirmed GNN seeds.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region B exhibits high GNN suspicious seeds (15) and a high internal edge density (1.5357), with 5 sequential DFFs (dffs2). The low boundary exit ratio (0.0714) and the presence of complex gate types (e.g., dffs2, nor2s1) suggest a structured, sequential state counter. The high GNN scores and DFFs contradict the expectation of purely combinational logic, indicating a stealthy sequential trojan. Region A's lack of GNN seeds and low internal density contrast sharply with Region B's complexity, reinforcing Region B's suspicious characteristics.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T011",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 46,
+  "clean_region_size": 46,
+  "gnn_seeds_count": 5,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=5, max=0.94) vs Region B (seeds=0, max=0.14). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.14) vs Region B (seeds=5, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": true,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "Both Region A and Region B have 0 GNN suspicious seeds and average GNN scores < 0.45, fulfilling the mandatory NEITHER rule. Region A has 1.0217 internal edge density (normal for arithmetic logic) and a boundary exit ratio of 0.5217 (within normal range). Region B has 1.1739 internal edge density (normal) and a boundary exit ratio of 0.7391 (>0.60), but no GNN seeds. While Region B's high boundary exit ratio is above the threshold for benign signal dispersion, the absence of GNN suspicion and normal internal edge density prevent flagging. Neither region exhibits structural characteristics of a hardware Trojan (e.g., GNN seeds, high exit ratios without suspicion).",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (max score 0.9361) and low internal edge density (1.0217), indicating significant topological clustering, which is a hallmark of hardware trojans. The boundary exit ratio (0.5217) is lower than Region A's 0.7391 but remains within acceptable limits for GNN suspicion. The absence of sequential DFFs (0) and the presence of combinational gates (e.g., nnd4s1, xor2s1) align with stealthy comparator trees or datapath payload injection. While Region A's low GNN scores and high boundary exits suggest benign signal dispersion, Region B's high GNN scores and low internal density strongly indicate malicious logic insertion, consistent with a combinational Trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both Region A and Region B have 0 confirmed GNN seeds, fulfilling the criteria for a clean negative control (NEITHER). The auditor's conclusion of Region A as a combinational trojan violated the NEITHER directive and ignored the asymmetric risk principle. Since neither region contains confirmed GNN seeds, they cannot be classified as malicious trojans. The boundary exit ratios (0.5217 for Region A, 0.7391 for Region B) are within normal ranges for arithmetic datapaths, further supporting the NEITHER assessment.",
+    "explanation_trial_2": "The analyst's conclusion that Region B is the malicious hardware Trojan is correct despite the audit critique. The critique's errors include misinterpreting low internal edge density in Region A as normal (it is not) and incorrectly dismissing Region B's boundary exit ratio (0.5217) as benign. Region B's confirmed GNN seeds (\u22651) mandate the \"NEITHER\" directive, but this is invalid due to the Mandatory NEITHER Directive. The presence of GNN seeds in Region B confirms the combinational Trojan type, and its gate types (e.g., nnd4s1, xor2s1) align with combinational logic. The auditor's critique highlights flaws in reasoning, but the conclusion remains valid."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "NEITHER",
+    "confidence": "HIGH",
+    "trojan_type": "NONE",
+    "explanation": "Both Region A and Region B have 0 GNN suspicious seeds and average GNN scores < 0.45, fulfilling the mandatory NEITHER rule. Region A has 1.0217 internal edge density (normal for arithmetic logic) and a boundary exit ratio of 0.5217 (within normal range). Region B has 1.1739 internal edge density (normal) and a boundary exit ratio of 0.7391 (>0.60), but no GNN seeds. While Region B's high boundary exit ratio is above the threshold for benign signal dispersion, the absence of GNN suspicion and normal internal edge density prevent flagging. Neither region exhibits structural characteristics of a hardware Trojan (e.g., GNN seeds, high exit ratios without suspicion).",
+    "correct": false
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits high GNN suspicious seeds (max score 0.9361) and low internal edge density (1.0217), indicating significant topological clustering, which is a hallmark of hardware trojans. The boundary exit ratio (0.5217) is lower than Region A's 0.7391 but remains within acceptable limits for GNN suspicion. The absence of sequential DFFs (0) and the presence of combinational gates (e.g., nnd4s1, xor2s1) align with stealthy comparator trees or datapath payload injection. While Region A's low GNN scores and high boundary exits suggest benign signal dispersion, Region B's high GNN scores and low internal density strongly indicate malicious logic insertion, consistent with a combinational Trojan.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": false,
+    "correctness_trial_2": true,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

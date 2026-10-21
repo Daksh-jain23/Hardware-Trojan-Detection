@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T202",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 60,
+  "clean_region_size": 60,
+  "gnn_seeds_count": 10,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=10, max=0.90) vs Region B (seeds=0, max=0.10). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.10) vs Region B (seeds=10, max=0.90). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 10 confirmed GNN suspicious seeds (\u22651) and a peak GNN score of 0.9029 (\u22650.50), indicating strong topological anomaly clustering with 3 distinct trojan clusters. Despite its boundary exit ratio of 0.6 (slightly elevated above typical 0.55 for arithmetic datapaths), the presence of confirmed GNN anomalies overrides this metric per verification principles. Region A contains 0 DFFs, consistent with a stealthy combinational trojan (e.g., trigger comparator tree or datapath payload injection). Region B shows no GNN suspicion (0 seeds, max score 0.097 < 0.45) and is benign, confirming Region A as the malicious candidate per asymmetric security risk principles.",
+    "explanation_trial_2": "Region B exhibits confirmed GNN suspicious seeds (10) and a peak GNN score of 0.9029 (exceeding the 0.50 threshold), indicating a stealthy combinational comparator tree. Region A shows no GNN suspicion (0 seeds, max score 0.097) and is benign. Both regions lack sequential flip-flops (DFFs), ruling out sequential trojans. Region B's boundary exit ratio (0.6) is not disqualifying due to the presence of GNN suspicion, as per the principle that high exit ratios (>0.60) do not override confirmed anomalies."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 10 confirmed GNN seeds (\u22651) and max GNN score 0.9029 (\u22650.50), confirming topological anomaly clusters. Its combinational nature (0 DFFs) and internal edge density (0.95) align with stealthy comparator trees. Region B has no seeds (0) and low max GNN (0.097), confirming benign arithmetic logic. The Asymmetric Risk Principle ensures confirmed seeds (\u22651) do not constitute false positives, meeting all physical architectural classification rules for combinational trojan circuits.",
+    "explanation_trial_2": "Region B is the only candidate with confirmed GNN seeds (10) exceeding the 0.50 threshold and a peak GNN score of 0.9029. It has 0 DFFs confirming a combinational structure, and the gate types (XOR, AND, OR, NAND, NOR) form a cascaded comparator tree\u2014consistent with stealthy combinational Trojan payloads per hardware security principles. The boundary exit ratio (0.6) is outside typical arithmetic datapath ranges (0.30\u20130.55) but aligns with strong GNN suspicion due to confirmed seeds, per the auditor's principle that candidates with \u22651 seeds must be flagged regardless of this metric. Region A has 0 seeds and low GNN scores, confirming it as benign."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 10 confirmed GNN suspicious seeds (\u22651) and a peak GNN score of 0.9029 (\u22650.50), indicating strong topological anomaly clustering with 3 distinct trojan clusters. Despite its boundary exit ratio of 0.6 (slightly elevated above typical 0.55 for arithmetic datapaths), the presence of confirmed GNN anomalies overrides this metric per verification principles. Region A contains 0 DFFs, consistent with a stealthy combinational trojan (e.g., trigger comparator tree or datapath payload injection). Region B shows no GNN suspicion (0 seeds, max score 0.097 < 0.45) and is benign, confirming Region A as the malicious candidate per asymmetric security risk principles.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits confirmed GNN suspicious seeds (10) and a peak GNN score of 0.9029 (exceeding the 0.50 threshold), indicating a stealthy combinational comparator tree. Region A shows no GNN suspicion (0 seeds, max score 0.097) and is benign. Both regions lack sequential flip-flops (DFFs), ruling out sequential trojans. Region B's boundary exit ratio (0.6) is not disqualifying due to the presence of GNN suspicion, as per the principle that high exit ratios (>0.60) do not override confirmed anomalies.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

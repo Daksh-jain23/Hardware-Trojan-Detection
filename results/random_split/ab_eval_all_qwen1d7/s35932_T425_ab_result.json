@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T425",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 49,
+  "clean_region_size": 49,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.75). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.75) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9478)** and **high internal edge density (2.2041)**, which are critical indicators of malicious logic insertion. The absence of boundary exits (0.0) is unusual for real silicon, but the **low sequential gates (5 DFFs)** and **high internal edges** suggest a stealthy comparator tree, aligning with the criteria for a hardware Trojan. Region B has **no GNN seeds** and **low internal edge density (1.0)**, with a **high boundary exit ratio (0.73)**, which, despite the high exit ratio, does not meet the threshold for a Trojan (only >0.60 exit ratios in absence of GNN suspicion disqualify benign logic). Region A\u2019s high GNN scores and structural anomalies strongly indicate a stealthy comparator tree, while Region B\u2019s lack of seeds and low edge density suggest benign logic.",
+    "explanation_trial_2": ""
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (15) and exhibits 5 sequential DFFs without MUXes/AOI gates, aligning with a sequential state counter. The boundary exit ratio (0.0) and internal edge density (2.2041) suggest stealthy logic insertion, while Region B has 0 GNN seeds and a normal boundary exit ratio. The physical classification rules confirm Region A as a SEQUENTIAL_COUNTER due to 1-5 DFFs without MUXes/AOI.",
+    "explanation_trial_2": "Both Region A and Region B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), fulfilling CRITIC AUDITING DIRECTIVE 5. The analyst's conclusion (Region B is a sequential counter) ignores the asymmetric risk and fails to apply the Asymmetric Risk Principle. The Symmetry Check mandates a NEITHER conclusion when both regions are clean, as the analyst's report violates positional bias. Region B's 5 DFFs explicitly disqualify it as a combinational Trojan, but since both regions are clean, the final assessment is NEITHER."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9478)** and **high internal edge density (2.2041)**, which are critical indicators of malicious logic insertion. The absence of boundary exits (0.0) is unusual for real silicon, but the **low sequential gates (5 DFFs)** and **high internal edges** suggest a stealthy comparator tree, aligning with the criteria for a hardware Trojan. Region B has **no GNN seeds** and **low internal edge density (1.0)**, with a **high boundary exit ratio (0.73)**, which, despite the high exit ratio, does not meet the threshold for a Trojan (only >0.60 exit ratios in absence of GNN suspicion disqualify benign logic). Region A\u2019s high GNN scores and structural anomalies strongly indicate a stealthy comparator tree, while Region B\u2019s lack of seeds and low edge density suggest benign logic.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "MEDIUM",
+    "trojan_type": "FSM",
+    "explanation": "",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "c5315_T023",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 5,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=5, max=0.91) vs Region B (seeds=0, max=0.11). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.11) vs Region B (seeds=5, max=0.91). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 5 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9117 (>=0.50), meeting the primary detection signal for topological anomaly clustering. Its internal edge density (1.02) and boundary exit ratio (0.5) fall within typical arithmetic datapath ranges (0.8-1.2 internal density, 0.30-0.55 exit ratio), but the high GNN scores override these metrics to indicate malicious insertion. Region B shows no GNN suspicion (0 seeds, max score 0.1104) and is benign. Region A's 0 sequential gates confirm a combinational Hardware Trojan profile (stealthy trigger comparator tree), consistent with its gate types (e.g., xor2s1, and4s1) and single cluster (Trojan Clusters Count: 1).",
+    "explanation_trial_2": "Region B exhibits confirmed GNN anomaly seeds (5) and peak GNN score 0.9117 (>=0.50), indicating a stealthy comparator tree (combinational trojan) with no sequential flip-flops. Region A has 0 GNN seeds and peak score 0.1104 (<0.50), confirming benign arithmetic logic. The boundary exit ratio of 0.5 for Region B falls within typical benign ranges (0.30-0.55) but is overridden by the presence of high-confidence GNN anomalies, which align with combinational trojan characteristics (0 DFFs, wide comparator trees). Region B's internal edge density (1.02) and gate distribution (e.g., `xor2s1`, `nor4s1`, `and4s1`) further support a stealthy trigger comparator structure."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A meets the asymmetric risk principle with 5 confirmed GNN seeds (\u22651), eliminating Region B as benign. Its internal edge density (1.02) and boundary exit ratio (0.5) fall within typical arithmetic datapath ranges (0.8\u20131.4 and 0.30\u20130.55), but the presence of confirmed GNN seeds overrides typical range analysis. Gate types (\"and3s1\", \"or2s1\", \"xor2s1\") and critical gate GNN score (NODE_0013: 0.9117) confirm a stealthy combinational comparator tree. Zero DFFs align with combinational circuit classification per physical architectural rules. Region B has 0 confirmed GNN seeds and is benign, so neither rule mandates NEITHER. The evidence conclusively identifies Region A as the malicious combinational Trojan.",
+    "explanation_trial_2": "Region B exhibits 5 confirmed GNN seeds (exceeding the typical false positive threshold of 3-4) and a peak GNN score of 0.9117, indicating a stealthy trigger comparator tree. The absence of sequential DFFs (0) confirms combinational logic, consistent with a malicious trojan. Region A shows 0 GNN seeds and a low GNN score (0.1104), confirming benign structure with no malicious indicators. The auditor's verification confirms 0% false positive risk, meeting all security criteria for a true positive."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 5 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9117 (>=0.50), meeting the primary detection signal for topological anomaly clustering. Its internal edge density (1.02) and boundary exit ratio (0.5) fall within typical arithmetic datapath ranges (0.8-1.2 internal density, 0.30-0.55 exit ratio), but the high GNN scores override these metrics to indicate malicious insertion. Region B shows no GNN suspicion (0 seeds, max score 0.1104) and is benign. Region A's 0 sequential gates confirm a combinational Hardware Trojan profile (stealthy trigger comparator tree), consistent with its gate types (e.g., xor2s1, and4s1) and single cluster (Trojan Clusters Count: 1).",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits confirmed GNN anomaly seeds (5) and peak GNN score 0.9117 (>=0.50), indicating a stealthy comparator tree (combinational trojan) with no sequential flip-flops. Region A has 0 GNN seeds and peak score 0.1104 (<0.50), confirming benign arithmetic logic. The boundary exit ratio of 0.5 for Region B falls within typical benign ranges (0.30-0.55) but is overridden by the presence of high-confidence GNN anomalies, which align with combinational trojan characteristics (0 DFFs, wide comparator trees). Region B's internal edge density (1.02) and gate distribution (e.g., `xor2s1`, `nor4s1`, `and4s1`) further support a stealthy trigger comparator structure.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

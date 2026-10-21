@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T611",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 37,
+  "clean_region_size": 36,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.89). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.89) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": true,
+    "explanation_trial_1": "Region A has 15 GNN suspicious seeds with a max score of 0.9483, indicating severe topological clustering. Its high internal edge density (2.2973) and low boundary exit ratio (0.027) suggest anomalous structure, but the presence of GNN seeds disqualifies it as a Trojan. Region B has high internal edge density and a high boundary exit ratio (0.6111) but no GNN seeds, which, according to guideline 2, are considered benign. While Region B\u2019s high internal density and boundary exits might suggest a potential Trojan, the absence of GNN seeds and the lack of confirmed anomalies make it non-malicious. Region A\u2019s GNN seeds and low boundary exits further confirm it is not a Trojan.",
+    "explanation_trial_2": "**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** LOW  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### Explanation:\n- **Region A** has **high internal edges** but **no DFFs** and **no GNN seeds**.  \n- The presence of high internal edges with no DFFs suggests a **combinational Trojan**, but without GNN seeds, it is **not flagged** as malicious.  \n- **Confidence is LOW** because the high internal edges could indicate a potential Trojan, but without GNN seeds, it is not classified as malicious.  \n- **TROJAN_TYPE is NONE** because the system does not detect a specific type of Trojan (e.g., sequential counter or combinational) in Region A.  \n\nThis conclusion aligns with the guidelines that **no GNN seeds** disqualify the region from being classified as malicious, even if other indicators (like high internal edges) are present."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both Region A and Region B have 0 confirmed GNN suspicious seeds (seeds_a == 0 and seeds_b == 0), satisfying the NEITHER directive. The analyst's conclusion of Region A as a sequential counter is invalid due to the absence of state multiplexers (required for sequential trojans) and the anomalous boundary exit ratio (0.027 < 0.45, not normal for sequential counters). Region B's high boundary exit ratio (0.6111) is not valid for sequential counters, and its lack of DFFs disqualifies it as a trojan. Both regions are clean, confirming the NEITHER assessment.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and 5 sequential DFFs consistent with an FSM (e.g., \"dffles2\" as a state counter). The presence of DFFs without state multiplexers (as implied by the FSM context) aligns with the physical architectural classification rules, which categorize FSMs with sequential DFFs without state multiplexers. The auditor's initial classification of SEQUENTIAL_COUNTER was flawed because it required state multiplexers (e.g., \"dffles2\") to confirm the Trojan type, which were not explicitly linked. The low boundary exit ratio and GNN seeds further support an FSM Trojan, not a SEQUENTIAL_COUNTER."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A has 15 GNN suspicious seeds with a max score of 0.9483, indicating severe topological clustering. Its high internal edge density (2.2973) and low boundary exit ratio (0.027) suggest anomalous structure, but the presence of GNN seeds disqualifies it as a Trojan. Region B has high internal edge density and a high boundary exit ratio (0.6111) but no GNN seeds, which, according to guideline 2, are considered benign. While Region B\u2019s high internal density and boundary exits might suggest a potential Trojan, the absence of GNN seeds and the lack of confirmed anomalies make it non-malicious. Region A\u2019s GNN seeds and low boundary exits further confirm it is not a Trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_A",
+    "confidence": "MEDIUM",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**ASSESSMENT:** REGION_A  \n**CONFIDENCE:** LOW  \n**TROJAN_TYPE:** NONE  \n\n---\n\n### Explanation:\n- **Region A** has **high internal edges** but **no DFFs** and **no GNN seeds**.  \n- The presence of high internal edges with no DFFs suggests a **combinational Trojan**, but without GNN seeds, it is **not flagged** as malicious.  \n- **Confidence is LOW** because the high internal edges could indicate a potential Trojan, but without GNN seeds, it is not classified as malicious.  \n- **TROJAN_TYPE is NONE** because the system does not detect a specific type of Trojan (e.g., sequential counter or combinational) in Region A.  \n\nThis conclusion aligns with the guidelines that **no GNN seeds** disqualify the region from being classified as malicious, even if other indicators (like high internal edges) are present.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": true,
+    "identifier_leakage_detected": false
+  }
+}

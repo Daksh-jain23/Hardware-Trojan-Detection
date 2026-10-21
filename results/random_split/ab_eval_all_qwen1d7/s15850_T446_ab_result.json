@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T446",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 32,
+  "clean_region_size": 32,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.21). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "**  \nRegion A exhibits **high internal edge density (2.125)** and **confirmed GNN suspicious seeds (15)** with a max score of 0.9489, indicating strong topological anomalies. Despite a **low boundary exit ratio (0.0625)**, the presence of sequential DFFs (5) and high internal clustering aligns with **sequential trojan characteristics** (e.g., connected flip-flops driving state counters). Region B lacks GNN seeds and sequential DFFs, making it less suspicious. Region A\u2019s structural metrics (high internal density, GNN anomalies) strongly suggest a **stealthy sequential counter** trojan, even with low boundary exits. Region B\u2019s absence of GNN suspicion and low internal density further supports a **benign arithmetic datapath** classification.",
+    "explanation_trial_2": "Region B exhibits **high GNN suspicious seeds (15)** and **extremely high internal edge density (2.125)**, along with **low boundary exit ratio (0.0625)** and **5 sequential DFFs**. These characteristics align with **sequential trojans** (e.g., state counters or FSMs) that use DFFs to drive internal state transitions. The high GNN scores and low boundary exits suggest stealthy logic insertion, while the presence of DFFs contradicts the \"no DFFs\" assumption for combinational trojans. Region A, with 0 GNN seeds and low internal density, is benign and matches standard arithmetic logic behavior. Region B\u2019s anomalies are consistent with a **stealthy sequential counter** or **FSM**."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "The audit critique correctly identified that the analyst's initial classification of Region A as a sequential counter trojan was technically incorrect. Despite the misclassification, the evidence supports the selection of Region A due to its confirmed GNN seeds (15) and the presence of 5 sequential DFFs without MUXes/AOI, which aligns with the SEQUENTIAL_COUNTER classification according to the physical architectural rules. The boundary exit ratio and other factors are consistent with combinational logic, but the DFF count and absence of MUXes/AOI confirm the SEQUENTIAL_COUNTER type.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and 5 DFFs, aligning with a sequential counter. Region A has 0 GNN seeds and no DFFs, but the auditor's critique noted it is purely combinational (no DFFs) and matches benign logic metrics. Since Region B has confirmed GNN seeds, NEITHER is not applicable. Region B's DFFs and GNN seeds confirm it as a sequential counter, while Region A's lack of DFFs and GNN seeds validates its combinational nature."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "**  \nRegion A exhibits **high internal edge density (2.125)** and **confirmed GNN suspicious seeds (15)** with a max score of 0.9489, indicating strong topological anomalies. Despite a **low boundary exit ratio (0.0625)**, the presence of sequential DFFs (5) and high internal clustering aligns with **sequential trojan characteristics** (e.g., connected flip-flops driving state counters). Region B lacks GNN seeds and sequential DFFs, making it less suspicious. Region A\u2019s structural metrics (high internal density, GNN anomalies) strongly suggest a **stealthy sequential counter** trojan, even with low boundary exits. Region B\u2019s absence of GNN suspicion and low internal density further supports a **benign arithmetic datapath** classification.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits **high GNN suspicious seeds (15)** and **extremely high internal edge density (2.125)**, along with **low boundary exit ratio (0.0625)** and **5 sequential DFFs**. These characteristics align with **sequential trojans** (e.g., state counters or FSMs) that use DFFs to drive internal state transitions. The high GNN scores and low boundary exits suggest stealthy logic insertion, while the presence of DFFs contradicts the \"no DFFs\" assumption for combinational trojans. Region A, with 0 GNN seeds and low internal density, is benign and matches standard arithmetic logic behavior. Region B\u2019s anomalies are consistent with a **stealthy sequential counter** or **FSM**.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

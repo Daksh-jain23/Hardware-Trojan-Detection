@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T081",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.95) vs Region B (seeds=0, max=0.20). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.20) vs Region B (seeds=7, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 7 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9478 (>=0.50), meeting the primary detection criteria for malicious insertion. Its internal edge density (1.04) and boundary exit ratio (0.56) align with typical combinational logic behavior, but the high GNN scores override the exit ratio threshold (0.35-0.55) per verification principles. Region B shows no GNN suspicious seeds (0) and a boundary exit ratio of 0.60 (benign in the absence of GNN suspicion), confirming clean functionality. Both regions lack sequential flip-flops (0 DFFs), but Region A's GNN anomalies definitively indicate a stealthy combinational trojan (e.g., rare-condition comparator).",
+    "explanation_trial_2": "Region B exhibits 7 confirmed GNN suspicious seeds and a peak GNN score of 0.9478 (well above the 0.50 threshold), indicating a malicious combinational structure (e.g., stealthy trigger comparator tree). It has 0 sequential gates (DFFs), consistent with combinational trojans. Region A shows no GNN seeds (0) and a low peak score (0.1959), with a boundary exit ratio of 0.6 (slightly high but not sufficient to flag without GNN signals). Both regions have internal edge densities within benign ranges (1.04 for B, 1.1 for A), but Region B's strong GNN signals override typical metrics."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 7 confirmed GNN seeds (>=1) and a maximum GNN score of 0.9478 (>=0.50), satisfying the Asymmetric Risk Principle for retention as a Trojan candidate. The boundary exit ratio of 0.56 is slightly above the typical 0.55 for arithmetic datapaths but does not invalidate the candidate due to confirmed seeds. Region B has 0 seeds and max GNN <0.50, confirming it as benign. Both regions have 0 DFFs, consistent with combinational logic.",
+    "explanation_trial_2": "Region B is the only candidate with confirmed GNN seeds (7 \u2265 1), which by the Asymmetric Risk Principle overrides the boundary exit ratio (0.56) that is slightly elevated (above the normal 0.30\u20130.55 range for arithmetic datapaths). Region B has 0 DFFs, confirming combinational behavior consistent with a comparator trojan. Region A has 0 seeds and low GNN score (0.1959), confirming it is clean. This aligns with the auditor's verdict that confirmed seeds take precedence over boundary exit ratio thresholds."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 7 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9478 (>=0.50), meeting the primary detection criteria for malicious insertion. Its internal edge density (1.04) and boundary exit ratio (0.56) align with typical combinational logic behavior, but the high GNN scores override the exit ratio threshold (0.35-0.55) per verification principles. Region B shows no GNN suspicious seeds (0) and a boundary exit ratio of 0.60 (benign in the absence of GNN suspicion), confirming clean functionality. Both regions lack sequential flip-flops (0 DFFs), but Region A's GNN anomalies definitively indicate a stealthy combinational trojan (e.g., rare-condition comparator).",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 7 confirmed GNN suspicious seeds and a peak GNN score of 0.9478 (well above the 0.50 threshold), indicating a malicious combinational structure (e.g., stealthy trigger comparator tree). It has 0 sequential gates (DFFs), consistent with combinational trojans. Region A shows no GNN seeds (0) and a low peak score (0.1959), with a boundary exit ratio of 0.6 (slightly high but not sufficient to flag without GNN signals). Both regions have internal edge densities within benign ranges (1.04 for B, 1.1 for A), but Region B's strong GNN signals override typical metrics.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

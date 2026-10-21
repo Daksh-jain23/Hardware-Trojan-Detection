@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T407",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 37,
+  "clean_region_size": 24,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.04). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.04) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits high GNN suspicious seeds (15, max score 0.9497) and high internal edge density (1.9459), indicating topological anomalies consistent with stealthy sequential logic. Its low boundary exit ratio (0.0541) and presence of 5 sequential DFFs suggest a complex state counter or FSM. Region B has 0 GNN seeds, high internal edge density, and high boundary exits (0.7083), but lacks sequential DFFs and no GNN suspicion. Region A's structural indicators (high internal density, low boundary exits, and DFFs) align with sequential Trojan characteristics, while Region B's lack of GNN seeds and high boundary exits suggest benign combinational logic. The stark contrast in GNN suspicion and structural anomalies confirms Region A as a candidate for a stealthy sequential counter Trojan.",
+    "explanation_trial_2": "**  \nRegion B exhibits high internal edge density (1.9459) and 15 GNN suspicious seeds (max score 0.9497), indicating complex, potentially malicious logic. Its boundary exit ratio of 0.0541 is significantly below normal (0.35\u20130.55), suggesting hidden or concealed behavior. Region A has no GNN seeds but high internal density (0.9583) and a normal boundary exit ratio (0.7083). While Region A\u2019s high density is typical, its lack of seeds means it is not flagged as anomalous. Region B\u2019s combination of high GNN seeds, sequential DFFs (5), and low boundary exits strongly suggests a **SEQUENTIAL_COUNTER** trojan, as it leverages complex logic to hide its purpose."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (15) and exhibits state multiplexers (e.g., \"pi\"), which aligns with the FSM classification rule (DFFs with MUXes or AOI/OAI gates). The presence of state multiplexers disqualifies it from being a sequential counter (as per physical rules), and the auditor's critique correctly identified this conflict. The original hypothesis incorrectly classified it as a sequential counter due to ignoring the MUXes, but the FSM classification is valid based on the architectural features.",
+    "explanation_trial_2": "The auditor's critique highlights that Region B's confirmed GNN seeds (15) and low boundary exit ratio (0.0541) violate asymmetric risk criteria, which mandate flagging anomalies with confirmed seeds. Despite the analyst's failure to address these factors, Region B's high GNN seeds and DFFs align with sequential logic (e.g., FSM), while Region A's clean status (0 GNN seeds) and low internal density rule out malicious logic. The boundary exit ratio in Region B is within normal bounds for adjacent bus interconnects, confirming NEITHER as invalid. The analyst's conclusion was flawed due to ignoring asymmetric risk, but Region B's GNN seeds and DFFs still support a sequential counter."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits high GNN suspicious seeds (15, max score 0.9497) and high internal edge density (1.9459), indicating topological anomalies consistent with stealthy sequential logic. Its low boundary exit ratio (0.0541) and presence of 5 sequential DFFs suggest a complex state counter or FSM. Region B has 0 GNN seeds, high internal edge density, and high boundary exits (0.7083), but lacks sequential DFFs and no GNN suspicion. Region A's structural indicators (high internal density, low boundary exits, and DFFs) align with sequential Trojan characteristics, while Region B's lack of GNN seeds and high boundary exits suggest benign combinational logic. The stark contrast in GNN suspicion and structural anomalies confirms Region A as a candidate for a stealthy sequential counter Trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "**  \nRegion B exhibits high internal edge density (1.9459) and 15 GNN suspicious seeds (max score 0.9497), indicating complex, potentially malicious logic. Its boundary exit ratio of 0.0541 is significantly below normal (0.35\u20130.55), suggesting hidden or concealed behavior. Region A has no GNN seeds but high internal density (0.9583) and a normal boundary exit ratio (0.7083). While Region A\u2019s high density is typical, its lack of seeds means it is not flagged as anomalous. Region B\u2019s combination of high GNN seeds, sequential DFFs (5), and low boundary exits strongly suggests a **SEQUENTIAL_COUNTER** trojan, as it leverages complex logic to hide its purpose.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

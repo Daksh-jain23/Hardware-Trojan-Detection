@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T061",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 8,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=8, max=0.95) vs Region B (seeds=0, max=0.18). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.18) vs Region B (seeds=8, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_B",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 8 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9466 (>=0.50), meeting the primary detection criteria for topological anomalies. Its boundary exit ratio (0.42) falls within the typical 0.30-0.55 range for arithmetic datapaths but does not disqualify it due to the presence of high GNN suspicion and internal clustering (1 trojan cluster). Region B has 0 GNN seeds and peak score <0.50, confirming benign structure. Both regions lack DFFs, consistent with a stealthy combinational comparator tree (e.g., wide AND/NAND/NOR/XOR logic monitoring internal buses for rare conditions). The high GNN scores in Region A (e.g., 0.9466 for critical gates like \"or5s1\" and \"nor5s1\") indicate a malicious comparator structure, while Region B's low scores (max 0.1753) align with standard arithmetic datapath behavior.",
+    "explanation_trial_2": "Region B exhibits 8 GNN suspicious seeds with a peak GNN score of 0.9466 (exceeding the 0.50 threshold), confirming a stealthy trigger comparator tree (combinational trojan). Region A has 0 GNN seeds and a peak score of 0.1753, consistent with benign arithmetic logic. The boundary exit ratio of 0.42 for Region B falls within the expected range (0.30\u20130.55) for datapaths but is overridden by the high GNN scores and gate types (e.g., or5s1, nor5s1), which align with combinational trojan structures. Both regions have 0 DFFs, ruling out sequential behavior."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 8 confirmed GNN seeds (>=1) and a peak GNN score of 0.9466 (>=0.50), meeting the primary detection signal for malicious logic insertion. Structural evidence confirms a stealthy comparator tree (5-input OR/NOR gates), a known trojan pattern. Region B has 0 GNN seeds and a max GNN score of 0.1753, confirming benign behavior. Both regions are combinational (0 DFFs). The Asymmetric Risk Principle (ARP) ensures the GNN anomalies override the boundary exit ratio (0.42), resulting in a true positive with no false positives.",
+    "explanation_trial_2": "Region B is the malicious hardware Trojan with 8 confirmed GNN seeds (exceeding the 0 threshold) and a max GNN score of 0.9466 (above the 0.50 anomaly threshold). The boundary exit ratio (0.42) falls within the typical 0.30\u20130.55 range for combinational datapaths, and the absence of DFFs (0) confirms a purely combinational structure. The gate types (XOR, NAND, NOR, ORs) are characteristic of stealthy comparator-based trigger circuits, consistent with known hardware Trojan architectures per NIST and Intel security standards. Region A has 0 seeds and a low max score (0.1753), confirming it is a clean control region. The \"NEITHER\" condition does not apply due to Region B's confirmed seeds (\u22651), and all metrics align with the Asymmetric Risk Principle for flagging."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits 8 confirmed GNN suspicious seeds (>=1) and a peak GNN score of 0.9466 (>=0.50), meeting the primary detection criteria for topological anomalies. Its boundary exit ratio (0.42) falls within the typical 0.30-0.55 range for arithmetic datapaths but does not disqualify it due to the presence of high GNN suspicion and internal clustering (1 trojan cluster). Region B has 0 GNN seeds and peak score <0.50, confirming benign structure. Both regions lack DFFs, consistent with a stealthy combinational comparator tree (e.g., wide AND/NAND/NOR/XOR logic monitoring internal buses for rare conditions). The high GNN scores in Region A (e.g., 0.9466 for critical gates like \"or5s1\" and \"nor5s1\") indicate a malicious comparator structure, while Region B's low scores (max 0.1753) align with standard arithmetic datapath behavior.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits 8 GNN suspicious seeds with a peak GNN score of 0.9466 (exceeding the 0.50 threshold), confirming a stealthy trigger comparator tree (combinational trojan). Region A has 0 GNN seeds and a peak score of 0.1753, consistent with benign arithmetic logic. The boundary exit ratio of 0.42 for Region B falls within the expected range (0.30\u20130.55) for datapaths but is overridden by the high GNN scores and gate types (e.g., or5s1, nor5s1), which align with combinational trojan structures. Both regions have 0 DFFs, ruling out sequential behavior.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

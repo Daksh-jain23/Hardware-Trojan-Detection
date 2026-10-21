@@ -1,0 +1,88 @@
+{
+  "circuit": "s13207_T611",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 37,
+  "clean_region_size": 37,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.35). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.35) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspiciousness** (15 seeds with max score 0.9482), **high internal edge density** (2.2432), and **low boundary exit ratio** (0.027). These characteristics align with a **stealthy trigger comparator tree** or **sequential counter**, where tight connectivity and low boundary spread suggest intentional design for covert operations. Region B has **no GNN seeds**, **low internal edge density**, and **high boundary exits** (0.8649), which would typically be considered benign in the absence of GNN suspicion. However, Region A\u2019s GNN seeds and low boundary exits indicate anomalous topological clustering, making it a strong candidate for a **sequential counter** or **FSM**. The mandatory NEITHER rule is not applicable here since Region A has GNN seeds.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (0.9482) and high internal edge density (2.2432), contrasting with Region A's low GNN scores (0.0445) and lower internal edge density (1.027). Region B's boundary exit ratio (0.027) is significantly below the normal range (0.30\u20130.55), yet its high GNN scores and sequential DFFs (5) indicate a structured, sequential state counter. Region A's lack of GNN seeds and low boundary exits suggest benign arithmetic logic, but Region B's characteristics align with a stealthy sequential Trojan. The presence of DFFs and high GNN suspicion in Region B strongly supports a sequential counter Trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both Region A and Region B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), triggering the NEITHER directive. Region A's state multiplexers and compound logic disqualify it as a Sequential Counter ( FSM ), but the NEITHER directive prohibits flagging benign logic when both regions have 0 seeds. Region B's high boundary exits (0.8649) and absence of DFFs align with benign arithmetic logic. The analyst's false positive conclusion (Region A as Sequential Counter) is invalidated by the NEITHER directive, ensuring neither region is flagged as malicious.",
+    "explanation_trial_2": "The analyst's conclusion was flawed due to not addressing the boundary exit ratio and misclassifying sequential DFFs. Region B has confirmed GNN seeds (15) and high internal density, aligning with sequential counter characteristics. The presence of 5 sequential DFFs without state multiplexers (mux) supports this classification, despite the low boundary exit ratio, which is typical for benign logic with no GNN anomalies."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits **high GNN suspiciousness** (15 seeds with max score 0.9482), **high internal edge density** (2.2432), and **low boundary exit ratio** (0.027). These characteristics align with a **stealthy trigger comparator tree** or **sequential counter**, where tight connectivity and low boundary spread suggest intentional design for covert operations. Region B has **no GNN seeds**, **low internal edge density**, and **high boundary exits** (0.8649), which would typically be considered benign in the absence of GNN suspicion. However, Region A\u2019s GNN seeds and low boundary exits indicate anomalous topological clustering, making it a strong candidate for a **sequential counter** or **FSM**. The mandatory NEITHER rule is not applicable here since Region A has GNN seeds.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits high GNN suspicious seeds (0.9482) and high internal edge density (2.2432), contrasting with Region A's low GNN scores (0.0445) and lower internal edge density (1.027). Region B's boundary exit ratio (0.027) is significantly below the normal range (0.30\u20130.55), yet its high GNN scores and sequential DFFs (5) indicate a structured, sequential state counter. Region A's lack of GNN seeds and low boundary exits suggest benign arithmetic logic, but Region B's characteristics align with a stealthy sequential Trojan. The presence of DFFs and high GNN suspicion in Region B strongly supports a sequential counter Trojan.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "circuit": "s1423_T015",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 5,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=5, max=0.85) vs Region B (seeds=0, max=0.23). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.23) vs Region B (seeds=5, max=0.85). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (5, max score 0.8475)** and **high internal edge density (1.04)**, along with a **boundary exit ratio of 0.62** (above 0.60), which is suspicious for malicious logic insertion. Region B has **0 GNN seeds** and **lower internal edge density (1.24)**, but its boundary exit ratio is 0.58 (below 0.60), and it lacks sequential gates (DFFs). Region A's high GNN scores and structural anomalies (e.g., high internal density, boundary exits) align with **combinational trojan characteristics** (e.g., stealthy gate trees with no DFFs). Region B's lack of GNN suspicion and lower density suggest benign arithmetic logic, but Region A's anomalies make it more likely a **combinational trojan** (e.g., stealthy gate tree with no DFFs). The seeded region's anomalous clustering (GNN seeds) and high boundary exits further support its malicious nature.",
+    "explanation_trial_2": "Region B exhibits **high GNN suspicious seeds (5)** and **high boundary exit ratio (0.62)**, which are critical indicators of anomalous topological clustering. While Region A has 0 GNN seeds and a boundary exit ratio of 0.58 (within normal thresholds), Region B's high GNN scores (e.g., 0.8475 on xor2s1) and high boundary exits (31/115) suggest a **stealthy comparator tree** or **sequential state counter** with 0 DFFs. The absence of sequential DFFs (0 DFFs in both regions) aligns with combinational trojans (e.g., XOR/XOR2s1 gates), but the high GNN scores in Region B indicate **localized anomalous clustering** that compromises fabricated silicon. Region A's lack of GNN seeds and lower internal edge density (1.04 vs. 1.24) further supports its classification as **benign**.  \n\n**Key Differences**:  \n- Region B\u2019s high GNN scores (0.8475) and high boundary exits (0.62) indicate **anomalous topological clustering**.  \n- Region A\u2019s 0 GNN seeds and lower internal edge density (1.04) suggest **benign arithmetic logic**.  \n- Region B\u2019s **combinational trojan** hypothesis is supported by its 0 DFFs and high GNN suspicion, despite the high boundary exit ratio."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A is flagged as a combinational Trojan due to confirmed GNN seeds (5) and high internal edge density (1.04), which align with the asymmetric risk principle. The boundary exit ratio (0.62) is not normal for a 1-hop subgraph, further supporting the anomaly. Region B has 0 GNN seeds and lower internal edge density (1.24), which aligns with benign arithmetic logic. The analyst's oversight of the boundary exit ratio did not negate the presence of GNN suspicion in Region A. Since Region A contains the confirmed GNN seeds, it is the malicious hardware Trojan.",
+    "explanation_trial_2": "The analyst failed to apply the Asymmetric Risk Principle, which mandates flagging confirmed GNN seeds (>=1) even if boundary exit ratios are within normal ranges (0.30\u20130.55). Region B\u2019s 5 confirmed GNN seeds and high boundary exit ratio (0.62) strongly indicate a combinational trojan. Despite the boundary exit ratio being above the normal threshold, the presence of confirmed GNN seeds in Region B (5) aligns with combinational trojans, and the analyst's omission of this risk factor led to a false negative. The selected region (Region B) has 0 DFFs, confirming the TROJAN_TYPE as COMBINATIONAL."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (5, max score 0.8475)** and **high internal edge density (1.04)**, along with a **boundary exit ratio of 0.62** (above 0.60), which is suspicious for malicious logic insertion. Region B has **0 GNN seeds** and **lower internal edge density (1.24)**, but its boundary exit ratio is 0.58 (below 0.60), and it lacks sequential gates (DFFs). Region A's high GNN scores and structural anomalies (e.g., high internal density, boundary exits) align with **combinational trojan characteristics** (e.g., stealthy gate trees with no DFFs). Region B's lack of GNN suspicion and lower density suggest benign arithmetic logic, but Region A's anomalies make it more likely a **combinational trojan** (e.g., stealthy gate tree with no DFFs). The seeded region's anomalous clustering (GNN seeds) and high boundary exits further support its malicious nature.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits **high GNN suspicious seeds (5)** and **high boundary exit ratio (0.62)**, which are critical indicators of anomalous topological clustering. While Region A has 0 GNN seeds and a boundary exit ratio of 0.58 (within normal thresholds), Region B's high GNN scores (e.g., 0.8475 on xor2s1) and high boundary exits (31/115) suggest a **stealthy comparator tree** or **sequential state counter** with 0 DFFs. The absence of sequential DFFs (0 DFFs in both regions) aligns with combinational trojans (e.g., XOR/XOR2s1 gates), but the high GNN scores in Region B indicate **localized anomalous clustering** that compromises fabricated silicon. Region A's lack of GNN seeds and lower internal edge density (1.04 vs. 1.24) further supports its classification as **benign**.  \n\n**Key Differences**:  \n- Region B\u2019s high GNN scores (0.8475) and high boundary exits (0.62) indicate **anomalous topological clustering**.  \n- Region A\u2019s 0 GNN seeds and lower internal edge density (1.04) suggest **benign arithmetic logic**.  \n- Region B\u2019s **combinational trojan** hypothesis is supported by its 0 DFFs and high GNN suspicion, despite the high boundary exit ratio.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

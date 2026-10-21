@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T004",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 24,
+  "gnn_seeds_count": 8,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=8, max=0.88) vs Region B (seeds=0, max=0.04). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.04) vs Region B (seeds=8, max=0.88). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "**  \nRegion A exhibits **high GNN suspicious seeds (8, max score 0.8753)** and **high internal edge density (0.98)**, indicating anomalous topological clustering. Its boundary exit ratio (0.52) falls within normal ranges, but the presence of high GNN scores and no sequential DFFs (0) strongly suggests a **combinational Trojan** (e.g., stealthy comparator tree or payload injection). Region B has **no GNN seeds** and a **low boundary exit ratio (0.6667)**, but its internal edge density (0.9583) and absence of DFFs align with benign arithmetic logic. Region A\u2019s anomalous clustering and high GNN scores disqualify it as benign, while Region B remains unflagged due to lack of suspicious seeds.",
+    "explanation_trial_2": "**  \nRegion A has a high internal edge density (0.9583) and a boundary exit ratio of 0.6667 (above 0.60), which is not disqualifying for a trojan if no GNN seeds are present. However, the absence of GNN seeds and the high internal density suggest potential anomalies, but the exit ratio's proximity to the threshold (0.60) prevents definitive classification. Region B, with 8 GNN seeds and a lower boundary exit ratio (0.52), is clearly a combinational trojan. Since Region A lacks seeds and the exit ratio is high, it does not meet the criteria for a trojan. The internal density and exit ratio are within normal ranges for arithmetic logic, making Region A unlikely to be malicious."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (8) and high internal edge density (0.98), fulfilling the criteria for a combinational trojan. The audit's critique about the asymmetric risk principle applies to Region A only when seeds are present (which they are), but the boundary exit ratio (0.52) is within normal ranges for arithmetic datapaths. Region B has no GNN seeds and a high boundary exit ratio (0.6667), which is normal for benign logic. Since Region A contains confirmed seeds, it is the malicious region, and Region B is classified as benign. The audit's recommendation aligns with this conclusion.",
+    "explanation_trial_2": "The auditor's critique correctly identifies Region B as the malicious candidate due to its confirmed GNN seeds (8) and high internal edge density (0.98), aligning with combinational logic (e.g., comparator trees). Region A's high boundary exit ratio (0.6667) is unjustified in the absence of GNN seeds, making it a valid candidate for a hardware trojan. The original report incorrectly dismissed Region A as benign, violating the asymmetric risk principle. Since Region B contains confirmed GNN seeds, it is flagged as the malicious candidate, while Region A's anomalous exit ratio is considered a false positive. Physical architectural classification rules confirm Region B's 0 DFFs, supporting a combinational trojan."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**  \nRegion A exhibits **high GNN suspicious seeds (8, max score 0.8753)** and **high internal edge density (0.98)**, indicating anomalous topological clustering. Its boundary exit ratio (0.52) falls within normal ranges, but the presence of high GNN scores and no sequential DFFs (0) strongly suggests a **combinational Trojan** (e.g., stealthy comparator tree or payload injection). Region B has **no GNN seeds** and a **low boundary exit ratio (0.6667)**, but its internal edge density (0.9583) and absence of DFFs align with benign arithmetic logic. Region A\u2019s anomalous clustering and high GNN scores disqualify it as benign, while Region B remains unflagged due to lack of suspicious seeds.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "NEITHER",
+    "confidence": "LOW",
+    "trojan_type": "NONE",
+    "explanation": "**  \nRegion A has a high internal edge density (0.9583) and a boundary exit ratio of 0.6667 (above 0.60), which is not disqualifying for a trojan if no GNN seeds are present. However, the absence of GNN seeds and the high internal density suggest potential anomalies, but the exit ratio's proximity to the threshold (0.60) prevents definitive classification. Region B, with 8 GNN seeds and a lower boundary exit ratio (0.52), is clearly a combinational trojan. Since Region A lacks seeds and the exit ratio is high, it does not meet the criteria for a trojan. The internal density and exit ratio are within normal ranges for arithmetic logic, making Region A unlikely to be malicious.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

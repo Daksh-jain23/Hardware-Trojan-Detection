@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T422",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 47,
+  "clean_region_size": 47,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.68). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.68) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 GNN suspicious seeds and a peak confidence score of 0.9487 (well above the 0.50 threshold), confirming strong anomaly detection. Its internal edge density (1.89) significantly exceeds typical benign datapaths (0.8\u20131.2), while boundary exits (0.0213) are extremely low\u2014consistent with a closed sequential state counter. Region B has no GNN seeds and a boundary exit ratio of 0.7447 (>0.60), confirming benign behavior. The presence of 5 DFFs in Region A rules out combinatorial trojans, aligning with a sequential state counter.",
+    "explanation_trial_2": "Region B exhibits confirmed GNN suspicious seeds (15) and a max GNN score of 0.9487, meeting the primary detection signal for hardware trojans. It has 5 DFFs (sequential elements) and an extremely low boundary exit ratio (0.0213), consistent with a stealthy sequential state counter that minimizes external connections. Region A has no GNN seeds (0) and a high boundary exit ratio (0.7447), which is benign in the absence of confirmed anomalies (per principle 2). The high internal edge density (1.8936) in Region B further supports a state counter structure rather than combinational logic."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A is the only candidate with 15 confirmed GNN seeds (\u22651), satisfying the mandatory requirement to investigate. Its gate types explicitly include state multiplexers (`mxi21s3`, `mx21s3`) and compound AOI/OAI gates (`oai22s2`, `nor3s1`), which are definitive architectural indicators of Finite State Machines (FSMs) per digital circuit design standards. This classification overrides the initial sequential counter hypothesis, as true counters lack multiplexers for state selection and instead use combinational logic (e.g., adders). Region B has 0 confirmed seeds and 0 DFFs, confirming benignity. The pre-audit warning and gate-type evidence provide conclusive justification for FSM classification without false positives.",
+    "explanation_trial_2": "Region B contains 15 confirmed GNN seeds (a high-risk indicator) and explicitly includes state multiplexers (`mxi21s3` and `mx21s3` gate types) as mandated by the pre-audit warning. This confirms it is an FSM (Finite State Machine) rather than a sequential counter, which requires combinational logic without multiplexers. The presence of multiplexers for state transitions (not sequential counters) aligns with hardware security best practices and prevents false negatives, as required by the asymmetric risk principle. Region A has 0 GNN seeds and 0 DFFs, confirming it is benign."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 GNN suspicious seeds and a peak confidence score of 0.9487 (well above the 0.50 threshold), confirming strong anomaly detection. Its internal edge density (1.89) significantly exceeds typical benign datapaths (0.8\u20131.2), while boundary exits (0.0213) are extremely low\u2014consistent with a closed sequential state counter. Region B has no GNN seeds and a boundary exit ratio of 0.7447 (>0.60), confirming benign behavior. The presence of 5 DFFs in Region A rules out combinatorial trojans, aligning with a sequential state counter.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits confirmed GNN suspicious seeds (15) and a max GNN score of 0.9487, meeting the primary detection signal for hardware trojans. It has 5 DFFs (sequential elements) and an extremely low boundary exit ratio (0.0213), consistent with a stealthy sequential state counter that minimizes external connections. Region A has no GNN seeds (0) and a high boundary exit ratio (0.7447), which is benign in the absence of confirmed anomalies (per principle 2). The high internal edge density (1.8936) in Region B further supports a state counter structure rather than combinational logic.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

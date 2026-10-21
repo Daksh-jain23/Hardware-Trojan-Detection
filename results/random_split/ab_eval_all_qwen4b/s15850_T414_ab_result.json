@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T414",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 40,
+  "clean_region_size": 40,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.38). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.38) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits 15 confirmed GNN suspicious seeds with a peak confidence of 0.9479 (exceeding the 0.50 threshold), indicating a malicious cluster. Its low boundary exit ratio (0.275) aligns with a stealthy sequential state counter that minimizes external connections. Region B has no GNN seeds and a boundary exit ratio of 0.55 (within benign arithmetic datapath norms), confirming it as clean. The presence of 4 sequential DFFs in Region A further supports a sequential counter rather than a combinational trojan.",
+    "explanation_trial_2": "Region B exhibits confirmed GNN suspicious seeds (15) with peak score (0.9479) > 0.50, 4 DFFs indicating sequential behavior, and low boundary exit ratio (0.275) consistent with a compact state counter payload. Region A has no GNN suspicion (0 seeds, max score 0.3847), 0 DFFs, and internal density (1.2) within typical combinatorial arithmetic datapath range."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has 15 confirmed GNN seeds (\u22651), mandating malicious flagging per the asymmetric risk principle. Ground truth confirms 4 DFFs and multiplexer gates (e.g., `mx21s3` and `mxi21s3`), which constitute state multiplexers. This meets the FSM classification rule (DFFs with state multiplexers), not combinational (0 DFFs required) or sequential counter (lacks state multiplexers). Region B has 0 GNN seeds and 0 DFFs, confirming benign behavior. The initial hypothesis incorrectly claimed 0 DFFs for Region A, but ground truth explicitly shows 4 DFFs, invalidating combinational classification.",
+    "explanation_trial_2": "Region B has 15 confirmed GNN seeds (>=1), meeting the threshold for a malicious candidate. The presence of state multiplexers (gate types \"mx21s3\" and \"mxi21s3\") explicitly classifies it as a Finite State Machine (FSM) per security directives, overriding the initial sequential counter misclassification. This aligns with the requirement that DFFs with state multiplexers must be categorized as FSMs, not sequential counters (which require absence of state multiplexers). Region A has 0 GNN seeds and is benign, so NEITHER is inapplicable. The corrected classification ensures accurate mitigation targeting."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits 15 confirmed GNN suspicious seeds with a peak confidence of 0.9479 (exceeding the 0.50 threshold), indicating a malicious cluster. Its low boundary exit ratio (0.275) aligns with a stealthy sequential state counter that minimizes external connections. Region B has no GNN seeds and a boundary exit ratio of 0.55 (within benign arithmetic datapath norms), confirming it as clean. The presence of 4 sequential DFFs in Region A further supports a sequential counter rather than a combinational trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits confirmed GNN suspicious seeds (15) with peak score (0.9479) > 0.50, 4 DFFs indicating sequential behavior, and low boundary exit ratio (0.275) consistent with a compact state counter payload. Region A has no GNN suspicion (0 seeds, max score 0.3847), 0 DFFs, and internal density (1.2) within typical combinatorial arithmetic datapath range.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}
