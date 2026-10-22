@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T428",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 65,
+  "clean_region_size": 38,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.28). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.28) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high internal edge density (1.78)** and **confirmed GNN suspicious seeds (15, max score 0.9491)**, indicating anomalous topological clustering. Its **low boundary exit ratio (0.0308)** contrasts with normal datapath behavior (expected 0.30\u20130.55), suggesting potential **stealthy trigger comparator tree** or **sequential state counter** characteristics. Region B has **no GNN seeds** and **high boundary exits (410, exit ratio 0.76)**, which are typical of benign arithmetic logic (e.g., wide ALUs). Region A's **sequential gates (5 DFFs)** and **high internal density** align with **sequential trojans** (e.g., state counters). While Region B's high boundary exits are normal, Region A's GNN seeds and low boundary exits (vs. expected 0.30\u20130.55) strongly suggest a **hidden malicious logic insertion**. The absence of GNN seeds in Region B does not disqualify it as benign, but Region A's metrics confirm a **hidden malicious logic insertion**.",
+    "explanation_trial_2": "Region B exhibits high GNN scores (0.9491) and 15 seeds, indicating anomalous clustering. It has a high internal edge density (1.78) and 5 sequential DFFs, suggesting complex sequential logic. The low boundary exit ratio (0.03) contrasts with the normal range (0.30\u20130.55), but its high GNN scores and DFFs strongly suggest malicious intent. Region A lacks seeds and has no sequential gates, making it less suspicious."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "The auditor's critique highlights the presence of state multiplexers (mx21s3 and mxi21s3) in Region A's gate types, which are critical for sequential counter logic. While Region A exhibits high GNN seeds and clustering, these characteristics are typical of combinational logic (e.g., ALUs, multipliers) with boundary exit ratios ~0.30\u20130.55. The low boundary exit ratio (0.0308) and sequential DFFs (5) align with combinational logic, not sequential counters. The presence of state multiplexers in Region A's gate types confirms it is an FSM (Finite State Machine), despite its high GNN scores, due to the absence of state multiplexing evidence in the initial analysis. The analyst's conclusion of a sequential counter was invalid due to omission of state multiplexing evidence.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and 5 sequential DFFs (e.g., dffles2, mxi21s3), aligning with a stealthy sequential counter. Region A has 0 GNN seeds and 0 DFFs, but Region B's high internal density and DFFs (5) meet the criteria for a sequential counter. The auditor's rules confirm Region B as the malicious candidate due to confirmed seeds and DFFs, excluding NEITHER."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits **high internal edge density (1.78)** and **confirmed GNN suspicious seeds (15, max score 0.9491)**, indicating anomalous topological clustering. Its **low boundary exit ratio (0.0308)** contrasts with normal datapath behavior (expected 0.30\u20130.55), suggesting potential **stealthy trigger comparator tree** or **sequential state counter** characteristics. Region B has **no GNN seeds** and **high boundary exits (410, exit ratio 0.76)**, which are typical of benign arithmetic logic (e.g., wide ALUs). Region A's **sequential gates (5 DFFs)** and **high internal density** align with **sequential trojans** (e.g., state counters). While Region B's high boundary exits are normal, Region A's GNN seeds and low boundary exits (vs. expected 0.30\u20130.55) strongly suggest a **hidden malicious logic insertion**. The absence of GNN seeds in Region B does not disqualify it as benign, but Region A's metrics confirm a **hidden malicious logic insertion**.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits high GNN scores (0.9491) and 15 seeds, indicating anomalous clustering. It has a high internal edge density (1.78) and 5 sequential DFFs, suggesting complex sequential logic. The low boundary exit ratio (0.03) contrasts with the normal range (0.30\u20130.55), but its high GNN scores and DFFs strongly suggest malicious intent. Region A lacks seeds and has no sequential gates, making it less suspicious.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

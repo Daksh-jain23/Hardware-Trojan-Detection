@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T457",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 33,
+  "clean_region_size": 33,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.21). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits high GNN suspicious seeds (15, max score 0.9482) and 5 sequential DFFs, indicating connected flip-flops driving internal state counters. Its high internal edge density (2.303) and low boundary exit ratio (0.0303) suggest tight, possibly maliciously connected logic. Region B has 0 GNN seeds and no DFFs, but Region A's structural characteristics (high GNN suspicion, DFFs, and low boundary exits) align with sequential trojan indicators, making it a likely stealthy trigger comparator tree or FSM. The presence of GNN seeds in Region A disqualifies it as benign, despite the low boundary exit ratio.",
+    "explanation_trial_2": "Region B exhibits **high GNN suspicious seeds (15, max score 0.9482)** and **high internal edge density (2.303)**, along with **5 sequential DFFs**. These metrics strongly suggest a **sequential Trojan** (e.g., state counter or FSM). While Region A has 0 GNN seeds and low edge density, its **boundary exit ratio (0.2727)** falls within normal ranges, and it lacks DFFs. Region B\u2019s **low boundary exit ratio** (0.0303) contrasts with typical arithmetic datapath behavior, further implicating a stealthy Trojan. The presence of DFFs and high GNN scores disqualifies Region A as benign, while Region B\u2019s suspicious patterns confirm a **sequential counter** or **FSM**. Region A\u2019s lack of GNN seeds and low edge density makes it **unlikely** to be a Trojan, but the user\u2019s instruction to flag confirmed seeds (Region B\u2019s 15) ensures **no false negatives**."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 5 DFFs (1-5 DFFs without MUXes/AOI), fulfilling the criteria for a SEQUENTIAL_COUNTER trojan. It has confirmed GNN seeds (15 seeds, max 0.9482) and an asymmetric boundary exit ratio (0.0303 \u2264 0.45), aligning with the asymmetric risk principle. The analyst's failure to flag Region A despite seeds violated the \"NEITHER\" directive, and its DFF count confirms the SEQUENTIAL_COUNTER classification.",
+    "explanation_trial_2": "Region B contains 5 sequential DFFs (e.g., `dffles2`) but no state multiplexers, which are critical for sequential counters. The presence of confirmed GNN seeds (15) and the low boundary exit ratio (0.0303) align with combinational Trojan characteristics (e.g., bus vector triggers). The absence of state multiplexers invalidates the claim of a sequential counter, and the Asymmetric Risk Principle mandates flagging Region B due to confirmed seeds. Region A is benign (0 seeds, low internal density)."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits high GNN suspicious seeds (15, max score 0.9482) and 5 sequential DFFs, indicating connected flip-flops driving internal state counters. Its high internal edge density (2.303) and low boundary exit ratio (0.0303) suggest tight, possibly maliciously connected logic. Region B has 0 GNN seeds and no DFFs, but Region A's structural characteristics (high GNN suspicion, DFFs, and low boundary exits) align with sequential trojan indicators, making it a likely stealthy trigger comparator tree or FSM. The presence of GNN seeds in Region A disqualifies it as benign, despite the low boundary exit ratio.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits **high GNN suspicious seeds (15, max score 0.9482)** and **high internal edge density (2.303)**, along with **5 sequential DFFs**. These metrics strongly suggest a **sequential Trojan** (e.g., state counter or FSM). While Region A has 0 GNN seeds and low edge density, its **boundary exit ratio (0.2727)** falls within normal ranges, and it lacks DFFs. Region B\u2019s **low boundary exit ratio** (0.0303) contrasts with typical arithmetic datapath behavior, further implicating a stealthy Trojan. The presence of DFFs and high GNN scores disqualifies Region A as benign, while Region B\u2019s suspicious patterns confirm a **sequential counter** or **FSM**. Region A\u2019s lack of GNN seeds and low edge density makes it **unlikely** to be a Trojan, but the user\u2019s instruction to flag confirmed seeds (Region B\u2019s 15) ensures **no false negatives**.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

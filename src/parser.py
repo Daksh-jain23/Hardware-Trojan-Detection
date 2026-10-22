@@ -29,15 +29,17 @@ OUTPUT_PORTS = {"q", "qn", "qb"}
 # Trojan identification
 def is_trojan_gate(name):
     """
-    Trust-Hub Trojan gates use names such as:
-
+    Trojan gates use names such as:
         troj00U1
         troj100U2
         trojan00
+        g_trig_a_00
+        g_trojan_payload
 
-    We identify them using the 'troj' prefix.
+    We identify them using 'troj', 'trojan', or 'trig' tokens.
     """
-    return name.lower().startswith("troj")
+    nl = name.lower()
+    return nl.startswith("troj") or "trojan" in nl or "trig" in nl
 
 
 

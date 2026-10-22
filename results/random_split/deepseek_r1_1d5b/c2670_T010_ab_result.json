@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T010",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.94) vs Region B (seeds=0, max=0.07). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.07) vs Region B (seeds=7, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "**  \nRegion A exhibits **high GNN suspicious seeds (7, max score 0.9438)** and **internal edge density (1.0)**, indicating anomalous topological clustering. Its **boundary exit ratio (0.44)** falls within the 0.35\u20130.55 range for localized 2-hop subgraphs, but the presence of GNN seeds disqualifies it as benign. Region B has **0 GNN seeds** and **lower internal edge density (1.04)**, lacking the structural markers of a Trojan. Region A\u2019s **0 sequential DFFs** confirms it is a **combinational Trojan** (stealthy trigger comparator tree or datapath payload injection), as required by the criteria. While Region B\u2019s boundary exit ratio (0.46) is within allowed thresholds, its absence of GNN seeds and lack of DFFs preclude malicious classification. Region A\u2019s structural anomalies align with hardware Trojan indicators, making it the only candidate with confirmed GNN suspicion.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (7) and a max GNN score of 0.9438, indicating anomalous topological clustering. Its internal edge density (1.0) and boundary exit ratio (0.44) fall within normal ranges, but the presence of complex gates (e.g., nnd3s1, nor2s1) and high GNN scores suggest malicious logic insertion. Region A has no GNN seeds and a normal boundary exit ratio, making it unlikely to be a Trojan. The combination of high GNN scores and structural anomalies in Region B aligns with a combinational Trojan (e.g., stealthy comparator tree or sequential state counter)."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (7) and has 0 DFFs, fulfilling the criteria for a combinational Trojan. The absence of DFFs and the presence of high GNN scores (0.94) align with combinational logic indicators. While Region B has 0 GNN seeds and 0 DFFs, it lacks the necessary evidence to qualify as a malicious Trojan. The auditor's recommendation to flag Region A as a combinational Trojan is valid, and the rules mandate selecting the region with confirmed seeds, not dismissing it as \"benign arithmetic logic.\"",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (7, max 0.9438) and 0 DFFs, aligning with combinational Trojan characteristics. The absence of sequential DFFs and high GNN scores, combined with complex gate types (e.g., nnd3s1, or2s1), confirm it as a stealthy, high-risk combinational Trojan. Region A's 0 GNN seeds and low edge density (1.04) align with benign logic, but Region B's anomaly underscores its malicious nature."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**  \nRegion A exhibits **high GNN suspicious seeds (7, max score 0.9438)** and **internal edge density (1.0)**, indicating anomalous topological clustering. Its **boundary exit ratio (0.44)** falls within the 0.35\u20130.55 range for localized 2-hop subgraphs, but the presence of GNN seeds disqualifies it as benign. Region B has **0 GNN seeds** and **lower internal edge density (1.04)**, lacking the structural markers of a Trojan. Region A\u2019s **0 sequential DFFs** confirms it is a **combinational Trojan** (stealthy trigger comparator tree or datapath payload injection), as required by the criteria. While Region B\u2019s boundary exit ratio (0.46) is within allowed thresholds, its absence of GNN seeds and lack of DFFs preclude malicious classification. Region A\u2019s structural anomalies align with hardware Trojan indicators, making it the only candidate with confirmed GNN suspicion.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits high GNN suspicious seeds (7) and a max GNN score of 0.9438, indicating anomalous topological clustering. Its internal edge density (1.0) and boundary exit ratio (0.44) fall within normal ranges, but the presence of complex gates (e.g., nnd3s1, nor2s1) and high GNN scores suggest malicious logic insertion. Region A has no GNN seeds and a normal boundary exit ratio, making it unlikely to be a Trojan. The combination of high GNN scores and structural anomalies in Region B aligns with a combinational Trojan (e.g., stealthy comparator tree or sequential state counter).",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

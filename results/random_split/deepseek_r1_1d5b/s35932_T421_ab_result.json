@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T421",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 29,
+  "clean_region_size": 25,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.54). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.54) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": true,
+    "swap_consistent": false,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits high internal edge density (2.34) and low boundary exit ratio (0.03), with 15 GNN suspicious seeds (max score 0.9459). Region B has high internal edge density (0.96) and high boundary exit ratio (0.68), with 0 GNN seeds. The mandatory NEITHER rule applies because both regions have 0 GNN seeds < 0.45. Region A's high GNN scores and sequential DFFs suggest anomalous topological clustering, but Region B's high boundary exits and lack of GNN seeds make it benign under standard arithmetic logic. Neither region shows malicious characteristics.",
+    "explanation_trial_2": "**  \nRegion B exhibits high internal edge density (2.34) and sequential gates (5), indicating potential for a sequential counter or FSM. Its boundary exit ratio of 0.0345 (very low) and high GNN scores (0.9459) suggest anomalous topological clustering, aligning with sequential trojan characteristics. Region A lacks GNN seeds and sequential gates, making it less likely to be a trojan. While Region A\u2019s high internal density is notable, its absence of GNN seeds and low boundary exits prevent it from meeting the criteria for a trojan. Region B\u2019s combination of high GNN scores, sequential gates, and low boundary exits strongly indicates a sequential counter or FSM."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (15) with an internal edge density of 2.3448 and 5 sequential DFFs (vs. Region B's 0), indicating a sequential counter. The boundary exit ratio (0.0345) does not disqualify Region A under the Asymmetric Risk Principle, and its high density supports the trojan's architectural classification. The auditor's prior dismissal of Region A as \"benign\" was flawed, leading to a false negative. The selected region aligns with the sequential counter hypothesis, confirming the trojan's presence.",
+    "explanation_trial_2": "The auditor's critique correctly identifies Region B as a SEQUENTIAL_COUNTER Trojan due to its confirmed GNN seeds (15) and 5 DFFs (dffles2, dffs2) without MUXes/AOI, aligning with sequential connectivity. The boundary exit ratio (0.0345) is below the normal range for arithmetic datapaths, but the presence of confirmed GNN seeds invalidates the claim of \"benign logic\" under the Asymmetric Risk Principle. Region B's DFFs and GNN seeds strongly indicate a SEQUENTIAL_COUNTER Trojan, despite the low boundary exit ratio, as confirmed seeds take precedence. Region A's lack of GNN seeds and high internal density do not meet the criteria for a Trojan."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "NEITHER",
+    "confidence": "HIGH",
+    "trojan_type": "NONE",
+    "explanation": "Region A exhibits high internal edge density (2.34) and low boundary exit ratio (0.03), with 15 GNN suspicious seeds (max score 0.9459). Region B has high internal edge density (0.96) and high boundary exit ratio (0.68), with 0 GNN seeds. The mandatory NEITHER rule applies because both regions have 0 GNN seeds < 0.45. Region A's high GNN scores and sequential DFFs suggest anomalous topological clustering, but Region B's high boundary exits and lack of GNN seeds make it benign under standard arithmetic logic. Neither region shows malicious characteristics.",
+    "correct": false
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "**  \nRegion B exhibits high internal edge density (2.34) and sequential gates (5), indicating potential for a sequential counter or FSM. Its boundary exit ratio of 0.0345 (very low) and high GNN scores (0.9459) suggest anomalous topological clustering, aligning with sequential trojan characteristics. Region A lacks GNN seeds and sequential gates, making it less likely to be a trojan. While Region A\u2019s high internal density is notable, its absence of GNN seeds and low boundary exits prevent it from meeting the criteria for a trojan. Region B\u2019s combination of high GNN scores, sequential gates, and low boundary exits strongly indicates a sequential counter or FSM.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": false,
+    "correctness_trial_2": true,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

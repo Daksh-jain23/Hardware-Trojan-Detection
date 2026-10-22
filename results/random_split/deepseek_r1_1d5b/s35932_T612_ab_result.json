@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T612",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 23,
+  "clean_region_size": 23,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.04). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.04) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9488)** and **extremely high internal edge density (1.913)**, which are critical indicators of hardware trojan insertion. The absence of GNN seeds in Region B (0) and its **high boundary exit ratio (0.6957)** suggests normal signal dispersion, but Region A's high internal density and GNN scores strongly correlate with **combinational trojan characteristics**. Region A's **4 sequential gates** further support a complex, possibly sequential counter architecture, but the primary risk lies in its high GNN scores and internal density. Region B's lack of GNN seeds and low boundary exits align with benign design features, making it unlikely to be a trojan.",
+    "explanation_trial_2": ""
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains 4 sequential DFFs (DFFles2) without state multiplexers (as per gate type descriptions), which aligns with the criteria for SEQUENTIAL_COUNTER (1-5 DFFs without MUXes/AOI). The presence of confirmed GNN seeds (15) in Region A meets the threshold for a malicious trojan under the asymmetric risk principle. The auditor's critique highlighted the absence of state multiplexers, but the classification rules prioritize DFF counts and gate types, confirming Region A as a SEQUENTIAL_COUNTER based on its physical architecture.",
+    "explanation_trial_2": "Region B contains 4 sequential DFFs (DFFles2) consistent with Sequential Counter Trojans, despite the absence of state multiplexers (mux in gate types). The presence of DFFs without MUXes/AOI aligns with the rules for SEQUENTIAL_COUNTER, even though the absence of MUXes is a critical distinction between Sequential Counter and FSM Trojans. The analyst's report incorrectly dismissed the anomaly without addressing the absence of MUXes, but the DFFs' presence satisfies the criteria for SEQUENTIAL_COUNTER."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9488)** and **extremely high internal edge density (1.913)**, which are critical indicators of hardware trojan insertion. The absence of GNN seeds in Region B (0) and its **high boundary exit ratio (0.6957)** suggests normal signal dispersion, but Region A's high internal density and GNN scores strongly correlate with **combinational trojan characteristics**. Region A's **4 sequential gates** further support a complex, possibly sequential counter architecture, but the primary risk lies in its high GNN scores and internal density. Region B's lack of GNN seeds and low boundary exits align with benign design features, making it unlikely to be a trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "MEDIUM",
+    "trojan_type": "FSM",
+    "explanation": "",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

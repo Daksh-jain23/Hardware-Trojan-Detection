@@ -1,0 +1,88 @@
+{
+  "circuit": "c2670_T004",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 60,
+  "clean_region_size": 51,
+  "gnn_seeds_count": 10,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=10, max=0.95) vs Region B (seeds=0, max=0.19). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.19) vs Region B (seeds=10, max=0.95). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (10, max score 0.9469)** and **extremely high internal edge density (0.9833)**, indicating a dense, possibly stealthy trigger comparator tree. While Region B has **0 GNN seeds** and **lower internal edge density (1.1569)**, its boundary exit ratio (0.3529) is within normal ranges, and it lacks sequential gates (DFFs). The absence of GNN suspicion in Region B and its lower internal density suggest benign arithmetic logic, but Region A's high GNN scores and structural anomalies strongly indicate a **combinational Trojan** (e.g., stealthy comparator tree) with no DFFs. The high internal density in Region A aligns with typical stealthy trigger structures, while Region B's lack of GNN seeds and lower density suggests benign design.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (10) with max score 0.9469, indicating significant topological anomalies. Its internal edge density (0.9833) and boundary exits (28, exit ratio 0.4667) align with high internal clustering, which is characteristic of combinational trojans (e.g., AND/NOR/XOR gate trees). The absence of sequential DFFs (0) and the presence of complex gates (e.g., AND3s1, NOR5s1) support a combinational stealthy trigger comparator tree. Region A's lack of GNN seeds and low internal density contrast sharply, confirming Region B's anomalous structure."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "The auditor correctly identified that Region A's GNN seeds are not confirmed (as per the analyst's report, which did not specify whether they are \"confirmed\" or merely \"suspected\"). Both Region A and Region B have 0 confirmed GNN seeds, satisfying the NEITHER criterion. Region B's lower internal edge density (1.1569) and absence of sequential DFFs align with benign arithmetic logic, while Region A's high GNN scores (though not confirmed) and lack of DFFs support the conclusion that neither region contains a malicious trojan. The analyst's initial assessment was flawed due to misinterpretation of data, and the NEITHER designation reflects the absence of confirmed GNN seeds in both regions.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (10) and high internal density (0.9833), aligning with combinational trojan characteristics (e.g., AND/NOR trees). The audit critique highlights the failure to apply the Asymmetric Risk Principle, which would have flagged the GNN seeds as anomalies. Despite this, Region B's structural evidence (high GNN scores, low DFFs) confirms a combinational trojan. Physical classification rules apply: 0 DFFs in Region B mandate TROJAN_TYPE: COMBINATIONAL. The report's omission of the Asymmetric Risk Principle risks a false negative, but the evidence explicitly supports Region B as the malicious candidate."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (10, max score 0.9469)** and **extremely high internal edge density (0.9833)**, indicating a dense, possibly stealthy trigger comparator tree. While Region B has **0 GNN seeds** and **lower internal edge density (1.1569)**, its boundary exit ratio (0.3529) is within normal ranges, and it lacks sequential gates (DFFs). The absence of GNN suspicion in Region B and its lower internal density suggest benign arithmetic logic, but Region A's high GNN scores and structural anomalies strongly indicate a **combinational Trojan** (e.g., stealthy comparator tree) with no DFFs. The high internal density in Region A aligns with typical stealthy trigger structures, while Region B's lack of GNN seeds and lower density suggests benign design.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B exhibits high GNN suspicious seeds (10) with max score 0.9469, indicating significant topological anomalies. Its internal edge density (0.9833) and boundary exits (28, exit ratio 0.4667) align with high internal clustering, which is characteristic of combinational trojans (e.g., AND/NOR/XOR gate trees). The absence of sequential DFFs (0) and the presence of complex gates (e.g., AND3s1, NOR5s1) support a combinational stealthy trigger comparator tree. Region A's lack of GNN seeds and low internal density contrast sharply, confirming Region B's anomalous structure.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

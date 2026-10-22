@@ -1,0 +1,88 @@
+{
+  "circuit": "s35932_T604",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 35,
+  "clean_region_size": 35,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.81). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.81) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits high internal edge density (1.8286) and 4 sequential DFFs, along with 15 GNN suspicious seeds (max score 0.9482). The low boundary exit ratio (0.0286) contrasts with typical high boundary exits in datapaths, suggesting anomalous clustering. Region B has 0 GNN seeds and high boundary exits (24, exit ratio 0.6857), but lacks DFFs and sequential connectivity. While Region B's high boundary exits could hint at a Trojan, the absence of GNN seeds and lack of DFFs disqualify it under the mandatory NEITHER rule. Region A's GNN seeds and sequential DFFs confirm a sequential counter Trojan, despite the low boundary exit ratio, due to the anomalous clustering and high internal density.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (15) and sequential DFFs (4), indicating a hidden sequential state counter. Its internal edge density (1.8286) and low boundary exit ratio (0.0286) suggest tight, concealed logic, aligning with stealthy sequential trojans. Region A has no GNN seeds and high boundary exit ratio (0.6857), but its lack of DFFs and low internal density (0.9714) makes it benign under normal conditions. Region B's high GNN scores and DFFs strongly correlate with a sequential Trojan, despite the low boundary exit ratio, which may stem from tight, concealed logic."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both REGION_A and REGION_B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), satisfying the \"NEITHER\" condition. The auditor's initial analysis incorrectly applied the asymmetric risk principle, misstating exit ratios and dismissing GNN seeds as false positives. Physical metrics (DFFs, MUXes, AOI gates) do not conclusively identify a Trojan type, and neither region exhibits suspicious patterns (e.g., high internal density, boundary exits) that would qualify as a hardware Trojan. The assessment avoids false positives by strictly adhering to physical metrics and avoiding classification based on incomplete data.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and 4 sequential DFFs (indicating state counters), which are definitive indicators of a SEQUENTIAL_COUNTER Trojan. The auditor's critique highlighted that the analyst failed to apply the asymmetric risk principle (boundary exit ratio \u2264 0.45 must be flagged when GNN seeds are present), but Region B's low boundary exit ratio (0.0286) is a critical anomaly that should have been flagged. Despite this, the presence of confirmed GNN seeds disqualifies Region B as benign, and the analysis adheres to the rules for selecting the candidate region with confirmed seeds. Region A, with 0 GNN seeds and a normal exit ratio, is classified as benign."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits high internal edge density (1.8286) and 4 sequential DFFs, along with 15 GNN suspicious seeds (max score 0.9482). The low boundary exit ratio (0.0286) contrasts with typical high boundary exits in datapaths, suggesting anomalous clustering. Region B has 0 GNN seeds and high boundary exits (24, exit ratio 0.6857), but lacks DFFs and sequential connectivity. While Region B's high boundary exits could hint at a Trojan, the absence of GNN seeds and lack of DFFs disqualify it under the mandatory NEITHER rule. Region A's GNN seeds and sequential DFFs confirm a sequential counter Trojan, despite the low boundary exit ratio, due to the anomalous clustering and high internal density.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits high GNN suspicious seeds (15) and sequential DFFs (4), indicating a hidden sequential state counter. Its internal edge density (1.8286) and low boundary exit ratio (0.0286) suggest tight, concealed logic, aligning with stealthy sequential trojans. Region A has no GNN seeds and high boundary exit ratio (0.6857), but its lack of DFFs and low internal density (0.9714) makes it benign under normal conditions. Region B's high GNN scores and DFFs strongly correlate with a sequential Trojan, despite the low boundary exit ratio, which may stem from tight, concealed logic.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

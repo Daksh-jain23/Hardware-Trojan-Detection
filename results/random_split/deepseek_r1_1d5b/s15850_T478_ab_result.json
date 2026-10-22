@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T478",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 53,
+  "clean_region_size": 53,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.65). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.65) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9482)** and **low boundary exits (0.0189)**, which are critical indicators of a stealthy Hardware Trojan. The **internal edge density (1.98)** is significantly higher than the normal range (0.30\u20130.55), suggesting anomalous topological clustering. Region A contains **5 sequential DFFs**, confirming the presence of connected flip-flops driving state counters, a hallmark of sequential trojans. In contrast, Region B has **0 GNN seeds** and **normal boundary exits (0.7547)**, with no sequential DFFs, indicating benign logic. The disparity in GNN suspicion and structural anomalies strongly supports Region A as a malicious candidate.",
+    "explanation_trial_2": "Region B exhibits high GNN suspicious seeds (15) and a high internal edge density (1.9811), with low boundary exit ratio (0.0189) and 5 sequential DFFs. The combination of high GNN scores, complex gate types (e.g., DFFles2, nor2s1), and low boundary exits suggests a sequential Trojan. Region A has no GNN seeds and lower edge density, but its lack of sequential DFFs and low boundary exits may indicate benign logic. Region B\u2019s anomalies align with sequential Trojan characteristics (flip-flops, low boundary exits) and high GNN suspicion, making it a strong candidate for a stealthy trigger comparator tree or state counter."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (15) and low boundary exits (1, exit ratio 0.0189), aligning with stealthy sequential counters. The presence of 5 sequential DFFs further supports this classification. Region B's lack of GNN seeds (0) does not preclude benign arithmetic logic (ALUs, multipliers), but the auditor's critique correctly identifies Region A as the malicious candidate due to its GNN seeds and low exits. The recommendation to accept Region A is valid under the evidence, and the assumption about Region B's benignity is a **benign alternative hypothesis** (not a false positive).",
+    "explanation_trial_2": "The auditor's critique did not provide specific details about MUXes/AOI gates or DFFs in Region B. Based on the original assessment, Region B has 5 DFFs and 15 GNN seeds, which align with the criteria for a SEQUENTIAL_COUNTER Trojan (1-5 DFFs without MUXes/AOI). The high GNN seeds and internal density contrast with Region A's low GNN seeds, reinforcing Region B's anomalous topological clustering. Since Region B contains confirmed GNN seeds (15), the NEITHER designation is invalid. The presence of DFFs and high GNN scores supports a sequential counter, while Region A's lack of DFFs and low GNN seeds suggest benign logic."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9482)** and **low boundary exits (0.0189)**, which are critical indicators of a stealthy Hardware Trojan. The **internal edge density (1.98)** is significantly higher than the normal range (0.30\u20130.55), suggesting anomalous topological clustering. Region A contains **5 sequential DFFs**, confirming the presence of connected flip-flops driving state counters, a hallmark of sequential trojans. In contrast, Region B has **0 GNN seeds** and **normal boundary exits (0.7547)**, with no sequential DFFs, indicating benign logic. The disparity in GNN suspicion and structural anomalies strongly supports Region A as a malicious candidate.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits high GNN suspicious seeds (15) and a high internal edge density (1.9811), with low boundary exit ratio (0.0189) and 5 sequential DFFs. The combination of high GNN scores, complex gate types (e.g., DFFles2, nor2s1), and low boundary exits suggests a sequential Trojan. Region A has no GNN seeds and lower edge density, but its lack of sequential DFFs and low boundary exits may indicate benign logic. Region B\u2019s anomalies align with sequential Trojan characteristics (flip-flops, low boundary exits) and high GNN suspicion, making it a strong candidate for a stealthy trigger comparator tree or state counter.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

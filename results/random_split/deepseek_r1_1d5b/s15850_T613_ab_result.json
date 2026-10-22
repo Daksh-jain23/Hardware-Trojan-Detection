@@ -1,0 +1,88 @@
+{
+  "circuit": "s15850_T613",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 22,
+  "clean_region_size": 22,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.46). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.46) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_A",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": false,
+    "swap_consistent": false,
+    "position_bias": true,
+    "explanation_trial_1": "**  \nRegion A exhibits **high GNN suspicious seeds (15, max score 0.9494)** and **high internal edge density (1.9091)**, indicating anomalous topological clustering. Its **sequential DFFs (4)** and **boundary exits (0, exit ratio 0.0)** suggest complex, possibly malicious sequential logic (e.g., state counters or flip-flop-driven counters). Region B has **0 GNN seeds** and **low internal edge density (1.0455)**, with **high boundary exits (14, exit ratio 0.6364)**, which, combined with no GNN suspicion, aligns with benign signal dispersion. However, Region A\u2019s **high GNN scores and DFFs** strongly suggest **sequential Trojan characteristics** (e.g., hidden state counters or payload injection), making it more likely malicious than Region B. Region B\u2019s low GNN suspicion and low internal density further support its classification as **benign**.",
+    "explanation_trial_2": "Region A has a high GNN score (0.4573) but no seeds, while Region B has 15 seeds and no boundary exits. Region A's internal edge density (1.0455) is lower than Region B's (1.9091), and Region B has no boundary exits. The absence of seeds in Region A suggests no trojan, though the high GNN score indicates some anomaly. Region B's sequential gates (4) and high seeds suggest potential trojan activity, but Region A's lack of seeds and lower density make it less likely. Thus, Region A is not NEITHER, and the assessment is HIGH confidence."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both REGION_A and REGION_B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), satisfying the asymmetric risk principle that mandates NEITHER when both regions lack confirmed GNN seeds. The auditor's claim of a SEQUENTIAL_COUNTER in REGION_A is invalid due to factual misrepresentation of physical metrics (e.g., internal edge density 1.9091 vs. typical 0.30\u20130.55 for sequential counters). Region A's high internal edge density is not typical for sequential logic, and Region B's 0 DFFs align with normal combinational logic. The asymmetric risk principle explicitly requires NEITHER when both regions have 0 seeds.",
+    "explanation_trial_2": "Both REGION_A and REGION_B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), violating Rule 5 (NEITHER). The analyst's conclusion of REGION_B as a Trojan is a false positive, as Rule 5 mandates NEITHER when both regions lack confirmed GNN seeds. Physical architectural rules indicate both regions have 0 DFFs, confirming TROJAN_TYPE: NONE. The presence of sequential DFFs in REGION_B is irrelevant under Rule 5, which prohibits flagging benign logic (no confirmed seeds) as a Trojan."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "**  \nRegion A exhibits **high GNN suspicious seeds (15, max score 0.9494)** and **high internal edge density (1.9091)**, indicating anomalous topological clustering. Its **sequential DFFs (4)** and **boundary exits (0, exit ratio 0.0)** suggest complex, possibly malicious sequential logic (e.g., state counters or flip-flop-driven counters). Region B has **0 GNN seeds** and **low internal edge density (1.0455)**, with **high boundary exits (14, exit ratio 0.6364)**, which, combined with no GNN suspicion, aligns with benign signal dispersion. However, Region A\u2019s **high GNN scores and DFFs** strongly suggest **sequential Trojan characteristics** (e.g., hidden state counters or payload injection), making it more likely malicious than Region B. Region B\u2019s low GNN suspicion and low internal density further support its classification as **benign**.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A has a high GNN score (0.4573) but no seeds, while Region B has 15 seeds and no boundary exits. Region A's internal edge density (1.0455) is lower than Region B's (1.9091), and Region B has no boundary exits. The absence of seeds in Region A suggests no trojan, though the high GNN score indicates some anomaly. Region B's sequential gates (4) and high seeds suggest potential trojan activity, but Region A's lack of seeds and lower density make it less likely. Thus, Region A is not NEITHER, and the assessment is HIGH confidence.",
+    "correct": false
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": false,
+    "overall_accuracy": 0.5,
+    "swap_consistent": false,
+    "position_bias_detected": true,
+    "identifier_leakage_detected": false
+  }
+}

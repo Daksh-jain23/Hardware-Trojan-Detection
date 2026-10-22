@@ -1,0 +1,88 @@
+{
+  "circuit": "s1423_T612",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 80,
+  "clean_region_size": 80,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.44). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.44) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9477)** and **high internal edge density (1.2125)**, indicating anomalous topological clustering. Its boundary exit ratio (0.4) is within normal ranges, but the presence of 3 sequential DFFs and localized GNN seeds strongly suggests **sequential state counter** or **datapath payload injection**. Region B has **0 GNN seeds** and **low internal edge density (1.15)**, with no sequential DFFs, aligning with benign arithmetic logic. The stark contrast in GNN suspicion between the regions confirms Region A's malicious potential, while Region B remains unaltered.",
+    "explanation_trial_2": ""
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A has confirmed GNN seeds (15) and 3 sequential DFFs, meeting the criteria for a SEQUENTIAL_COUNTER. Region B has 0 confirmed GNN seeds, so it is assessed as NEITHER. The presence of DFFs in Region A disqualifies it from being a combinational Trojan, and since it has confirmed seeds, it is selected as the malicious region.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and has 3 DFFs without MUXes/AOI gates, meeting the criteria for SEQUENTIAL_COUNTER. Region A has 0 seeds and a normal exit ratio (0.4), but the auditor incorrectly flagged it as \"neither\" despite Region B's confirmed seeds. The analysis adheres to physical architectural rules, explicitly identifying Region B as the malicious trojan."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (15, max score 0.9477)** and **high internal edge density (1.2125)**, indicating anomalous topological clustering. Its boundary exit ratio (0.4) is within normal ranges, but the presence of 3 sequential DFFs and localized GNN seeds strongly suggests **sequential state counter** or **datapath payload injection**. Region B has **0 GNN seeds** and **low internal edge density (1.15)**, with no sequential DFFs, aligning with benign arithmetic logic. The stark contrast in GNN suspicion between the regions confirms Region A's malicious potential, while Region B remains unaltered.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "MEDIUM",
+    "trojan_type": "FSM",
+    "explanation": "",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

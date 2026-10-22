@@ -1,0 +1,88 @@
+{
+  "circuit": "s13207_T477",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "FSM",
+  "candidate_region_size": 32,
+  "clean_region_size": 32,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.34). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.34) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": false,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "",
+    "explanation_trial_2": "Region B exhibits high GNN scores (0.9492), a high internal edge density (2.56), and 5 sequential DFFles2 gates, indicating a potential sequential counter or FSM. Region A has 0 GNN seeds, high internal edge density (1.03), and high boundary exits (28), but no sequential gates. While Region A's high internal density and boundary exits are typical for non-malicious designs, Region B's high GNN scores and sequential elements strongly suggest a malicious sequential counter. The mandatory NEITHER rule does not apply here since Region B has GNN seeds."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "FSM",
+    "trojan_type_trial_2": "FSM",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (15, max score 0.9492) and exhibits high internal edge density (2.56), aligning with the criteria for a sequential counter Trojan. The auditor's oversight of the asymmetric risk principle (omitting flagging due to GNN seeds) does not negate the validity of Region A's classification. Region B's lack of GNN seeds and high boundary exits (0.875) align with benign behavior, but the analyst incorrectly dismissed Region B as clean, ignoring potential hidden malicious logic. The internal edge density in Region A (2.56) is consistent with standard arithmetic datapaths, confirming its status as a sequential counter Trojan.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15) and 5 sequential DFFs (e.g., `dffles2`), aligning with SEQUENTIAL_COUNTER characteristics. Region A has 0 GNN seeds and lower edge density, making it less likely malicious. The auditor's correction confirms Region B as the malicious area."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "MEDIUM",
+    "trojan_type": "FSM",
+    "explanation": "",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "FSM",
+    "explanation": "Region B exhibits high GNN scores (0.9492), a high internal edge density (2.56), and 5 sequential DFFles2 gates, indicating a potential sequential counter or FSM. Region A has 0 GNN seeds, high internal edge density (1.03), and high boundary exits (28), but no sequential gates. While Region A's high internal density and boundary exits are typical for non-malicious designs, Region B's high GNN scores and sequential elements strongly suggest a malicious sequential counter. The mandatory NEITHER rule does not apply here since Region B has GNN seeds.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

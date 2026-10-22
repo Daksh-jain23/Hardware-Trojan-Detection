@@ -1,0 +1,88 @@
+{
+  "circuit": "c6288_T022",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 7,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=7, max=0.94) vs Region B (seeds=0, max=0.05). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.05) vs Region B (seeds=7, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits **high GNN suspicious seeds (7, max score 0.944)** and **internal edge density (1.22)**, indicating complex, possibly malicious logic. Its **boundary exit ratio (0.48)** is within normal ranges, but the **absence of sequential DFFs** (0) and **high internal clustering** (1.22) align with **sequential counter** characteristics. Region B has **no GNN seeds** and **high boundary exits (0.66)**, which, while unusual, does not meet the threshold for GNN suspicion. Region A\u2019s structural anomalies (high GNN scores, low DFFs, and low boundary exits) strongly suggest a **sequential counter** with hidden logic, making it more likely to be a hardware trojan. Region B\u2019s benign high boundary exits and lack of GNN suspicion do not meet the criteria for a trojan.",
+    "explanation_trial_2": "**  \nRegion B exhibits **GNN seeds (max score 0.944)** and a **boundary exit ratio of 0.48**, which is below the normal range (0.30\u20130.55). The presence of GNN seeds indicates anomalous clustering, even with a low boundary exit ratio. Region A has **no seeds** and a **high boundary exit ratio of 0.66**, which is typical for normal systems. Since Region B\u2019s GNN seeds suggest anomalous behavior, it is classified as a **Trojan** despite the low boundary exit ratio. No DFFs (sequential counters) are present, so the TROJAN_TYPE is **NONE**. The high GNN scores in Region B confirm the seeded anomalous clustering, aligning with the rule that **one region with seeds and the other without is anomalous**."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (max score 0.944) and 0 DFFs, aligning with the physical architectural classification rules for COMBINATIONAL trojans. The presence of GNN seeds mandates selection of Region A despite its lower boundary exit ratio, as the auditor's rule requires selecting the region with confirmed seeds. Region B lacks GNN seeds and lower boundary exits, but since Region A meets the criteria for a COMBINATIONAL Trojan, it is the malicious target.",
+    "explanation_trial_2": "Both REGION_A and REGION_B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), fulfilling the requirement for clean designs. The auditor correctly identified REGION_B as the trojan based on its high internal edge density and confirmed GNN seeds, but the analysis must avoid false positives for clean designs. Since REGION_A is a clean negative control with no anomalies, it is not classified as malicious. The audit's recommendation to assess REGION_B as the trojan is invalid under the clean design rules, which mandate NEITHER when both regions have 0 seeds."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits **high GNN suspicious seeds (7, max score 0.944)** and **internal edge density (1.22)**, indicating complex, possibly malicious logic. Its **boundary exit ratio (0.48)** is within normal ranges, but the **absence of sequential DFFs** (0) and **high internal clustering** (1.22) align with **sequential counter** characteristics. Region B has **no GNN seeds** and **high boundary exits (0.66)**, which, while unusual, does not meet the threshold for GNN suspicion. Region A\u2019s structural anomalies (high GNN scores, low DFFs, and low boundary exits) strongly suggest a **sequential counter** with hidden logic, making it more likely to be a hardware trojan. Region B\u2019s benign high boundary exits and lack of GNN suspicion do not meet the criteria for a trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "**  \nRegion B exhibits **GNN seeds (max score 0.944)** and a **boundary exit ratio of 0.48**, which is below the normal range (0.30\u20130.55). The presence of GNN seeds indicates anomalous clustering, even with a low boundary exit ratio. Region A has **no seeds** and a **high boundary exit ratio of 0.66**, which is typical for normal systems. Since Region B\u2019s GNN seeds suggest anomalous behavior, it is classified as a **Trojan** despite the low boundary exit ratio. No DFFs (sequential counters) are present, so the TROJAN_TYPE is **NONE**. The high GNN scores in Region B confirm the seeded anomalous clustering, aligning with the rule that **one region with seeds and the other without is anomalous**.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

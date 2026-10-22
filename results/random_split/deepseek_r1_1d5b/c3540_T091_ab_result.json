@@ -1,0 +1,88 @@
+{
+  "circuit": "c3540_T091",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "COMBINATIONAL",
+  "candidate_region_size": 50,
+  "clean_region_size": 50,
+  "gnn_seeds_count": 5,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=5, max=0.94) vs Region B (seeds=0, max=0.21). Type: COMBINATIONAL.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.21) vs Region B (seeds=5, max=0.94). Type: COMBINATIONAL."
+  },
+  "heuristic_eval": {
+    "trial_1": "NEITHER",
+    "trial_2": "NEITHER",
+    "trojan_type_trial_1": "NONE",
+    "trojan_type_trial_2": "NONE",
+    "trojan_type_correct": false,
+    "correct_t1": false,
+    "correct_t2": false,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits high internal edge density (0.98) and a boundary exit ratio of 0.52, which aligns with normal arithmetic datapath behavior. It contains 5 GNN suspicious seeds with scores \u2265 0.50, indicating topological anomalies. The absence of sequential DFFs (0) suggests a combinational trojan, while the high GNN scores and internal clustering (0.98) point to stealthy logic insertion. Region B has no GNN seeds and a higher boundary exit ratio (0.7), but its lack of GNN suspicion and lower internal density (1.12) make it less suspicious. Region A\u2019s structural characteristics (high GNN suspicion, no DFFs, and normal boundary exits) strongly indicate a stealthy comparator tree or sequential state counter, despite the absence of DFFs.",
+    "explanation_trial_2": "Region B has 5 confirmed GNN seeds (high score) indicating anomalous clustering, lower internal edge density (0.98 vs. 1.12), and a boundary exit ratio of 0.52 (below 0.6). The absence of sequential DFFs and high GNN scores support its classification as a combinational Trojan. While the exit ratio is low, the presence of high GNN seeds and the lack of sequential connectivity further confirm its suspicious nature."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "COMBINATIONAL",
+    "trojan_type_trial_2": "COMBINATIONAL",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Both Region A and Region B have 0 confirmed GNN seeds (seeds_a == 0 and seeds_b == 0), fulfilling Directive 4's requirement for a \"NEITHER\" assessment. The analyst's conclusion of Region A as a hardware Trojan is invalid because Region B is clean and lacks anomalies. The asymmetric boundary exit ratio (0.52) in Region A is normal for combinational logic, and the absence of sequential gates (DFFs) in Region B further supports its benign status. The NEITHER assessment aligns with strict physical hardware rules, ensuring no false positives on clean designs.",
+    "explanation_trial_2": "Region B has 5 confirmed GNN seeds (\u22651), which triggers the requirement to select the candidate region with confirmed seeds. Despite the absence of DFFs (0 DFFs), Region B's GNN scores (0.9442) are consistent with combinational logic (e.g., \"nnd2s1\" and \"pi\" gates). The presence of GNN seeds and the absence of DFFs align with benign combinational logic, not a trojan. The auditor's critique incorrectly dismissed Region B as a \"sequential counter\" without validating the absence of DFFs, which is critical for distinguishing between combinational and sequential trojans. Region B's GNN scores and architectural constraints (0 DFFs, normal exit ratio) preclude a FSM or sequential counter trojan, confirming it as a benign combinational logic region."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region A exhibits high internal edge density (0.98) and a boundary exit ratio of 0.52, which aligns with normal arithmetic datapath behavior. It contains 5 GNN suspicious seeds with scores \u2265 0.50, indicating topological anomalies. The absence of sequential DFFs (0) suggests a combinational trojan, while the high GNN scores and internal clustering (0.98) point to stealthy logic insertion. Region B has no GNN seeds and a higher boundary exit ratio (0.7), but its lack of GNN suspicion and lower internal density (1.12) make it less suspicious. Region A\u2019s structural characteristics (high GNN suspicion, no DFFs, and normal boundary exits) strongly indicate a stealthy comparator tree or sequential state counter, despite the absence of DFFs.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "COMBINATIONAL",
+    "explanation": "Region B has 5 confirmed GNN seeds (high score) indicating anomalous clustering, lower internal edge density (0.98 vs. 1.12), and a boundary exit ratio of 0.52 (below 0.6). The absence of sequential DFFs and high GNN scores support its classification as a combinational Trojan. While the exit ratio is low, the presence of high GNN seeds and the lack of sequential connectivity further confirm its suspicious nature.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}

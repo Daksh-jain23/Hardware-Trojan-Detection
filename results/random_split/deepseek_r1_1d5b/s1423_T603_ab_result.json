@@ -1,0 +1,88 @@
+{
+  "circuit": "s1423_T603",
+  "circuit_has_trojan": true,
+  "candidate_is_trojan": true,
+  "ground_truth_trojan_type": "SEQUENTIAL_COUNTER",
+  "candidate_region_size": 25,
+  "clean_region_size": 25,
+  "gnn_seeds_count": 15,
+  "gnn_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Pure GNN: Region A (seeds=15, max=0.95) vs Region B (seeds=0, max=0.87). Type: SEQUENTIAL_COUNTER.",
+    "explanation_trial_2": "Pure GNN: Region A (seeds=0, max=0.87) vs Region B (seeds=15, max=0.95). Type: SEQUENTIAL_COUNTER."
+  },
+  "heuristic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false
+  },
+  "llm_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A exhibits high GNN suspicious seeds (15, max score 0.9458) and sequential DFFs (5), indicating a sequential trojan. Region B has no GNN seeds and a boundary exit ratio of 0.68 (above 0.55), but lacks GNN suspicion. While Region B's high boundary exit ratio is within normal ranges, its absence of GNN seeds disqualifies it from being malicious under the rules. Region A's GNN seeds and sequential gates strongly suggest a hardware trojan.",
+    "explanation_trial_2": "Region B exhibits **high GNN suspicious seeds (15)** and **high internal edge density (1.56)**, along with **5 sequential DFFs**, which are strong indicators of a hardware trojan. While Region B's boundary exit ratio is **0.0** (extremely low), the presence of GNN seeds and sequential DFFs (indicating state counters or FSMs) outweighs the low boundary exits. Region A has **no GNN seeds** and **low internal edge density (1.04)**, lacking the topological clustering and complexity required for a stealthy trojan. Region B's high GNN scores (e.g., 0.9458) and sequential DFFs confirm a **sequential counter** or **FSM** with malicious intent, despite the low boundary exits. The absence of GNN suspicion in Region A rules out benign logic, but Region B's seeds and structure strongly suggest a trojan."
+  },
+  "critic_eval": {
+    "trial_1": "REGION_A",
+    "trial_2": "REGION_B",
+    "trojan_type_trial_1": "SEQUENTIAL_COUNTER",
+    "trojan_type_trial_2": "SEQUENTIAL_COUNTER",
+    "trojan_type_correct": true,
+    "correct_t1": true,
+    "correct_t2": true,
+    "swap_consistent": true,
+    "position_bias": false,
+    "explanation_trial_1": "Region A contains confirmed GNN seeds (15) and a boundary exit ratio of 0.0 (<< 0.45), which triggers asymmetric risk. The region has 5 sequential DFFs with state multiplexers (mux in Gate Types), aligning with FSM classification. The extreme boundary exit ratio and GNN seeds violate normal ranges, making Region A a valid candidate for a Trojan despite the initial misapplication of the Asymmetric Risk Principle.",
+    "explanation_trial_2": "Region B contains confirmed GNN seeds (15), which strictly disqualifies it as \"benign arithmetic/datapath logic\" (Rule 4). The Asymmetric Risk Principle explicitly states boundary exit ratios \u2264 0.45 never disqualify a candidate with confirmed GNN seeds. Despite the boundary exit ratio (0), Region B's high internal edge density (1.56) and DFFs (5) strongly indicate a sequential counter. The analyst's failure to apply the Asymmetric Risk Principle led to a false negative, but Region B is not a clean design and must be assessed as a sequential counter."
+  },
+  "trial_1": {
+    "assignment": {
+      "REGION_A": "GNN Candidate",
+      "REGION_B": "Clean Control"
+    },
+    "assessment": "REGION_A",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region A exhibits high GNN suspicious seeds (15, max score 0.9458) and sequential DFFs (5), indicating a sequential trojan. Region B has no GNN seeds and a boundary exit ratio of 0.68 (above 0.55), but lacks GNN suspicion. While Region B's high boundary exit ratio is within normal ranges, its absence of GNN seeds disqualifies it from being malicious under the rules. Region A's GNN seeds and sequential gates strongly suggest a hardware trojan.",
+    "correct": true
+  },
+  "trial_2": {
+    "assignment": {
+      "REGION_A": "Clean Control",
+      "REGION_B": "GNN Candidate"
+    },
+    "assessment": "REGION_B",
+    "confidence": "HIGH",
+    "trojan_type": "SEQUENTIAL_COUNTER",
+    "explanation": "Region B exhibits **high GNN suspicious seeds (15)** and **high internal edge density (1.56)**, along with **5 sequential DFFs**, which are strong indicators of a hardware trojan. While Region B's boundary exit ratio is **0.0** (extremely low), the presence of GNN seeds and sequential DFFs (indicating state counters or FSMs) outweighs the low boundary exits. Region A has **no GNN seeds** and **low internal edge density (1.04)**, lacking the topological clustering and complexity required for a stealthy trojan. Region B's high GNN scores (e.g., 0.9458) and sequential DFFs confirm a **sequential counter** or **FSM** with malicious intent, despite the low boundary exits. The absence of GNN suspicion in Region A rules out benign logic, but Region B's seeds and structure strongly suggest a trojan.",
+    "correct": true
+  },
+  "evaluation_metrics": {
+    "correctness_trial_1": true,
+    "correctness_trial_2": true,
+    "overall_accuracy": 1.0,
+    "swap_consistent": true,
+    "position_bias_detected": false,
+    "identifier_leakage_detected": false
+  }
+}
