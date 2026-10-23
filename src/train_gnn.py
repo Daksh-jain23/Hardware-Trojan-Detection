@@ -2,119 +2,56 @@
 Train a GAT-based Hardware Trojan detector.
 
 Pipeline:
-
-    Verilog
-       ↓
-    NetworkX graph
-       ↓
-    41 node features
-       ↓
-    PyTorch Geometric graph
-       ↓
-    GAT
-       ↓
-    Trojan probability for every node
-       ↓
-    Validation threshold selection
-       ↓
-    Unseen test-family evaluation
-
-Dataset split is by circuit family to avoid node-level leakage.
-
-TRAIN:
-    s13207
-    s1423
-
-VALIDATION:
-    s15850
-
-TEST:
-    s35932
+    Verilog -> NetworkX graph -> 53 node features -> PyTorch Geometric graph
+    -> 3-Layer Residual GAT -> Node-level Trojan probabilities
+    -> Validation threshold tuning -> Unseen test evaluation
 """
 
+from __future__ import annotations
+
 import argparse
+import math
 import sys
 from pathlib import Path
 
 import numpy as np
+import scipy.sparse as sp
+from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from sklearn.metrics import (
-    precision_score,
-    recall_score,
-    f1_score,
-    confusion_matrix,
-)
-
 from torch_geometric.nn import GATConv
 
-
-# ============================================================
-# PATH SETUP
-# ============================================================
-
+# Path setup
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from dataset import (
+    GraphSample,
     build_node_level_dataset,
     graph_to_pyg,
     split_dataset,
-    GraphSample,
 )
 
-
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
-DEFAULT_TRAIN_FAMILIES = [
-    "s13207",
-    "s1423",
-]
-
-DEFAULT_VAL_FAMILIES = [
-    "s15850",
-]
-
-DEFAULT_TEST_FAMILIES = [
-    "s35932",
-]
+# Default split and training configuration
+DEFAULT_TRAIN_FAMILIES = ["s13207", "s1423"]
+DEFAULT_VAL_FAMILIES = ["s15850"]
+DEFAULT_TEST_FAMILIES = ["s35932"]
 
 EPOCHS = 100
-
 LEARNING_RATE = 0.001
-
 WEIGHT_DECAY = 1e-4
-
 HIDDEN_DIM = 64
-
 HEADS_1 = 4
 HEADS_2 = 2
-
 DROPOUT = 0.2
 
 CHECKPOINT_DIR = ROOT / "checkpoints"
+CHECKPOINT_PATH = CHECKPOINT_DIR / "trojan_gnn.pt"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-CHECKPOINT_PATH = (
-    CHECKPOINT_DIR / "trojan_gnn.pt"
-)
-
-DEVICE = torch.device(
-    "cuda"
-    if torch.cuda.is_available()
-    else "cpu"
-)
-
-
-# ============================================================
-# DATASET PREPARATION
-# ============================================================
 
 def prepare_dataset(
     data_roots=None,
@@ -129,10 +66,7 @@ def prepare_dataset(
     max_samples=None,
     seed=42,
 ):
-    """
-    Build the dataset from files/roots and split into Train, Validation, Test.
-    """
-    # If no explicit families or files given, check default family splits
+    """Build the dataset and split into train, val, and test subsets."""
     has_custom_split = (
         train_families is not None
         or val_families is not None
@@ -181,21 +115,15 @@ def prepare_dataset(
     return train_samples, val_samples, test_samples
 
 
-# ============================================================
-# MODEL
-# ============================================================
-
 class TrojanGNN(nn.Module):
     """
     3-Layer Residual Graph Attention Network for Hardware Trojan localization.
 
-    Features:
-    - Layer 1: GATConv(input_dim -> hidden_dim, heads=4) = 256 + LayerNorm
-    - Layer 2: GATConv(256 -> hidden_dim, heads=4) = 256 + Residual(h1) + LayerNorm
-    - Layer 3: GATConv(256 -> hidden_dim, heads=2) = 128 + Residual Projection + LayerNorm
-    - Classifier: Linear(128 -> 1)
+    Layer 1: GATConv(input_dim -> hidden_dim, heads=4) = 256 + LayerNorm
+    Layer 2: GATConv(256 -> hidden_dim, heads=4) = 256 + Residual(h1) + LayerNorm
+    Layer 3: GATConv(256 -> hidden_dim, heads=2) = 128 + Residual Projection + LayerNorm
+    Classifier: Linear(128 -> 1)
     """
-
     def __init__(
         self,
         input_dim: int,
@@ -203,10 +131,9 @@ class TrojanGNN(nn.Module):
         dropout: float = DROPOUT,
     ):
         super().__init__()
-
         self.dropout = dropout
 
-        # First GAT layer (input_dim -> hidden_dim * 4 = 256)
+        # Layer 1
         self.gat1 = GATConv(
             in_channels=input_dim,
             out_channels=hidden_dim,
@@ -216,7 +143,7 @@ class TrojanGNN(nn.Module):
         )
         self.norm1 = nn.LayerNorm(hidden_dim * HEADS_1)
 
-        # Second GAT layer (256 -> 256) with direct residual addition
+        # Layer 2 with direct residual
         self.gat2 = GATConv(
             in_channels=hidden_dim * HEADS_1,
             out_channels=hidden_dim,
@@ -226,7 +153,7 @@ class TrojanGNN(nn.Module):
         )
         self.norm2 = nn.LayerNorm(hidden_dim * HEADS_1)
 
-        # Third GAT layer (256 -> 128)
+        # Layer 3 with projected residual
         self.gat3 = GATConv(
             in_channels=hidden_dim * HEADS_1,
             out_channels=hidden_dim,
@@ -236,83 +163,50 @@ class TrojanGNN(nn.Module):
         )
         self.norm3 = nn.LayerNorm(hidden_dim * HEADS_2)
 
-        # Residual projection from 256 to 128
+        # Projection from 256 to 128
         self.res_proj = nn.Linear(hidden_dim * HEADS_1, hidden_dim * HEADS_2)
 
-        # Final node-level classifier
-        self.classifier = nn.Linear(
-            hidden_dim * HEADS_2,
-            1,
-        )
+        # Final linear classifier
+        self.classifier = nn.Linear(hidden_dim * HEADS_2, 1)
 
-    def forward(
-        self,
-        x,
-        edge_index,
-    ):
+    def forward(self, x, edge_index):
         # Layer 1
         h1 = self.gat1(x, edge_index)
         h1 = F.elu(h1)
         h1 = self.norm1(h1)
         h1 = F.dropout(h1, p=self.dropout, training=self.training)
 
-        # Layer 2 with residual addition
+        # Layer 2
         h2 = self.gat2(h1, edge_index)
         h2 = F.elu(h2 + h1)
         h2 = self.norm2(h2)
         h2 = F.dropout(h2, p=self.dropout, training=self.training)
 
-        # Layer 3 with projected residual addition
+        # Layer 3
         h3 = self.gat3(h2, edge_index)
         h3 = F.elu(h3 + self.res_proj(h2))
         h3 = self.norm3(h3)
         h3 = F.dropout(h3, p=self.dropout, training=self.training)
 
-        # Trojan score for each node
         logits = self.classifier(h3)
-
         return logits.squeeze(-1)
 
 
-# ============================================================
-# NETWORKX → PYTORCH GEOMETRIC
-# ============================================================
-
 def convert_samples(samples):
-    """
-    Convert every complete circuit into a PyG Data object.
-    """
-
+    """Convert every GraphSample into a PyG Data object."""
     data_list = []
-
     for sample in samples:
-
-        data = graph_to_pyg(
-            sample.graph
-        )
-
-        # Keep metadata for later analysis.
+        data = graph_to_pyg(sample.graph)
         data.family = sample.family
         data.source = sample.source
-
         data_list.append(data)
-
     return data_list
 
-
-# ============================================================
-# CLASS BALANCE
-# ============================================================
-
-# ============================================================
-# FOCAL LOSS & CLASS BALANCE
-# ============================================================
 
 class FocalLoss(nn.Module):
     """
     Focal Loss with calibrated positive weight.
-    Down-weights easy negatives (obvious normal gates) and focuses learning
-    on hard ambiguous gates near the Trojan boundary.
+    Down-weights easy negatives and focuses on hard ambiguous gates near the Trojan boundary.
     """
     def __init__(
         self,
@@ -345,15 +239,9 @@ class FocalLoss(nn.Module):
 
 
 def calculate_class_weight(data_list):
-    """
-    Calculate calibrated positive-class weight for loss.
-    Uses square-root dampening to prevent logit explosion / saturation.
-    """
-    import math
-
+    """Calculate calibrated positive-class weight for class-imbalanced training."""
     normal = 0
     trojan = 0
-
     for data in data_list:
         normal += int((data.y == 0).sum().item())
         trojan += int((data.y == 1).sum().item())
@@ -362,26 +250,16 @@ def calculate_class_weight(data_list):
         raise RuntimeError("Training data contains zero Trojan nodes.")
 
     raw_ratio = normal / trojan
-    # Damped positive weight prevents extreme logit saturation (which previously clipped threshold at 0.95)
     damped_weight = min(25.0, max(5.0, math.sqrt(raw_ratio) * 1.5))
 
-    print()
-    print("========== CLASS BALANCE ==========")
-    print(f"Normal nodes    : {normal}")
-    print(f"Trojan nodes    : {trojan}")
-    print(f"Raw imbalance   : {raw_ratio:.2f}")
+    print("\n========== CLASS BALANCE ==========")
+    print(f"Normal nodes     : {normal}")
+    print(f"Trojan nodes     : {trojan}")
+    print(f"Raw imbalance    : {raw_ratio:.2f}")
     print(f"Calibrated weight: {damped_weight:.2f}")
 
-    return torch.tensor(
-        damped_weight,
-        dtype=torch.float32,
-        device=DEVICE,
-    )
+    return torch.tensor(damped_weight, dtype=torch.float32, device=DEVICE)
 
-
-# ============================================================
-# TOPOLOGICAL CLUSTER REFINEMENT
-# ============================================================
 
 def refine_predictions_with_topology(
     edge_index_tensor,
@@ -391,8 +269,8 @@ def refine_predictions_with_topology(
 ):
     """
     Apply graph topological priors:
-    1. Prune isolated false alarms (single predicted Trojan gates with 0 positive neighbors within 2 hops).
-    2. Fill Trojan cluster gaps (normal gates with >= 2 Trojan neighbors whose probability is close to threshold).
+    1. Prune isolated false alarms (0 positive neighbors within 2 hops).
+    2. Fill Trojan cluster gaps (normal gates with >= 2 Trojan neighbors).
     """
     if edge_index_tensor is None or edge_index_tensor.numel() == 0:
         return raw_preds
@@ -401,14 +279,11 @@ def refine_predictions_with_topology(
     if num_nodes == 0 or np.sum(raw_preds) == 0:
         return raw_preds
 
-    import scipy.sparse as sp
-
     ei = edge_index_tensor.cpu().numpy()
     adj = sp.csr_matrix(
         (np.ones(ei.shape[1], dtype=np.float32), (ei[0], ei[1])),
         shape=(num_nodes, num_nodes),
     )
-    # Undirected connectivity
     adj = (adj + adj.T).tocsr()
     adj.data[:] = 1.0
 
@@ -422,12 +297,12 @@ def refine_predictions_with_topology(
         hop1_pos = np.asarray(adj @ pos_vec).flatten()
         hop2_pos = np.asarray((adj @ adj) @ pos_vec).flatten()
 
-        # 1. Prune isolated false alarms: 0 positive neighbors within 2 hops unless extremely high confidence
+        # 1. Prune isolated false alarms
         for n in pos_nodes:
             if hop1_pos[n] == 0 and hop2_pos[n] == 0 and probas[n] < 0.90:
                 preds[n] = 0
 
-        # 2. Fill cluster gaps: gates surrounded by >= 2 Trojan neighbors with moderate probability
+        # 2. Fill cluster gaps
         neg_nodes = np.where(preds == 0)[0]
         for n in neg_nodes:
             if hop1_pos[n] >= 2 and probas[n] >= max(0.20, threshold - 0.20):
@@ -436,158 +311,65 @@ def refine_predictions_with_topology(
     return preds
 
 
-# ============================================================
-# TRAIN ONE EPOCH
-# ============================================================
-
-def train_one_epoch(
-    model,
-    data_list,
-    optimizer,
-    criterion,
-):
-    """
-    Train on every graph in the training set.
-    """
+def train_one_epoch(model, data_list, optimizer, criterion):
+    """Train the model across all graphs in the training set for one epoch."""
     model.train()
     total_loss = 0.0
 
     for data in data_list:
         data = data.to(DEVICE)
         optimizer.zero_grad()
-
-        logits = model(
-            data.x,
-            data.edge_index,
-        )
-
-        loss = criterion(
-            logits,
-            data.y.float(),
-        )
-
+        logits = model(data.x, data.edge_index)
+        loss = criterion(logits, data.y.float())
         loss.backward()
-        # Gradient clipping prevents gradient explosion on dense circuits
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
         optimizer.step()
-
         total_loss += loss.item()
 
     return total_loss / len(data_list)
 
 
-# ============================================================
-# COLLECT PROBABILITIES
-# ============================================================
-
 @torch.no_grad()
-def collect_probabilities(
-    model,
-    data_list,
-):
-    """
-    Run the model and return probabilities and labels across all graphs.
-    """
+def collect_probabilities(model, data_list):
+    """Collect model probabilities and ground truth labels across all graphs."""
     model.eval()
-
     all_probabilities = []
     all_labels = []
 
     for data in data_list:
         data = data.to(DEVICE)
-
-        logits = model(
-            data.x,
-            data.edge_index,
-        )
-
-        probabilities = torch.sigmoid(
-            logits
-        )
-
-        all_probabilities.extend(
-            probabilities.cpu().numpy()
-        )
-
-        all_labels.extend(
-            data.y.cpu().numpy()
-        )
+        logits = model(data.x, data.edge_index)
+        probabilities = torch.sigmoid(logits)
+        all_probabilities.extend(probabilities.cpu().numpy())
+        all_labels.extend(data.y.cpu().numpy())
 
     return (
-        np.asarray(
-            all_probabilities,
-            dtype=np.float32,
-        ),
-        np.asarray(
-            all_labels,
-            dtype=np.int64,
-        ),
+        np.asarray(all_probabilities, dtype=np.float32),
+        np.asarray(all_labels, dtype=np.int64),
     )
 
 
-# ============================================================
-# FIND BEST THRESHOLD
-# ============================================================
-
-def find_best_threshold(
-    model,
-    data_list,
-):
-    """
-    Find the probability threshold producing the highest F1 on the VALIDATION set.
-    Searches across [0.05, 0.98] to prevent artificial ceiling clipping.
-    """
-    probabilities, labels = collect_probabilities(
-        model,
-        data_list,
-    )
-
+def find_best_threshold(model, data_list):
+    """Find the threshold producing highest validation F1 across [0.05, 0.98]."""
+    probabilities, labels = collect_probabilities(model, data_list)
     best_threshold = 0.5
     best_f1 = -1.0
 
-    thresholds = np.arange(
-        0.05,
-        0.981,
-        0.01,
-    )
-
+    thresholds = np.arange(0.05, 0.981, 0.01)
     for threshold in thresholds:
-        predictions = (
-            probabilities >= threshold
-        ).astype(np.int64)
-
-        f1 = f1_score(
-            labels,
-            predictions,
-            zero_division=0,
-        )
-
+        predictions = (probabilities >= threshold).astype(np.int64)
+        f1 = f1_score(labels, predictions, zero_division=0)
         if f1 > best_f1:
             best_f1 = f1
             best_threshold = float(threshold)
 
-    return (
-        best_threshold,
-        best_f1,
-    )
+    return best_threshold, best_f1
 
-
-# ============================================================
-# EVALUATION
-# ============================================================
 
 @torch.no_grad()
-def evaluate(
-    model,
-    data_list,
-    threshold=0.5,
-    apply_refinement=False,
-):
-    """
-    Evaluate node-level predictions with optional topological cluster refinement.
-    """
+def evaluate(model, data_list, threshold=0.5, apply_refinement=False):
+    """Evaluate precision, recall, and F1 on node-level predictions."""
     model.eval()
-
     all_preds = []
     all_labels = []
 
@@ -614,26 +396,13 @@ def evaluate(
     precision = precision_score(all_labels, all_preds, zero_division=0)
     recall = recall_score(all_labels, all_preds, zero_division=0)
     f1 = f1_score(all_labels, all_preds, zero_division=0)
-
     return precision, recall, f1
 
 
-# ============================================================
-# CONFUSION MATRIX
-# ============================================================
-
 @torch.no_grad()
-def print_confusion_matrix(
-    model,
-    data_list,
-    threshold,
-    apply_refinement=False,
-):
-    """
-    Print TP / TN / FP / FN with optional topological refinement.
-    """
+def print_confusion_matrix(model, data_list, threshold, apply_refinement=False):
+    """Print confusion matrix breakdown (TN, FP, FN, TP)."""
     model.eval()
-
     all_preds = []
     all_labels = []
 
@@ -657,29 +426,17 @@ def print_confusion_matrix(
     all_preds = np.asarray(all_preds, dtype=np.int64)
     all_labels = np.asarray(all_labels, dtype=np.int64)
 
-    tn, fp, fn, tp = confusion_matrix(
-        all_labels,
-        all_preds,
-        labels=[0, 1],
-    ).ravel()
-
+    tn, fp, fn, tp = confusion_matrix(all_labels, all_preds, labels=[0, 1]).ravel()
     header = "CONFUSION MATRIX (TOPOLOGY-REFINED)" if apply_refinement else "CONFUSION MATRIX (RAW)"
-    print()
-    print(f"========== {header} ==========")
+    print(f"\n========== {header} ==========")
     print(f"True Negatives  : {tn}")
     print(f"False Positives : {fp}")
     print(f"False Negatives : {fn}")
     print(f"True Positives  : {tp}")
 
 
-# ============================================================
-# MAIN
-# ============================================================
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="Train GAT-based Hardware Trojan detector."
-    )
+    parser = argparse.ArgumentParser(description="Train GAT-based Hardware Trojan detector.")
     parser.add_argument(
         "--data-dir",
         type=Path,
@@ -755,7 +512,6 @@ def main():
         default=None,
         help="Maximum number of netlists to load.",
     )
-
     parser.add_argument(
         "--patience",
         type=int,
@@ -770,41 +526,15 @@ def main():
 
     args = parser.parse_args()
 
-    print(
-        "========== HARDWARE TROJAN GNN =========="
-    )
-
-    print(
-        "Device:",
-        DEVICE,
-    )
-
+    print("========== HARDWARE TROJAN GNN ==========")
+    print("Device:", DEVICE)
     if torch.cuda.is_available():
-
-        print(
-            "GPU:",
-            torch.cuda.get_device_name(0),
-        )
-
+        print("GPU   :", torch.cuda.get_device_name(0))
     else:
+        print("GPU   : CPU")
 
-        print(
-            "GPU: CPU"
-        )
-
-    # --------------------------------------------------------
-    # LOAD DATASET
-    # --------------------------------------------------------
-
-    print(
-        "Loading node-level dataset..."
-    )
-
-    (
-        train_samples,
-        val_samples,
-        test_samples,
-    ) = prepare_dataset(
+    print("Loading node-level dataset...")
+    train_samples, val_samples, test_samples = prepare_dataset(
         data_roots=args.data_dir,
         files=args.files,
         train_families=args.train_families,
@@ -821,146 +551,46 @@ def main():
     print(f"Validation graphs  : {len(val_samples)}")
     print(f"Test graphs        : {len(test_samples)}")
 
-    # --------------------------------------------------------
-    # CONVERT GRAPHS
-    # --------------------------------------------------------
-
-    train_data = convert_samples(
-        train_samples
-    )
-
-    val_data = convert_samples(
-        val_samples
-    )
-
-    test_data = convert_samples(
-        test_samples
-    )
-
-    # --------------------------------------------------------
-    # FEATURE INFORMATION
-    # --------------------------------------------------------
+    train_data = convert_samples(train_samples)
+    val_data = convert_samples(val_samples)
+    test_data = convert_samples(test_samples)
 
     input_dim = train_data[0].x.shape[1]
+    print("\n========== GRAPH INFORMATION ==========")
+    print("Input feature dimension:", input_dim)
 
-    print()
-    print("========== GRAPH INFORMATION ==========")
+    model = TrojanGNN(input_dim=input_dim, hidden_dim=args.hidden_dim).to(DEVICE)
+    print("\n", model)
 
-    print(
-        "Input feature dimension:",
-        input_dim,
-    )
-
-    # --------------------------------------------------------
-    # CREATE MODEL
-    # --------------------------------------------------------
-
-    model = TrojanGNN(
-        input_dim=input_dim,
-        hidden_dim=args.hidden_dim,
-    ).to(DEVICE)
-
-    print()
-    print(model)
-
-    # --------------------------------------------------------
-    # CLASS WEIGHT & LOSS CRITERION
-    # --------------------------------------------------------
-
-    positive_weight = (
-        calculate_class_weight(
-            train_data
-        )
-    )
-
+    positive_weight = calculate_class_weight(train_data)
     if args.use_bce:
-        criterion = nn.BCEWithLogitsLoss(
-            pos_weight=positive_weight
-        )
+        criterion = nn.BCEWithLogitsLoss(pos_weight=positive_weight)
         print("Loss function: BCEWithLogitsLoss")
     else:
-        criterion = FocalLoss(
-            alpha=0.5,
-            gamma=2.0,
-            pos_weight=positive_weight.item(),
-        )
+        criterion = FocalLoss(alpha=0.5, gamma=2.0, pos_weight=positive_weight.item())
         print("Loss function: Calibrated FocalLoss (gamma=2.0, alpha=0.5)")
 
-    # --------------------------------------------------------
-    # OPTIMIZER & SCHEDULER
-    # --------------------------------------------------------
-
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=args.lr,
-        weight_decay=WEIGHT_DECAY,
-    )
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="max",
-        factor=0.5,
-        patience=5,
-        min_lr=1e-5,
+        optimizer, mode="max", factor=0.5, patience=5, min_lr=1e-5
     )
 
-    # --------------------------------------------------------
-    # TRAINING
-    # --------------------------------------------------------
-
-    print()
-    print("========== TRAINING ==========")
-
+    print("\n========== TRAINING ==========")
     best_f1 = -1.0
     best_threshold = 0.5
     best_epoch = 0
     no_improve_epochs = 0
 
-    args.checkpoint.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
 
-    for epoch in range(
-        1,
-        args.epochs + 1,
-    ):
+    for epoch in range(1, args.epochs + 1):
+        loss = train_one_epoch(model, train_data, optimizer, criterion)
+        val_threshold, val_f1 = find_best_threshold(model, val_data)
+        val_precision, val_recall, _ = evaluate(model, val_data, threshold=val_threshold)
 
-        loss = train_one_epoch(
-            model,
-            train_data,
-            optimizer,
-            criterion,
-        )
-
-        # ----------------------------------------------------
-        # Find threshold ONLY using validation data.
-        # ----------------------------------------------------
-
-        val_threshold, val_f1 = (
-            find_best_threshold(
-                model,
-                val_data,
-            )
-        )
-
-        val_precision, val_recall, _ = (
-            evaluate(
-                model,
-                val_data,
-                threshold=val_threshold,
-            )
-        )
-
-        # Step learning rate scheduler on validation F1
         scheduler.step(val_f1)
 
-        # ----------------------------------------------------
-        # Save best model.
-        # ----------------------------------------------------
-
         if val_f1 > best_f1:
-
             best_f1 = val_f1
             best_threshold = val_threshold
             best_epoch = epoch
@@ -968,41 +598,20 @@ def main():
 
             torch.save(
                 {
-                    "model_state_dict":
-                        model.state_dict(),
-
-                    "input_dim":
-                        input_dim,
-
-                    "hidden_dim":
-                        args.hidden_dim,
-
-                    "epoch":
-                        epoch,
-
-                    "val_f1":
-                        val_f1,
-
-                    "threshold":
-                        val_threshold,
+                    "model_state_dict": model.state_dict(),
+                    "input_dim": input_dim,
+                    "hidden_dim": args.hidden_dim,
+                    "epoch": epoch,
+                    "val_f1": val_f1,
+                    "threshold": val_threshold,
                 },
                 args.checkpoint,
             )
         else:
             no_improve_epochs += 1
 
-        # ----------------------------------------------------
-        # Print progress.
-        # ----------------------------------------------------
-
         current_lr = optimizer.param_groups[0]["lr"]
-
-        if (
-            epoch == 1
-            or epoch % 5 == 0
-            or no_improve_epochs == 0
-        ):
-
+        if epoch == 1 or epoch % 5 == 0 or no_improve_epochs == 0:
             print(
                 f"Epoch {epoch:03d} | "
                 f"loss={loss:.4f} | "
@@ -1013,7 +622,6 @@ def main():
                 f"val_f1={val_f1:.4f}"
             )
 
-        # Early stopping check
         if no_improve_epochs >= args.patience:
             print(
                 f"\n[INFO] Early stopping triggered at epoch {epoch} "
@@ -1021,170 +629,49 @@ def main():
             )
             break
 
-    # --------------------------------------------------------
-    # LOAD BEST MODEL
-    # --------------------------------------------------------
+    # Load best model for evaluation
+    checkpoint = torch.load(args.checkpoint, map_location=DEVICE)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    best_threshold = float(checkpoint["threshold"])
 
-    checkpoint = torch.load(
-        args.checkpoint,
-        map_location=DEVICE,
+    print("\n========== BEST MODEL ==========")
+    print("Best epoch                :", checkpoint["epoch"])
+    print("Best validation threshold :", best_threshold)
+    print("Best validation F1        :", checkpoint["val_f1"])
+    print("Checkpoint                :", args.checkpoint)
+
+    # Final validation evaluation
+    val_precision, val_recall, val_f1 = evaluate(model, val_data, threshold=best_threshold)
+    print("\n========== FINAL VALIDATION ==========")
+    print(f"Threshold   : {best_threshold:.2f}")
+    print(f"Precision   : {val_precision:.4f}")
+    print(f"Recall      : {val_recall:.4f}")
+    print(f"F1          : {val_f1:.4f}")
+
+    # Final test evaluation (Raw GNN)
+    test_precision, test_recall, test_f1 = evaluate(
+        model, test_data, threshold=best_threshold, apply_refinement=False
     )
-
-    model.load_state_dict(
-        checkpoint["model_state_dict"]
-    )
-
-    best_threshold = float(
-        checkpoint["threshold"]
-    )
-
-    print()
-    print(
-        "========== BEST MODEL =========="
-    )
-
-    print(
-        "Best epoch:",
-        checkpoint["epoch"],
-    )
-
-    print(
-        "Best validation threshold:",
-        best_threshold,
-    )
-
-    print(
-        "Best validation F1:",
-        checkpoint["val_f1"],
-    )
-
-    print(
-        "Checkpoint:",
-        args.checkpoint,
-    )
-
-    # --------------------------------------------------------
-    # FINAL VALIDATION RESULT
-    # --------------------------------------------------------
-
-    val_precision, val_recall, val_f1 = (
-        evaluate(
-            model,
-            val_data,
-            threshold=best_threshold,
-        )
-    )
-
-    print()
-    print(
-        "========== FINAL VALIDATION =========="
-    )
-
-    print(
-        f"Threshold   : {best_threshold:.2f}"
-    )
-
-    print(
-        f"Precision   : {val_precision:.4f}"
-    )
-
-    print(
-        f"Recall      : {val_recall:.4f}"
-    )
-
-    print(
-        f"F1          : {val_f1:.4f}"
-    )
-
-    # --------------------------------------------------------
-    # FINAL TEST (RAW & TOPOLOGY-REFINED)
-    # --------------------------------------------------------
-
-    test_precision, test_recall, test_f1 = (
-        evaluate(
-            model,
-            test_data,
-            threshold=best_threshold,
-            apply_refinement=False,
-        )
-    )
-
-    print()
-    print(
-        "========== TEST RESULT (RAW GNN) =========="
-    )
-
     test_family_names = sorted(set(s.family for s in test_samples))
-    print(
-        "Test families:",
-        test_family_names,
+    print("\n========== TEST RESULT (RAW GNN) ==========")
+    print("Test families:", test_family_names)
+    print(f"Threshold   : {best_threshold:.2f}")
+    print(f"Precision   : {test_precision:.4f}")
+    print(f"Recall      : {test_recall:.4f}")
+    print(f"F1          : {test_f1:.4f}")
+    print_confusion_matrix(model, test_data, best_threshold, apply_refinement=False)
+
+    # Final test evaluation (Topology-Refined)
+    ref_precision, ref_recall, ref_f1 = evaluate(
+        model, test_data, threshold=best_threshold, apply_refinement=True
     )
+    print("\n========== TEST RESULT (TOPOLOGY-REFINED) ==========")
+    print(f"Threshold   : {best_threshold:.2f}")
+    print(f"Precision   : {ref_precision:.4f}")
+    print(f"Recall      : {ref_recall:.4f}")
+    print(f"F1          : {ref_f1:.4f}")
+    print_confusion_matrix(model, test_data, best_threshold, apply_refinement=True)
 
-    print(
-        f"Threshold   : {best_threshold:.2f}"
-    )
-
-    print(
-        f"Precision   : {test_precision:.4f}"
-    )
-
-    print(
-        f"Recall      : {test_recall:.4f}"
-    )
-
-    print(
-        f"F1          : {test_f1:.4f}"
-    )
-
-    print_confusion_matrix(
-        model,
-        test_data,
-        best_threshold,
-        apply_refinement=False,
-    )
-
-    # Topology-refined evaluation
-    ref_precision, ref_recall, ref_f1 = (
-        evaluate(
-            model,
-            test_data,
-            threshold=best_threshold,
-            apply_refinement=True,
-        )
-    )
-
-    print()
-    print(
-        "========== TEST RESULT (TOPOLOGY-REFINED) =========="
-    )
-
-    print(
-        f"Threshold   : {best_threshold:.2f}"
-    )
-
-    print(
-        f"Precision   : {ref_precision:.4f}"
-    )
-
-    print(
-        f"Recall      : {ref_recall:.4f}"
-    )
-
-    print(
-        f"F1          : {ref_f1:.4f}"
-    )
-
-    print_confusion_matrix(
-        model,
-        test_data,
-        best_threshold,
-        apply_refinement=True,
-    )
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
     main()

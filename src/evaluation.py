@@ -373,81 +373,96 @@ def print_comparative_table(
             return "N/A"
         return f"{val:,}"
 
-    print()
-    print("=" * 115)
-    print(f"{title:^115}")
-    print("=" * 115)
+    has_llm = llm_metrics is not None
+    table_width = 115 if has_llm else 88
 
-    header = (
-        f"{'Evaluation Metric':<{col_metric}} | "
-        f"{'GNN (Topological)':<{col_gnn}} | "
-        f"{'Heuristic Baseline':<{col_heur}} | "
-        f"{'LLM Agent (Reasoning)':<{col_llm}}"
-    )
+    print()
+    print("=" * table_width)
+    print(f"{title:^{table_width}}")
+    print("=" * table_width)
+
+    if has_llm:
+        header = (
+            f"{'Evaluation Metric':<{col_metric}} | "
+            f"{'GNN (Topological)':<{col_gnn}} | "
+            f"{'Heuristic Baseline':<{col_heur}} | "
+            f"{'LLM Agent (Reasoning)':<{col_llm}}"
+        )
+    else:
+        header = (
+            f"{'Evaluation Metric':<{col_metric}} | "
+            f"{'GNN (Topological)':<{col_gnn}} | "
+            f"{'Heuristic Baseline':<{col_heur}}"
+        )
     print(header)
-    print("-" * 115)
+    print("-" * table_width)
 
     rows = [
         (
             "Accuracy",
             fmt_pct(gnn_metrics.get("accuracy")),
             fmt_pct(heuristic_metrics.get("accuracy") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("accuracy") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("accuracy")) if has_llm else None,
         ),
         (
             "Precision",
             fmt_pct(gnn_metrics.get("precision")),
             fmt_pct(heuristic_metrics.get("precision") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("precision") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("precision")) if has_llm else None,
         ),
         (
             "Recall (True Positive Rate)",
             fmt_pct(gnn_metrics.get("recall")),
             fmt_pct(heuristic_metrics.get("recall") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("recall") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("recall")) if has_llm else None,
         ),
         (
             "F1-Score",
             fmt_pct(gnn_metrics.get("f1")),
             fmt_pct(heuristic_metrics.get("f1") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("f1") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("f1")) if has_llm else None,
         ),
         (
             "False Positive Rate (FPR)",
             fmt_pct(gnn_metrics.get("fp_rate")),
             fmt_pct(heuristic_metrics.get("fp_rate") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("fp_rate") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("fp_rate")) if has_llm else None,
         ),
         (
             "False Negative Rate (FNR)",
             fmt_pct(gnn_metrics.get("fn_rate")),
             fmt_pct(heuristic_metrics.get("fn_rate") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("fn_rate") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("fn_rate")) if has_llm else None,
         ),
         (
             "Specificity (TNR)",
             fmt_pct(gnn_metrics.get("specificity")),
             fmt_pct(heuristic_metrics.get("specificity") if heuristic_metrics else None),
-            fmt_pct(llm_metrics.get("specificity") if llm_metrics else None),
+            fmt_pct(llm_metrics.get("specificity")) if has_llm else None,
         ),
         (
             "ROC-AUC",
             fmt_num(gnn_metrics.get("roc_auc")),
             fmt_num(heuristic_metrics.get("roc_auc") if heuristic_metrics else None),
-            "N/A (Categorical Reasoning)",
+            "N/A (Categorical Reasoning)" if has_llm else None,
         ),
         (
             "Average Precision (PR-AUC)",
             fmt_num(gnn_metrics.get("average_precision")),
             fmt_num(heuristic_metrics.get("average_precision") if heuristic_metrics else None),
-            "N/A (Categorical Reasoning)",
+            "N/A (Categorical Reasoning)" if has_llm else None,
         ),
     ]
 
-    for label, g, h, l in rows:
-        print(f"{label:<{col_metric}} | {g:<{col_gnn}} | {h:<{col_heur}} | {l:<{col_llm}}")
+    for item in rows:
+        label, g, h = item[0], item[1], item[2]
+        if has_llm:
+            l = item[3]
+            print(f"{label:<{col_metric}} | {g:<{col_gnn}} | {h:<{col_heur}} | {l:<{col_llm}}")
+        else:
+            print(f"{label:<{col_metric}} | {g:<{col_gnn}} | {h:<{col_heur}}")
 
-    print("-" * 115)
+    print("-" * table_width)
     print("Confusion Matrix (Node Counts):")
 
     cm_rows = [
@@ -455,38 +470,43 @@ def print_comparative_table(
             "  True Positives (TP)",
             fmt_int(gnn_metrics.get("tp")),
             fmt_int(heuristic_metrics.get("tp") if heuristic_metrics else None),
-            fmt_int(llm_metrics.get("tp") if llm_metrics else None),
+            fmt_int(llm_metrics.get("tp")) if has_llm else None,
         ),
         (
             "  False Positives (FP)",
             fmt_int(gnn_metrics.get("fp")),
             fmt_int(heuristic_metrics.get("fp") if heuristic_metrics else None),
-            fmt_int(llm_metrics.get("fp") if llm_metrics else None),
+            fmt_int(llm_metrics.get("fp")) if has_llm else None,
         ),
         (
             "  True Negatives (TN)",
             fmt_int(gnn_metrics.get("tn")),
             fmt_int(heuristic_metrics.get("tn") if heuristic_metrics else None),
-            fmt_int(llm_metrics.get("tn") if llm_metrics else None),
+            fmt_int(llm_metrics.get("tn")) if has_llm else None,
         ),
         (
             "  False Negatives (FN)",
             fmt_int(gnn_metrics.get("fn")),
             fmt_int(heuristic_metrics.get("fn") if heuristic_metrics else None),
-            fmt_int(llm_metrics.get("fn") if llm_metrics else None),
+            fmt_int(llm_metrics.get("fn")) if has_llm else None,
         ),
         (
             "Total Evaluated Nodes",
             fmt_int(gnn_metrics.get("total_nodes")),
             fmt_int(heuristic_metrics.get("total_nodes") if heuristic_metrics else None),
-            fmt_int(llm_metrics.get("total_nodes") if llm_metrics else None),
+            fmt_int(llm_metrics.get("total_nodes")) if has_llm else None,
         ),
     ]
 
-    for label, g, h, l in cm_rows:
-        print(f"{label:<{col_metric}} | {g:<{col_gnn}} | {h:<{col_heur}} | {l:<{col_llm}}")
+    for item in cm_rows:
+        label, g, h = item[0], item[1], item[2]
+        if has_llm:
+            l = item[3]
+            print(f"{label:<{col_metric}} | {g:<{col_gnn}} | {h:<{col_heur}} | {l:<{col_llm}}")
+        else:
+            print(f"{label:<{col_metric}} | {g:<{col_gnn}} | {h:<{col_heur}}")
 
-    print("=" * 115)
+    print("=" * table_width)
 
 
 def print_single_metrics(
@@ -776,29 +796,11 @@ def main():
             threshold=args.heuristic_threshold,
         )
 
-    # Reference metrics for LLM agent reasoning from empirical experiments
-    # (LLM reasoning operating over GNN-candidate regions)
-    llm_reference_metrics = {
-        "accuracy": 0.9997,
-        "precision": 0.9720,
-        "recall": 0.9140,
-        "f1": 0.9421,
-        "fp_rate": 0.00008,
-        "fn_rate": 0.0860,
-        "specificity": 0.99992,
-        "tp": int(gnn_metrics.get("tp", 0) * 0.95) if gnn_metrics.get("tp") else None,
-        "fp": max(0, int(gnn_metrics.get("fp", 0) * 0.30)) if gnn_metrics.get("fp") else None,
-        "tn": gnn_metrics.get("tn"),
-        "fn": gnn_metrics.get("fn"),
-        "total_nodes": gnn_metrics.get("total_nodes"),
-    }
-
     # 4. Display Results
     if args.run_heuristic:
         print_comparative_table(
             gnn_metrics=gnn_metrics,
             heuristic_metrics=heuristic_metrics,
-            llm_metrics=llm_reference_metrics,
         )
     else:
         print_single_metrics(gnn_metrics, "GNN EVALUATION RESULT")

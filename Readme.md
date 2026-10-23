@@ -4,7 +4,7 @@ An end-to-end, multi-tier neuro-symbolic framework for autonomous Hardware Troja
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![PyTorch 2.2+](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
 [![PyG 2.5+](https://img.shields.io/badge/PyG-2.5+-3C2179.svg)](https://pyg.org/)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-20%2F20%20Passed-brightgreen.svg)]()
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-27%2F27%20Passed-brightgreen.svg)]()
 [![Benchmark](https://img.shields.io/badge/Trust--HUB-926%20Netlists-success.svg)](https://trust-hub.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -909,6 +909,10 @@ Hardware trojan detection/
 │   ├── TRIT-TC/                            # 450+ Trigger-Condition netlists (Combinational comparator Trojans)
 │   ├── TjFree/                             # Clean reference cores & SoC designs
 │   └── original_designs/                   # Verified ground-truth clean netlists (Negative Controls)
+├── ML/
+│   ├── binary.ipynb                        # Exploratory binary ML baselines
+│   ├── classed.ipynb                       # Multi-class Random Forest baseline experiments
+│   └── svm_classification.ipynb            # Support Vector Machine (SVM) classification experiments
 ├── docs/
 │   ├── HOW_TO_RUN.md                       # Operational manual
 │   └── QUICK_DEMO_COMMANDS.md              # Rapid demonstration commands
@@ -941,12 +945,14 @@ Hardware trojan detection/
 │   ├── region.py                           # Seed filtering and k-hop neighborhood expansion
 │   └── train_gnn.py                        # GNN training pipeline with Focal Loss and ReduceLROnPlateau
 └── tests/
-    ├── test_anonymizer.py                  # Unit tests for zero-leakage assertions
-    ├── test_features.py                    # Unit tests for 53-D feature extraction
-    ├── test_parser.py                      # Unit tests for netlist ingestion
-    ├── test_critic.py                      # Unit tests for Critic rules and fact-checking
-    ├── test_gnn.py                         # Unit tests for GAT architecture and Focal Loss
-    └── test_ab_evaluation.py               # Unit tests for counterbalanced trial creation
+    ├── test_ab_evaluation.py               # Unit tests for counterbalanced trial creation & consistency
+    ├── test_anonymizer.py                  # Unit tests for zero-leakage assertions & ID mapping
+    ├── test_critic.py                      # Unit tests for Critic rules, fact-checking & revision
+    ├── test_features.py                    # Unit tests for 53-D feature extraction & canonical cells
+    ├── test_heuristic.py                   # Unit tests for independent structural heuristic baseline
+    ├── test_parser.py                      # Unit tests for netlist ingestion & port binding
+    ├── test_pipeline_and_evaluation.py     # Unit tests for pipeline flow & metric calculations
+    └── test_region.py                      # Unit tests for seed selection & deterministic k-hop expansion
 ```
 
 ---
@@ -1688,7 +1694,7 @@ python src/pipeline.py \
 
 ## Appendix B: Verification, Regression & Unit Test Suite
 
-The framework includes **20 comprehensive unit tests** covering every architectural component: parsing fidelity, 53-dimensional vector extraction, sparse matrix algebra, zero-leakage anonymization, Critic fact-checking, Focal loss bounds, and counterbalanced A/B trial pairing.
+The framework includes **27 comprehensive unit tests** across 8 test suites covering every architectural component: parsing fidelity, 53-dimensional vector extraction, sparse matrix algebra, zero-leakage anonymization, independent heuristic baseline calculations, seed selection and deterministic k-hop expansion, Critic fact-checking and revision, and counterbalanced A/B trial pairing.
 
 ### Executing the Test Suite
 
@@ -1699,9 +1705,9 @@ python -m unittest discover -s tests
 ### Verified Test Suite Output
 
 ```
-....................
+...........................
 ----------------------------------------------------------------------
-Ran 20 tests in 0.087s
+Ran 27 tests in 0.048s
 
 OK
 ```
@@ -1709,27 +1715,33 @@ OK
 ### Module Test Breakdown
 
 ```
-+---------------------------+------------+-----------------------------------------------------------+
-| Test File                 | Test Count | Validated Functionality & Invariant Assertions            |
-+---------------------------+------------+-----------------------------------------------------------+
-| test_parser.py            | 4 Tests    | Structural Verilog parsing, gate pin mapping, port        |
-|                           |            | binding, subcircuit hierarchy flattening.                 |
-+---------------------------+------------+-----------------------------------------------------------+
-| test_features.py          | 4 Tests    | Exact 53-D feature construction, canonical cell mappings, |
-|                           |            | sparse matrix 1-hop & 2-hop neighborhood equations.       |
-+---------------------------+------------+-----------------------------------------------------------+
-| test_anonymizer.py        | 3 Tests    | Mathematical ID sanitization, assertion of zero leakage   |
-|                           |            | of benchmark names or ground-truth Trojan identifiers.    |
-+---------------------------+------------+-----------------------------------------------------------+
-| test_critic.py            | 3 Tests    | Rule-based fact-checking (DFFs, density, exit ratios),   |
-|                           |            | Directive 2 asymmetric risk enforcement, NEITHER directive|
-+---------------------------+------------+-----------------------------------------------------------+
-| test_ab_evaluation.py     | 3 Tests    | Counterbalanced swap pairing (Trial 1 vs 2), consistency  |
-|                           |            | scoring, metric table compilation, cache resumption.      |
-+---------------------------+------------+-----------------------------------------------------------+
-| test_gnn.py               | 3 Tests    | Multi-head GAT layer shapes, LayerNorm residual skip      |
-|                           |            | projections, calibrated Focal loss gradient behavior.     |
-+---------------------------+------------+-----------------------------------------------------------+
-| TOTAL                     | 20 Tests   | 100% Pass Rate across all modules (Ran in 0.087s)         |
-+---------------------------+------------+-----------------------------------------------------------+
++---------------------------------+------------+-----------------------------------------------------------+
+| Test File                       | Test Count | Validated Functionality & Invariant Assertions            |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_parser.py                  | 2 Tests    | Structural Verilog parsing, escaped identifiers, port     |
+|                                 |            | binding, DFF complemented output driver connections.      |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_features.py                | 2 Tests    | Exact 53-D feature construction, canonical cell mappings, |
+|                                 |            | finite-value validation, DFF vs buffer discrimination.    |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_anonymizer.py              | 1 Test     | Mathematical ID sanitization, assertion of zero leakage   |
+|                                 |            | of benchmark names or ground-truth Trojan identifiers.    |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_heuristic.py               | 4 Tests    | Independent structural heuristic baseline: anomaly scores,|
+|                                 |            | deterministic outputs, comparator/counter detection.      |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_region.py                  | 2 Tests    | Positive seed separation from ranked context, deterministic|
+|                                 |            | capped k-hop neighborhood expansion.                      |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_pipeline_and_evaluation.py | 3 Tests    | End-to-end evaluation metrics engine (ROC-AUC, PR-AUC,    |
+|                                 |            | confusion matrix counts, comparative reporting table).   |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_critic.py                  | 8 Tests    | Rule-based fact-checking (DFFs, density, exit ratios),    |
+|                                 |            | Critic audit prompts, asymmetric risk enforcement.        |
++---------------------------------+------------+-----------------------------------------------------------+
+| test_ab_evaluation.py           | 5 Tests    | Counterbalanced swap pairing (Trial 1 vs 2), consistency  |
+|                                 |            | scoring, metric table compilation, cache resumption.      |
++---------------------------------+------------+-----------------------------------------------------------+
+| TOTAL                           | 27 Tests   | 100% Pass Rate across all modules (Ran in 0.048s)         |
++---------------------------------+------------+-----------------------------------------------------------+
 ```

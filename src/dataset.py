@@ -27,10 +27,6 @@ from parser import parse_netlist
 # Configuration
 # ============================================================
 
-# ============================================================
-# Configuration
-# ============================================================
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # Search paths for datasets. If present, both TRIT-TS and TRIT-TC are supported.
